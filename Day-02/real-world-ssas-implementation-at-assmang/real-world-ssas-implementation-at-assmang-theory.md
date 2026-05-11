@@ -404,6 +404,19 @@ In this topic you learned about **Real-World SSAS Implementation at Assmang**.
 - You can connect the concepts to a real Assmang business question
 - You completed the practical lab successfully
 
+## Visual Diagram
+
+```mermaid
+flowchart LR
+   BR[Business Requirements\nProduction, Cost, Safety, HR] --> DW[Assmang SQL Warehouse]
+   DW --> SSAS[SSAS Cube\nDimensions + Measure Groups]
+   SSAS --> KPI[KPI Layer\nTargets, Status, Trend]
+   KPI --> GOV[Governance\nSecurity + Processing + Monitoring]
+   GOV --> CONS[Consumption\nExcel, Power BI, MDX]
+   CONS --> FB[Stakeholder Feedback]
+   FB --> BR
+```
+
 ---
 
 *Assmang Pty Ltd — SSAS Fundamentals Training | Day 02*  

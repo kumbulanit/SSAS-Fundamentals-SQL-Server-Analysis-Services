@@ -9,6 +9,13 @@
 USE AssmangMining;
 GO
 
+-- Drop v3 fact tables if they already exist (safe reruns)
+IF OBJECT_ID('dbo.FactEmployeeMetrics', 'U') IS NOT NULL DROP TABLE dbo.FactEmployeeMetrics;
+IF OBJECT_ID('dbo.FactSafetyKPI', 'U') IS NOT NULL DROP TABLE dbo.FactSafetyKPI;
+IF OBJECT_ID('dbo.FactEquipmentEfficiency', 'U') IS NOT NULL DROP TABLE dbo.FactEquipmentEfficiency;
+
+GO
+
 -- ========================================================================
 -- FACT TABLE: Equipment Efficiency
 -- ========================================================================
@@ -105,20 +112,40 @@ GO
 -- ========================================================================
 -- Summary: v3 Complete Database
 -- ========================================================================
+DECLARE @DimMineCount INT;
+DECLARE @DimDepartmentCount INT;
+DECLARE @DimEmployeeCount INT;
+DECLARE @DimDateCount INT;
+DECLARE @FactProductionCount INT;
+DECLARE @FactOperatingCostsCount INT;
+DECLARE @FactEquipmentEfficiencyCount INT;
+DECLARE @FactSafetyKPICount INT;
+DECLARE @FactEmployeeMetricsCount INT;
+
+SELECT @DimMineCount = COUNT(*) FROM Dim_Mine;
+SELECT @DimDepartmentCount = COUNT(*) FROM Dim_Department;
+SELECT @DimEmployeeCount = COUNT(*) FROM Dim_Employee;
+SELECT @DimDateCount = COUNT(*) FROM Dim_Date;
+SELECT @FactProductionCount = COUNT(*) FROM FactProduction;
+SELECT @FactOperatingCostsCount = COUNT(*) FROM FactOperatingCosts;
+SELECT @FactEquipmentEfficiencyCount = COUNT(*) FROM FactEquipmentEfficiency;
+SELECT @FactSafetyKPICount = COUNT(*) FROM FactSafetyKPI;
+SELECT @FactEmployeeMetricsCount = COUNT(*) FROM FactEmployeeMetrics;
+
 PRINT 'v3 ASSMANG MINING DATABASE COMPLETED SUCCESSFULLY';
 PRINT '';
 PRINT 'BASE DIMENSIONS:';
-PRINT '- Dim_Mine: ' + CAST((SELECT COUNT(*) FROM Dim_Mine) AS NVARCHAR(10)) + ' mines';
-PRINT '- Dim_Department: ' + CAST((SELECT COUNT(*) FROM Dim_Department) AS NVARCHAR(10)) + ' departments';
-PRINT '- Dim_Employee: ' + CAST((SELECT COUNT(*) FROM Dim_Employee) AS NVARCHAR(10)) + ' employees';
-PRINT '- Dim_Date: ' + CAST((SELECT COUNT(*) FROM Dim_Date) AS NVARCHAR(10)) + ' dates (2023-2024)';
+PRINT '- Dim_Mine: ' + CAST(@DimMineCount AS NVARCHAR(10)) + ' mines';
+PRINT '- Dim_Department: ' + CAST(@DimDepartmentCount AS NVARCHAR(10)) + ' departments';
+PRINT '- Dim_Employee: ' + CAST(@DimEmployeeCount AS NVARCHAR(10)) + ' employees';
+PRINT '- Dim_Date: ' + CAST(@DimDateCount AS NVARCHAR(10)) + ' dates (2023-2024)';
 PRINT '';
 PRINT 'FACT TABLES:';
-PRINT '- FactProduction: ' + CAST((SELECT COUNT(*) FROM FactProduction) AS NVARCHAR(10)) + ' records (monthly)';
-PRINT '- FactOperatingCosts: ' + CAST((SELECT COUNT(*) FROM FactOperatingCosts) AS NVARCHAR(10)) + ' records (costs)';
-PRINT '- FactEquipmentEfficiency: ' + CAST((SELECT COUNT(*) FROM FactEquipmentEfficiency) AS NVARCHAR(10)) + ' records';
-PRINT '- FactSafetyKPI: ' + CAST((SELECT COUNT(*) FROM FactSafetyKPI) AS NVARCHAR(10)) + ' records';
-PRINT '- FactEmployeeMetrics: ' + CAST((SELECT COUNT(*) FROM FactEmployeeMetrics) AS NVARCHAR(10)) + ' records';
+PRINT '- FactProduction: ' + CAST(@FactProductionCount AS NVARCHAR(10)) + ' records (monthly)';
+PRINT '- FactOperatingCosts: ' + CAST(@FactOperatingCostsCount AS NVARCHAR(10)) + ' records (costs)';
+PRINT '- FactEquipmentEfficiency: ' + CAST(@FactEquipmentEfficiencyCount AS NVARCHAR(10)) + ' records';
+PRINT '- FactSafetyKPI: ' + CAST(@FactSafetyKPICount AS NVARCHAR(10)) + ' records';
+PRINT '- FactEmployeeMetrics: ' + CAST(@FactEmployeeMetricsCount AS NVARCHAR(10)) + ' records';
 PRINT '';
 PRINT 'Database ready for complete SSAS cube development (Day 1-2 full curriculum)';
 

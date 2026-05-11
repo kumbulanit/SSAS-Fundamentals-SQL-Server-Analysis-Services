@@ -385,6 +385,17 @@ In this topic you learned about **Advanced Queries, Calculations, and KPIs**.
 - You can connect the concepts to a real Assmang business question
 - You completed the practical lab successfully
 
+## Visual Diagram
+
+```mermaid
+flowchart LR
+	A[Base Measures\nTonnes, Revenue, Cost] --> B[Calculated Measures\nCost Per Tonne, Variance]
+	B --> C[Named Sets\nTop Mines, Above Average]
+	B --> D[KPI Definition\nValue + Goal + Status + Trend]
+	C --> E[Executive Dashboard]
+	D --> E
+```
+
 ---
 
 *Assmang Pty Ltd — SSAS Fundamentals Training | Day 02*  

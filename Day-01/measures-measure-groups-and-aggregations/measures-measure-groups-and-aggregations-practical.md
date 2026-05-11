@@ -27,7 +27,7 @@ Apply the theory from **Measures, Measure Groups, and Aggregations** by completi
 
 ## 📝 Guided Steps
 
-### Step 1: Load `datasets/v2_assmang_mining_extended
+### Step 1: Load `datasets/v2_assmang_mining_extended.sql`
 
 **What to do:** Load `datasets/v2_assmang_mining_extended.sql` to add production and operating cost facts.
 
@@ -132,6 +132,46 @@ By the end of this lab, you should be able to demonstrate the core workflow for 
 - **Save your project** after each major step.
 - **Ask questions** if something doesn't look right — it's better to clarify early.
 - **Take notes** on what you observe — this helps with the assessment later.
+
+## SQL Validation Queries (Run in SSMS)
+
+Run these checks to validate the fact tables used by your measure groups:
+
+```sql
+USE AssmangMining;
+GO
+
+SELECT
+	COUNT(*) AS FactProductionRows,
+	COUNT(DISTINCT MineID) AS MineCount,
+	MIN(DateID) AS MinDateID,
+	MAX(DateID) AS MaxDateID
+FROM dbo.FactProduction;
+```
+
+```sql
+SELECT
+	m.MineName,
+	SUM(fp.TonnesProduced) AS TotalTonnes,
+	SUM(fp.RevenueZAR) AS TotalRevenueZAR,
+	AVG(fp.Grade) AS AvgGrade
+FROM dbo.FactProduction fp
+JOIN dbo.Dim_Mine m ON fp.MineID = m.MineID
+GROUP BY m.MineName
+ORDER BY TotalTonnes DESC;
+```
+
+```sql
+SELECT
+	m.MineName,
+	d.DepartmentName,
+	SUM(oc.LaborCostZAR + oc.EquipmentCostZAR + oc.MaintenanceCostZAR + oc.SafetyCostZAR + oc.UtilitiesCostZAR + oc.OtherCostZAR) AS TotalOperatingCost
+FROM dbo.FactOperatingCosts oc
+JOIN dbo.Dim_Mine m ON oc.MineID = m.MineID
+JOIN dbo.Dim_Department d ON oc.DepartmentID = d.DepartmentID
+GROUP BY m.MineName, d.DepartmentName
+ORDER BY m.MineName, d.DepartmentName;
+```
 
 ---
 

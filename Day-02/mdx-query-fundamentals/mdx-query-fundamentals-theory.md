@@ -398,6 +398,19 @@ In this topic you learned about **MDX Query Fundamentals**.
 - You can connect the concepts to a real Assmang business question
 - You completed the practical lab successfully
 
+## Visual Diagram
+
+```mermaid
+flowchart TB
+	Q[MDX Query] --> C[Columns Axis\nMeasures]
+	Q --> R[Rows Axis\nMembers / Sets]
+	Q --> W[Where Clause\nSlicer Context]
+	C --> E[Cell Coordinates]
+	R --> E
+	W --> E
+	E --> O[Result Grid in SSMS / Excel]
+```
+
 ---
 
 *Assmang Pty Ltd — SSAS Fundamentals Training | Day 02*  

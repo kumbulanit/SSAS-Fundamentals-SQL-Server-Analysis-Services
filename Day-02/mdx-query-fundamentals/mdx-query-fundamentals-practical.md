@@ -133,6 +133,64 @@ By the end of this lab, you should be able to demonstrate the core workflow for 
 - **Ask questions** if something doesn't look right — it's better to clarify early.
 - **Take notes** on what you observe — this helps with the assessment later.
 
+## SQL Precheck (Run in SSMS Database Engine)
+
+```sql
+USE AssmangMining;
+GO
+
+SELECT
+	m.MineName,
+	SUM(fp.TonnesProduced) AS TotalTonnes,
+	SUM(fp.RevenueZAR) AS TotalRevenueZAR
+FROM dbo.FactProduction fp
+JOIN dbo.Dim_Mine m ON fp.MineID = m.MineID
+GROUP BY m.MineName
+ORDER BY m.MineName;
+```
+
+## MDX Lab Queries (Run in SSMS against SSAS)
+
+```mdx
+/* Step 2: Tonnes by mine */
+SELECT
+	{[Measures].[TonnesProduced]} ON COLUMNS,
+	[Mine].[Mine Name].[Mine Name].MEMBERS ON ROWS
+FROM [Assmang Mining Analytics];
+```
+
+```mdx
+/* Step 3: Add year slicer */
+SELECT
+	{[Measures].[TonnesProduced]} ON COLUMNS,
+	[Mine].[Mine Name].[Mine Name].MEMBERS ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE ([Date].[Calendar Year].&[2024]);
+```
+
+```mdx
+/* Step 4: Revenue by commodity type */
+SELECT
+	{[Measures].[RevenueZAR]} ON COLUMNS,
+	[Mine].[Mine Type].[Mine Type].MEMBERS ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE ([Date].[Calendar Year].&[2024]);
+```
+
+```mdx
+/* Step 5: Iron ore mines only */
+WITH
+SET [Iron Ore Mines] AS
+	DESCENDANTS(
+		[Mine].[Mine Type].&[Iron Ore],
+		[Mine].[Mine Name].[Mine Name]
+	)
+SELECT
+	{[Measures].[TonnesProduced], [Measures].[RevenueZAR]} ON COLUMNS,
+	[Iron Ore Mines] ON ROWS
+FROM [Assmang Mining Analytics];
+```
+
 ---
 
 *Assmang Pty Ltd — SSAS Fundamentals | Day 02 Practical Lab*

@@ -384,6 +384,19 @@ In this topic you learned about **Building and Deploying SSAS Cubes**.
 - You can connect the concepts to a real Assmang business question
 - You completed the practical lab successfully
 
+## Visual Diagram
+
+```mermaid
+flowchart LR
+	A[Create Data Source] --> B[Build Data Source View]
+	B --> C[Design Dimensions]
+	C --> D[Create Cube + Measure Groups]
+	D --> E[Deploy to SSAS Instance]
+	E --> F[Process Cube]
+	F --> G[Validate in Browser / MDX]
+	G --> H[Publish to Excel / Power BI]
+```
+
 ---
 
 *Assmang Pty Ltd — SSAS Fundamentals Training | Day 01*  

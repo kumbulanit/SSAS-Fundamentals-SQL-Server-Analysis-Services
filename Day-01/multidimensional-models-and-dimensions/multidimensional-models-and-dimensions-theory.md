@@ -406,6 +406,32 @@ In this topic you learned about **Multidimensional Models and Dimensions**.
 - You can connect the concepts to a real Assmang business question
 - You completed the practical lab successfully
 
+## Visual Diagram
+
+```mermaid
+flowchart TB
+   FP[FactProduction]
+   FM[FactOperatingCosts]
+   DM[Dim_Mine]
+   DD[Dim_Date]
+   DP[Dim_Department]
+   DE[Dim_Employee]
+
+   DM --> FP
+   DD --> FP
+   DM --> FM
+   DD --> FM
+   DP --> FM
+   DP --> DE
+   DM --> DE
+
+   H1[Mine Hierarchy\nMine Type > Province > Mine Name]
+   H2[Date Hierarchy\nYear > Quarter > Month > Day]
+
+   DM --> H1
+   DD --> H2
+```
+
 ---
 
 *Assmang Pty Ltd — SSAS Fundamentals Training | Day 01*  

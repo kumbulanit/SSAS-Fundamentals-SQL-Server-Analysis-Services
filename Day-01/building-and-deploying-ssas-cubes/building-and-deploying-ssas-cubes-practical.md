@@ -133,6 +133,46 @@ By the end of this lab, you should be able to demonstrate the core workflow for 
 - **Ask questions** if something doesn't look right — it's better to clarify early.
 - **Take notes** on what you observe — this helps with the assessment later.
 
+## SQL Validation Queries (Run in SSMS)
+
+Use these SQL checks before deployment and processing:
+
+```sql
+USE AssmangMining;
+GO
+
+SELECT
+	t.name AS TableName,
+	p.rows AS ApproxRowCount
+FROM sys.tables t
+JOIN sys.partitions p ON t.object_id = p.object_id AND p.index_id IN (0, 1)
+WHERE t.name IN ('Dim_Mine', 'Dim_Date', 'FactProduction', 'FactOperatingCosts')
+ORDER BY t.name;
+```
+
+```sql
+SELECT TOP (20)
+	m.MineName,
+	d.[Year],
+	d.[Month],
+	fp.TonnesProduced,
+	fp.RevenueZAR
+FROM dbo.FactProduction fp
+JOIN dbo.Dim_Mine m ON fp.MineID = m.MineID
+JOIN dbo.Dim_Date d ON fp.DateID = d.DateID
+ORDER BY d.[Year], d.[Month], m.MineName;
+```
+
+```sql
+SELECT
+	COUNT(*) AS OrphanRows
+FROM dbo.FactOperatingCosts oc
+LEFT JOIN dbo.Dim_Mine m ON oc.MineID = m.MineID
+LEFT JOIN dbo.Dim_Department dp ON oc.DepartmentID = dp.DepartmentID
+LEFT JOIN dbo.Dim_Date dd ON oc.DateID = dd.DateID
+WHERE m.MineID IS NULL OR dp.DepartmentID IS NULL OR dd.DateID IS NULL;
+```
+
 ---
 
 *Assmang Pty Ltd — SSAS Fundamentals | Day 01 Practical Lab*

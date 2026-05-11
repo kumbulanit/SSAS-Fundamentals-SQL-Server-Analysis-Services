@@ -27,7 +27,7 @@ Apply the theory from **Introduction to SQL Server Analysis Services** by comple
 
 ## 📝 Guided Steps
 
-### Step 1: Load `datasets/v1_assmang_mining_base
+### Step 1: Load `datasets/v1_assmang_mining_base.sql`
 
 **What to do:** Load `datasets/v1_assmang_mining_base.sql` into SQL Server and verify all four dimension tables exist.
 
@@ -132,6 +132,41 @@ By the end of this lab, you should be able to demonstrate the core workflow for 
 - **Save your project** after each major step.
 - **Ask questions** if something doesn't look right — it's better to clarify early.
 - **Take notes** on what you observe — this helps with the assessment later.
+
+## SQL Validation Queries (Run in SSMS)
+
+Run these checks after loading `v1_assmang_mining_base.sql`:
+
+```sql
+USE AssmangMining;
+GO
+
+SELECT
+	(SELECT COUNT(*) FROM dbo.Dim_Mine) AS MineCount,
+	(SELECT COUNT(*) FROM dbo.Dim_Department) AS DepartmentCount,
+	(SELECT COUNT(*) FROM dbo.Dim_Employee) AS EmployeeCount,
+	(SELECT COUNT(*) FROM dbo.Dim_Date) AS DateCount;
+```
+
+```sql
+SELECT TOP (10)
+	e.EmployeeCode,
+	e.FirstName + ' ' + e.LastName AS EmployeeName,
+	m.MineName,
+	d.DepartmentName
+FROM dbo.Dim_Employee e
+LEFT JOIN dbo.Dim_Mine m ON e.MineID = m.MineID
+LEFT JOIN dbo.Dim_Department d ON e.DepartmentID = d.DepartmentID
+ORDER BY e.EmployeeID;
+```
+
+```sql
+SELECT
+	MIN(FullDate) AS StartDate,
+	MAX(FullDate) AS EndDate,
+	COUNT(*) AS NumberOfDates
+FROM dbo.Dim_Date;
+```
 
 ---
 

@@ -133,6 +133,64 @@ By the end of this lab, you should be able to demonstrate the core workflow for 
 - **Ask questions** if something doesn't look right — it's better to clarify early.
 - **Take notes** on what you observe — this helps with the assessment later.
 
+## SQL Integrated Validation Pack (Run in SSMS Database Engine)
+
+```sql
+USE AssmangMining;
+GO
+
+SELECT 'Dim_Mine' AS TableName, COUNT(*) AS RowCount FROM dbo.Dim_Mine
+UNION ALL SELECT 'Dim_Department', COUNT(*) FROM dbo.Dim_Department
+UNION ALL SELECT 'Dim_Employee', COUNT(*) FROM dbo.Dim_Employee
+UNION ALL SELECT 'Dim_Date', COUNT(*) FROM dbo.Dim_Date
+UNION ALL SELECT 'FactProduction', COUNT(*) FROM dbo.FactProduction
+UNION ALL SELECT 'FactOperatingCosts', COUNT(*) FROM dbo.FactOperatingCosts
+UNION ALL SELECT 'FactEquipmentEfficiency', COUNT(*) FROM dbo.FactEquipmentEfficiency
+UNION ALL SELECT 'FactSafetyKPI', COUNT(*) FROM dbo.FactSafetyKPI
+UNION ALL SELECT 'FactEmployeeMetrics', COUNT(*) FROM dbo.FactEmployeeMetrics;
+```
+
+```sql
+SELECT
+	m.MineName,
+	SUM(fp.TonnesProduced) AS TotalTonnes,
+	SUM(fp.RevenueZAR) AS TotalRevenueZAR,
+	AVG(sk.ComplianceScore) AS AvgComplianceScore
+FROM dbo.Dim_Mine m
+LEFT JOIN dbo.FactProduction fp ON m.MineID = fp.MineID
+LEFT JOIN dbo.FactSafetyKPI sk ON m.MineID = sk.MineID
+GROUP BY m.MineName
+ORDER BY TotalRevenueZAR DESC;
+```
+
+## Executive MDX Query Pack (Run in SSMS against SSAS)
+
+```mdx
+/* Executive view 1: Production and revenue by mine */
+SELECT
+	{[Measures].[TonnesProduced], [Measures].[RevenueZAR]} ON COLUMNS,
+	[Mine].[Mine Name].[Mine Name].MEMBERS ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE ([Date].[Calendar Year].&[2024]);
+```
+
+```mdx
+/* Executive view 2: Safety and efficiency indicators */
+SELECT
+	{[Measures].[ComplianceScore], [Measures].[UpTimePercentage]} ON COLUMNS,
+	[Mine].[Mine Name].[Mine Name].MEMBERS ON ROWS
+FROM [Assmang Mining Analytics];
+```
+
+```mdx
+/* Executive view 3: Workforce metric */
+SELECT
+	{[Measures].[AttendancePercentage], [Measures].[OvertimeHours]} ON COLUMNS,
+	[Department].[Department Name].[Department Name].MEMBERS ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE ([Date].[Calendar Year].&[2024]);
+```
+
 ---
 
 *Assmang Pty Ltd — SSAS Fundamentals | Day 02 Practical Lab*

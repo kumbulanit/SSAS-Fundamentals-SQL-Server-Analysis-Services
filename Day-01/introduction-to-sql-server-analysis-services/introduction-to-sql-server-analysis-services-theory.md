@@ -405,6 +405,19 @@ In this topic you learned about **Introduction to SQL Server Analysis Services**
 - You can connect the concepts to a real Assmang business question
 - You completed the practical lab successfully
 
+## Visual Diagram
+
+```mermaid
+flowchart LR
+    A[Assmang SQL Data\nDim + Fact Tables] --> B[SSAS Multidimensional Model]
+    B --> C[Measures and KPIs]
+    B --> D[Dimensions and Hierarchies]
+    C --> E[Excel Pivot Reports]
+    D --> E
+    C --> F[Power BI Live Reports]
+    D --> F
+```
+
 ---
 
 *Assmang Pty Ltd — SSAS Fundamentals Training | Day 01*  

@@ -144,15 +144,15 @@ WHILE @CurrentDate <= @EndDate
 BEGIN
     INSERT INTO Dim_Date (DateID, FullDate, Year, Quarter, Month, MonthName, Day, DayOfWeek, DayName, WeekOfYear, IsWeekday)
     SELECT
-        CAST(FORMAT(@CurrentDate, 'yyyyMMdd') AS INT),
+        CAST(CONVERT(CHAR(8), @CurrentDate, 112) AS INT),
         @CurrentDate,
         YEAR(@CurrentDate),
-        QUARTER(@CurrentDate),
+        DATEPART(QUARTER, @CurrentDate),
         MONTH(@CurrentDate),
-        FORMAT(@CurrentDate, 'MMMM'),
+        DATENAME(MONTH, @CurrentDate),
         DAY(@CurrentDate),
         DATEPART(WEEKDAY, @CurrentDate),
-        FORMAT(@CurrentDate, 'dddd'),
+        DATENAME(WEEKDAY, @CurrentDate),
         DATEPART(WEEK, @CurrentDate),
         CASE WHEN DATEPART(WEEKDAY, @CurrentDate) NOT IN (1, 7) THEN 1 ELSE 0 END;
 
@@ -175,11 +175,21 @@ GO
 -- Next version: Will add Fact tables (Production, Costs)
 -- ========================================================================
 
+DECLARE @DimMineCount INT;
+DECLARE @DimDepartmentCount INT;
+DECLARE @DimEmployeeCount INT;
+DECLARE @DimDateCount INT;
+
+SELECT @DimMineCount = COUNT(*) FROM Dim_Mine;
+SELECT @DimDepartmentCount = COUNT(*) FROM Dim_Department;
+SELECT @DimEmployeeCount = COUNT(*) FROM Dim_Employee;
+SELECT @DimDateCount = COUNT(*) FROM Dim_Date;
+
 PRINT 'v1 ASSMANG MINING DATABASE CREATED SUCCESSFULLY';
-PRINT '- Dim_Mine: ' + CAST((SELECT COUNT(*) FROM Dim_Mine) AS NVARCHAR(10)) + ' records';
-PRINT '- Dim_Department: ' + CAST((SELECT COUNT(*) FROM Dim_Department) AS NVARCHAR(10)) + ' records';
-PRINT '- Dim_Employee: ' + CAST((SELECT COUNT(*) FROM Dim_Employee) AS NVARCHAR(10)) + ' records';
-PRINT '- Dim_Date: ' + CAST((SELECT COUNT(*) FROM Dim_Date) AS NVARCHAR(10)) + ' records';
+PRINT '- Dim_Mine: ' + CAST(@DimMineCount AS NVARCHAR(10)) + ' records';
+PRINT '- Dim_Department: ' + CAST(@DimDepartmentCount AS NVARCHAR(10)) + ' records';
+PRINT '- Dim_Employee: ' + CAST(@DimEmployeeCount AS NVARCHAR(10)) + ' records';
+PRINT '- Dim_Date: ' + CAST(@DimDateCount AS NVARCHAR(10)) + ' records';
 PRINT '';
 PRINT 'Ready for Day 1, Topics 1-2 (Basic Dimensions and Initial Cube Build)';
 

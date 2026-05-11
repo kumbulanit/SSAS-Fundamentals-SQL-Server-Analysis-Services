@@ -199,9 +199,15 @@ GO
 -- ========================================================================
 -- Summary of v2 Tables
 -- ========================================================================
+DECLARE @FactProductionCount INT;
+DECLARE @FactOperatingCostsCount INT;
+
+SELECT @FactProductionCount = COUNT(*) FROM FactProduction;
+SELECT @FactOperatingCostsCount = COUNT(*) FROM FactOperatingCosts;
+
 PRINT 'v2 ASSMANG MINING DATABASE EXTENDED SUCCESSFULLY';
-PRINT '- FactProduction: ' + CAST((SELECT COUNT(*) FROM FactProduction) AS NVARCHAR(10)) + ' records';
-PRINT '- FactOperatingCosts: ' + CAST((SELECT COUNT(*) FROM FactOperatingCosts) AS NVARCHAR(10)) + ' records';
+PRINT '- FactProduction: ' + CAST(@FactProductionCount AS NVARCHAR(10)) + ' records';
+PRINT '- FactOperatingCosts: ' + CAST(@FactOperatingCostsCount AS NVARCHAR(10)) + ' records';
 PRINT '';
 PRINT 'All dimensions and fact tables ready for SSAS cube building';
 PRINT 'Ready for Day 1, Topics 3-4 (Measure Groups and Cube Building)';

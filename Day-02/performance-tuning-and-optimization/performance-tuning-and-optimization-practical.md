@@ -133,6 +133,58 @@ By the end of this lab, you should be able to demonstrate the core workflow for 
 - **Ask questions** if something doesn't look right — it's better to clarify early.
 - **Take notes** on what you observe — this helps with the assessment later.
 
+## SQL Checks for Tuning Context (Run in SSMS Database Engine)
+
+```sql
+USE AssmangMining;
+GO
+
+SELECT
+	d.[Year],
+	d.[Month],
+	COUNT(*) AS ProductionRows,
+	SUM(fp.TonnesProduced) AS TotalTonnes
+FROM dbo.FactProduction fp
+JOIN dbo.Dim_Date d ON fp.DateID = d.DateID
+GROUP BY d.[Year], d.[Month]
+ORDER BY d.[Year], d.[Month];
+```
+
+```sql
+SELECT
+	m.MineName,
+	AVG(ee.UpTimePercentage) AS AvgUpTimePct,
+	AVG(ee.ProductivityTonnesPerHour) AS AvgProductivityTonnesPerHour
+FROM dbo.FactEquipmentEfficiency ee
+JOIN dbo.Dim_Mine m ON ee.MineID = m.MineID
+GROUP BY m.MineName
+ORDER BY AvgUpTimePct DESC;
+```
+
+## MDX Queries for Before/After Comparison (Run in SSMS against SSAS)
+
+```mdx
+/* Query A: broad scan by mine and month */
+SELECT
+	{[Measures].[TonnesProduced], [Measures].[RevenueZAR]} ON COLUMNS,
+	NON EMPTY
+	CROSSJOIN(
+		[Mine].[Mine Name].[Mine Name].MEMBERS,
+		[Date].[Month Name].[Month Name].MEMBERS
+	) ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE ([Date].[Calendar Year].&[2024]);
+```
+
+```mdx
+/* Query B: narrower slice for comparison */
+SELECT
+	{[Measures].[TonnesProduced], [Measures].[RevenueZAR]} ON COLUMNS,
+	[Mine].[Mine Name].[Mine Name].MEMBERS ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE ([Date].[Calendar Year].&[2024]);
+```
+
 ---
 
 *Assmang Pty Ltd — SSAS Fundamentals | Day 02 Practical Lab*

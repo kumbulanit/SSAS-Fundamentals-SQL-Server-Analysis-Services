@@ -133,6 +133,41 @@ By the end of this lab, you should be able to demonstrate the core workflow for 
 - **Ask questions** if something doesn't look right — it's better to clarify early.
 - **Take notes** on what you observe — this helps with the assessment later.
 
+## SQL Validation Queries (Run in SSMS)
+
+Use these checks to confirm your dimension data is hierarchy-ready:
+
+```sql
+USE AssmangMining;
+GO
+
+SELECT
+	MineType,
+	Province,
+	COUNT(*) AS MineCount
+FROM dbo.Dim_Mine
+GROUP BY MineType, Province
+ORDER BY MineType, Province;
+```
+
+```sql
+SELECT
+	[Year],
+	[Quarter],
+	COUNT(*) AS DaysInQuarter
+FROM dbo.Dim_Date
+GROUP BY [Year], [Quarter]
+ORDER BY [Year], [Quarter];
+```
+
+```sql
+SELECT
+	SUM(CASE WHEN MineName IS NULL THEN 1 ELSE 0 END) AS NullMineName,
+	SUM(CASE WHEN MineType IS NULL THEN 1 ELSE 0 END) AS NullMineType,
+	SUM(CASE WHEN Province IS NULL THEN 1 ELSE 0 END) AS NullProvince
+FROM dbo.Dim_Mine;
+```
+
 ---
 
 *Assmang Pty Ltd — SSAS Fundamentals | Day 01 Practical Lab*

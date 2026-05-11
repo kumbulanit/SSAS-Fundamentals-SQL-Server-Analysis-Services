@@ -400,6 +400,29 @@ In this topic you learned about **Measures, Measure Groups, and Aggregations**.
 - You can connect the concepts to a real Assmang business question
 - You completed the practical lab successfully
 
+## Visual Diagram
+
+```mermaid
+flowchart LR
+   FP[FactProduction] --> MPG1[Production Measure Group]
+   FC[FactOperatingCosts] --> MPG2[Operating Cost Measure Group]
+
+   MPG1 --> M1[TonnesProduced\nSum]
+   MPG1 --> M2[RevenueZAR\nSum]
+   MPG1 --> M3[Grade\nAverage]
+
+   MPG2 --> C1[LaborCostZAR\nSum]
+   MPG2 --> C2[MaintenanceCostZAR\nSum]
+   MPG2 --> C3[SafetyCostZAR\nSum]
+
+   M1 --> R[Reports / KPIs]
+   M2 --> R
+   M3 --> R
+   C1 --> R
+   C2 --> R
+   C3 --> R
+```
+
 ---
 
 *Assmang Pty Ltd — SSAS Fundamentals Training | Day 01*  

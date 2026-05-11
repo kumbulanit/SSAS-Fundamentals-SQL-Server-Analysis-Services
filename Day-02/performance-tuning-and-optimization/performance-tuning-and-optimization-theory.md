@@ -385,6 +385,23 @@ In this topic you learned about **Performance Tuning and Optimization**.
 - You can connect the concepts to a real Assmang business question
 - You completed the practical lab successfully
 
+## Visual Diagram
+
+```mermaid
+flowchart TD
+    S[Workload Pattern] --> D1{Need fastest query speed?}
+    D1 -->|Yes| M[MOLAP]
+    D1 -->|No| D2{Need near real-time data?}
+    D2 -->|Yes| R[ROLAP]
+    D2 -->|Balanced| H[HOLAP]
+
+    M --> A[Aggregation Design]
+    R --> A
+    H --> A
+    A --> P[Partition Strategy]
+    P --> C[Cache Warmup and Query Validation]
+```
+
 ---
 
 *Assmang Pty Ltd — SSAS Fundamentals Training | Day 02*  
