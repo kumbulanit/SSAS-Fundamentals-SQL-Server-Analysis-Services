@@ -1,0 +1,250 @@
+-- ========================================================================
+-- v3_assmang_mining_complete_mdx.mdx
+-- ========================================================================
+-- Assmang Pty Ltd: MDX Validation Queries (Version 3 - Complete)
+-- Validates: Equipment Efficiency, Safety KPIs, and Employee Metrics
+-- Cube: Assmang Mining Analytics
+-- Purpose: Verify advanced analytical measures and KPI calculations
+-- ========================================================================
+
+-- ========================================================================
+-- QUERY 1: Equipment Uptime By Mine - January 2023
+-- Expected: Equipment availability percentages ranging 87-96%
+-- Validates: Equipment Efficiency fact table and UpTime measure
+-- ========================================================================
+SELECT
+    [Measures].[Average UpTime Percentage] ON COLUMNS,
+    [Mine].[Mine Name].Members ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE [Date].[Calendar Year].[2023].[Calendar Quarter].[Q1];
+
+-- ========================================================================
+-- QUERY 2: Equipment Type Analysis - Operational Efficiency
+-- Expected: Different equipment types show varying uptime levels
+-- Equipment Types: Excavator, Haul Truck, Blast Hole Drill, Ore Crusher
+-- ========================================================================
+SELECT
+    [Measures].[Average UpTime Percentage] ON COLUMNS,
+    [Equipment].[Equipment Type].Members ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE [Date].[Calendar Year].[2023];
+
+-- ========================================================================
+-- QUERY 3: Equipment Downtime Hours - Maintenance Impact
+-- Expected: Total downtime minutes aggregated by mine
+-- Higher downtime = more maintenance required or older equipment
+-- ========================================================================
+SELECT
+    [Measures].[Total Downtime Minutes] ON COLUMNS,
+    [Mine].[Mine Name].Members ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE [Date].[Calendar Year].[2023];
+
+-- ========================================================================
+-- QUERY 4: Equipment Productivity by Mine
+-- Expected: Productivity measured in tonnes per hour
+-- Excavators highest (~65-92 tonnes/hr), Drills lowest (~52 tonnes/hr)
+-- ========================================================================
+SELECT
+    [Measures].[Average Productivity Tonnes Per Hour] ON COLUMNS,
+    [Mine].[Mine Name].Members ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE [Date].[Calendar Year].[2023];
+
+-- ========================================================================
+-- QUERY 5: Safety KPI - Lost Time Injuries by Mine
+-- Expected: LTI count by mine (0-1 incidents typical in reporting period)
+-- Lower is better; validates safety performance tracking
+-- ========================================================================
+SELECT
+    [Measures].[Total Lost Time Injuries] ON COLUMNS,
+    [Mine].[Mine Name].Members ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE [Date].[Calendar Year].[2023];
+
+-- ========================================================================
+-- QUERY 6: Total Recordable Incidents (TRI) Trend
+-- Expected: TRI count by mine and month
+-- Validates: Safety incident tracking across all incident types
+-- ========================================================================
+SELECT
+    [Measures].[Total Recordable Incidents] ON COLUMNS,
+    [Mine].[Mine Name].Members ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE [Date].[Calendar Year].[2023];
+
+-- ========================================================================
+-- QUERY 7: Nearmisses Tracking - Leading Safety Indicator
+-- Expected: Monthly nearmisses per mine (typically 10-20 per month)
+-- Validates: Early warning system for safety improvements
+-- ========================================================================
+SELECT
+    [Measures].[Total Nearmisses] ON COLUMNS,
+    [Mine].[Mine Name].Members ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE [Date].[Calendar Year].[2023];
+
+-- ========================================================================
+-- QUERY 8: Days Without Incident - Safety Stability KPI
+-- Expected: Running counter showing safety streaks
+-- Beeshoek: 28-56 days | Khumani: 15-31 days (higher incident frequency)
+-- ========================================================================
+SELECT
+    [Measures].[Average Days Without Incident] ON COLUMNS,
+    [Mine].[Mine Name].Members ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE [Date].[Calendar Year].[2023];
+
+-- ========================================================================
+-- QUERY 9: Compliance Score Assessment - Regulatory Performance
+-- Expected: Score 96-99% indicating good compliance posture
+-- Validates: Regulatory adherence and audit readiness
+-- ========================================================================
+SELECT
+    [Measures].[Average Compliance Score] ON COLUMNS,
+    [Mine].[Mine Name].Members ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE [Date].[Calendar Year].[2023];
+
+-- ========================================================================
+-- QUERY 10: Safety Training Hours Delivered - Employee Development
+-- Expected: 300-600 training hours per mine monthly
+-- Validates: Safety culture investment and workforce capability
+-- ========================================================================
+SELECT
+    [Measures].[Total Training Hours Delivered] ON COLUMNS,
+    [Mine].[Mine Name].Members ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE [Date].[Calendar Year].[2023];
+
+-- ========================================================================
+-- QUERY 11: Employee Attendance Performance - Human Capital
+-- Expected: Attendance rates 95-99% (lower = absenteeism issues)
+-- Validates: Workforce reliability and HR metrics
+-- ========================================================================
+SELECT
+    [Measures].[Average Attendance Percentage] ON COLUMNS,
+    [Mine].[Mine Name].Members ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE [Date].[Calendar Year].[2023];
+
+-- ========================================================================
+-- QUERY 12: Employee Performance Ratings Distribution
+-- Expected: Ratings on 1.0-5.0 scale, mean ~4.5
+-- Validates: Individual performance tracking and appraisal data
+-- ========================================================================
+SELECT
+    [Measures].[Average Performance Rating] ON COLUMNS,
+    [Department].[Department Name].Members ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE [Date].[Calendar Year].[2023];
+
+-- ========================================================================
+-- QUERY 13: Overtime Hours by Department - Workload Analysis
+-- Expected: Higher in Mining Operations (~10-25 hrs/employee/month)
+-- Engineering (~15-20) | Safety, HR (~2-10) - shows labor intensity
+-- ========================================================================
+SELECT
+    [Measures].[Total Overtime Hours] ON COLUMNS,
+    [Department].[Department Name].Members ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE [Date].[Calendar Year].[2023];
+
+-- ========================================================================
+-- QUERY 14: Training Hours Completed - Skill Development
+-- Expected: Average 4-20 training hours per employee monthly
+-- Validates: Learning and development program execution
+-- ========================================================================
+SELECT
+    [Measures].[Total Training Hours Completed] ON COLUMNS,
+    [Department].[Department Name].Members ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE [Date].[Calendar Year].[2023];
+
+-- ========================================================================
+-- QUERY 15: Safety vs Equipment Efficiency Correlation
+-- Expected: Good safety (compliance 98%+) correlates with equipment uptime
+-- Shows: Safety investments improve operational reliability
+-- ========================================================================
+SELECT
+    {
+        [Measures].[Average Compliance Score],
+        [Measures].[Average UpTime Percentage]
+    } ON COLUMNS,
+    [Mine].[Mine Name].Members ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE [Date].[Calendar Year].[2023];
+
+-- ========================================================================
+-- QUERY 16: Comprehensive KPI Dashboard - All Metrics 2023
+-- Expected: Single view of key performance indicators
+-- Purpose: Validates all fact tables are integrated in cube
+-- ========================================================================
+SELECT
+    {
+        [Measures].[Average UpTime Percentage],
+        [Measures].[Average Productivity Tonnes Per Hour],
+        [Measures].[Total Lost Time Injuries],
+        [Measures].[Average Compliance Score],
+        [Measures].[Average Attendance Percentage],
+        [Measures].[Average Performance Rating]
+    } ON COLUMNS,
+    [Mine].[Mine Name].Members ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE [Date].[Calendar Year].[2023];
+
+-- ========================================================================
+-- SUMMARY VALIDATION QUERY - Complete Fact Table Integration
+-- ========================================================================
+-- This query validates all three v3 fact tables are accessible:
+-- FactEquipmentEfficiency, FactSafetyKPI, FactEmployeeMetrics
+-- ========================================================================
+SELECT
+    {
+        [Measures].[Equipment Records Count],
+        [Measures].[Safety KPI Records Count],
+        [Measures].[Employee Metrics Records Count]
+    } ON COLUMNS,
+    {
+        [Date].[Calendar Year].[2023],
+        [Date].[Calendar Year].[2024]
+    } ON ROWS
+FROM [Assmang Mining Analytics];
+
+-- ========================================================================
+-- Expected Results Summary for v3:
+-- ========================================================================
+-- FactEquipmentEfficiency
+--   - Records: 8 equipment units × 1 date (Jan 31, 2023) = 8 records
+--   - Equipment Types: Excavator, Haul Truck, Blast Hole Drill, Ore Crusher
+--   - Measures: UpTime%, DownTimeMinutes, MaintenanceEvents, SafetyIncidents, ProductivityTonnesPerHour
+--   - Uptime Range: 87.4% - 96.1%
+--   - Productivity Range: 52.8 - 125.7 tonnes/hour (Crushers most productive)
+--
+-- FactSafetyKPI (10 records across 5 mines × 2 months)
+--   - Lost Time Injuries: Typically 0-1 per mine per month
+--   - Total Recordable Incidents: 1-4 per mine per month
+--   - Nearmisses: 10-20 per mine per month
+--   - Days Without Incident: 8-56 days (indicates incident clusters)
+--   - Compliance Score: 96.7% - 99.1% (strong regulatory position)
+--   - Training Hours: 320-580 hours per mine monthly
+--
+-- FactEmployeeMetrics (11 records, various employees × Jan 2023)
+--   - Attendance: 95.5% - 99.3% (strong workforce presence)
+--   - Overtime: 2.0 - 25.0 hours (operational stress indicator)
+--   - Training Hours: 4 - 20 hours (skill development)
+--   - Performance Rating: 4.1 - 4.9 / 5.0 (high performing workforce)
+--
+-- Cross-Fact Validation:
+--   ✓ Equipment efficiency (uptime) impacts production (tonnes, revenue)
+--   ✓ Safety KPI (compliance, training) influences equipment uptime
+--   ✓ Employee metrics (attendance, performance) drive operational results
+--   ✓ All three fact tables share Mine, Date, Department dimensions
+--
+-- KPI Interpretation Guidelines:
+--   - UpTime > 92% = Excellent equipment reliability
+--   - Compliance > 98% = Strong safety culture
+--   - LTI = 0 = Zero harm goal achievement
+--   - Attendance > 97% = Low absenteeism, stable workforce
+--   - Performance Ratings > 4.5 = High capability, retention risk if not managed
+-- ========================================================================

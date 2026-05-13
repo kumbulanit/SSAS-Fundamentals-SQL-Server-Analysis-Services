@@ -1,0 +1,164 @@
+-- ========================================================================
+-- v1_assmang_mining_base_mdx.mdx
+-- ========================================================================
+-- Assmang Pty Ltd: MDX Validation Queries (Version 1)
+-- Validates: Base dimensional structure through cube queries
+-- Cube: Assmang Mining Analytics
+-- Purpose: Validate Dim_Mine, Dim_Department, Dim_Employee, Dim_Date
+-- ========================================================================
+
+-- ========================================================================
+-- QUERY 1: Verify Mine Dimension Count
+-- Expected Result: 5 mines in the cube
+-- ========================================================================
+SELECT
+    [Measures].[Distinct Count] ON COLUMNS,
+    [Mine].[Mine Name].Members ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE [Measures].[Mine Count];
+
+-- ========================================================================
+-- QUERY 2: Mine Hierarchy - All Levels
+-- Validates: Mine Type, Province, and individual mine members
+-- Expected: Iron Ore mines, Manganese mines, Chrome mines grouped by province
+-- ========================================================================
+SELECT
+    [Measures].[Count] ON COLUMNS,
+    {
+        [Mine].[All Mines],
+        [Mine].[Mine Type].Members,
+        [Mine].[Province].Members,
+        [Mine].[Mine Name].Members
+    } ON ROWS
+FROM [Assmang Mining Analytics];
+
+-- ========================================================================
+-- QUERY 3: Department Dimension - All Members
+-- Expected Result: 6 departments visible in the cube
+-- ========================================================================
+SELECT
+    [Measures].[Department Count] ON COLUMNS,
+    [Department].[Department Name].Members ON ROWS
+FROM [Assmang Mining Analytics];
+
+-- ========================================================================
+-- QUERY 4: Department by Function Area
+-- Validates: Department hierarchy and function area grouping
+-- Expected: Mining Operations, Engineering, HR, Finance, Safety, Corporate
+-- ========================================================================
+SELECT
+    [Measures].[Count] ON COLUMNS,
+    {
+        [Department].[All Departments],
+        [Department].[Function Area].Members,
+        [Department].[Department Name].Members
+    } ON ROWS
+FROM [Assmang Mining Analytics];
+
+-- ========================================================================
+-- QUERY 5: Employee Dimension - All Members
+-- Expected Result: 18 employees loaded into the cube
+-- ========================================================================
+SELECT
+    [Measures].[Employee Count] ON COLUMNS,
+    [Employee].[Employee Name].Members ON ROWS
+FROM [Assmang Mining Analytics];
+
+-- ========================================================================
+-- QUERY 6: Employee Hierarchy - Job Titles by Department
+-- Validates: Employee distribution across departments and job titles
+-- Expected: Managers, Engineers, Officers, Specialists across 6 departments
+-- ========================================================================
+SELECT
+    [Measures].[Count] ON COLUMNS,
+    {
+        [Employee].[All Employees],
+        [Employee].[Department].Members,
+        [Employee].[Job Title].Members,
+        [Employee].[Employee Name].Members
+    } ON ROWS
+FROM [Assmang Mining Analytics];
+
+-- ========================================================================
+-- QUERY 7: Date Dimension - Year and Quarter Range
+-- Validates: Date dimension covers 2023-2024
+-- Expected Result: 730 daily records (Jan 2023 - Dec 2024)
+-- ========================================================================
+SELECT
+    [Measures].[Date Count] ON COLUMNS,
+    {
+        [Date].[Calendar Year].Members,
+        [Date].[Calendar Year].[2023].Children,
+        [Date].[Calendar Year].[2024].Children
+    } ON ROWS
+FROM [Assmang Mining Analytics];
+
+-- ========================================================================
+-- QUERY 8: Date Dimension - Weekday Validation
+-- Validates: Calendar dimension includes weekday names
+-- Expected: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday
+-- ========================================================================
+SELECT
+    [Measures].[Count] ON COLUMNS,
+    [Date].[Day of Week].Members ON ROWS
+FROM [Assmang Mining Analytics];
+
+-- ========================================================================
+-- QUERY 9: Cross-Dimensional Validation - Mine x Year
+-- Purpose: Confirm dimensional relationships are properly defined
+-- Expected: All 5 mines have data points across 2023-2024
+-- ========================================================================
+SELECT
+    [Date].[Calendar Year].Members ON COLUMNS,
+    [Mine].[Mine Name].Members ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE [Measures].[Mine Count];
+
+-- ========================================================================
+-- QUERY 10: Employee x Mine Assignment Validation
+-- Purpose: Verify employees are properly assigned to mines
+-- Expected: Mine managers and operational staff linked to specific mines
+-- ========================================================================
+SELECT
+    [Mine].[Mine Name].Members ON COLUMNS,
+    [Employee].[Employee Name].Members ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE [Measures].[Employee Count];
+
+-- ========================================================================
+-- SUMMARY VALIDATION QUERY
+-- ========================================================================
+-- This query returns all dimensional attributes to verify completeness
+-- Run this to validate all dimensions are accessible from the cube
+-- ========================================================================
+SELECT
+    {
+        [Measures].[Mine Count],
+        [Measures].[Department Count],
+        [Measures].[Employee Count],
+        [Measures].[Date Count]
+    } ON COLUMNS,
+    [Mine].[All Mines] ON ROWS
+FROM [Assmang Mining Analytics];
+
+-- ========================================================================
+-- Expected Results Summary for v1:
+-- ========================================================================
+-- Dim_Mine: 5 mines
+--   - Beeshoek Mine (Iron Ore, Northern Cape)
+--   - Khumani Mine (Iron Ore, Northern Cape)
+--   - Black Rock Mine (Manganese, Northern Cape)
+--   - Dwarsrivier Chrome Mine (Chrome, Limpopo)
+--   - Machadodorp Works (Chrome, Mpumalanga)
+--
+-- Dim_Department: 6 departments
+--   - Mining Operations, Engineering & Maintenance, Human Resources,
+--   - Safety & Compliance, Finance & Accounting, Corporate Affairs
+--
+-- Dim_Employee: 18 employees
+--   - Managers, Engineers, HR Officers, Safety Officers, Finance Specialists
+--
+-- Dim_Date: 730 days
+--   - Range: 2023-01-01 to 2024-12-31
+--   - Includes: Year, Quarter, Month, Day, Weekday attributes
+-- ========================================================================
