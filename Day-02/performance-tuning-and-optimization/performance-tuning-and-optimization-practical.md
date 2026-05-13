@@ -27,78 +27,100 @@ Apply the theory from **Performance Tuning and Optimization** by completing a gu
 
 ## 📝 Guided Steps
 
-### Step 1: Review the cube's storage mode and document why MOLAP is usually suitable for this training model
+### Step 1: Inspect storage mode and justify the default choice for this model
 
-**What to do:** Review the cube's storage mode and document why MOLAP is usually suitable for this training model.
+**Start with the design setting that affects almost everything else:**
+1. Open the cube designer.
+2. Review the storage mode of the cube and measure groups.
+3. Note whether the training model is using MOLAP and why.
+4. Write a short explanation of why MOLAP fits a training model with stable, batch-loaded data.
+5. Contrast it briefly with ROLAP or HOLAP so you can explain the trade-off.
 
-**Why this matters:** This step builds your understanding of performance tuning and optimization by giving you hands-on experience with the tool.
+**What to look for:** You are not memorising acronyms. You are deciding how fast queries, freshness, and complexity should be balanced.
 
-**Expected result:** You should see a successful outcome or confirmation in SSDT/SSMS before moving to the next step.
+**Expected result:** You can explain why preprocessed multidimensional storage is usually a sensible default in this course.
 
-**Troubleshooting:** If this step fails, check:
-- Is the SQL Server instance running?
-- Is the dataset `v3_assmang_mining_complete.sql` loaded?
-- Do you have the correct permissions?
-
----
-
-### Step 2: Use aggregation design tools to review suggested aggregations for production queries
-
-**What to do:** Use aggregation design tools to review suggested aggregations for production queries.
-
-**Why this matters:** This step builds your understanding of performance tuning and optimization by giving you hands-on experience with the tool.
-
-**Expected result:** You should see a successful outcome or confirmation in SSDT/SSMS before moving to the next step.
-
-**Troubleshooting:** If this step fails, check:
-- Is the SQL Server instance running?
-- Is the dataset `v3_assmang_mining_complete.sql` loaded?
-- Do you have the correct permissions?
+**If something goes wrong:**
+- If you cannot find the storage setting, inspect measure-group and partition properties.
+- If someone changed the default, document that and explain the implication rather than forcing it back blindly.
+- If you do not understand the mode, compare how each mode answers queries and refreshes data.
 
 ---
 
-### Step 3: Run two similar queries and compare behaviour before and after processing changes
+### Step 2: Review aggregation design for common production queries
 
-**What to do:** Run two similar queries and compare behaviour before and after processing changes.
+**Use the design tools with a business question in mind:**
+1. Focus on the production measure group first.
+2. Open the aggregation design tooling or relevant measure-group settings.
+3. Review which attributes are likely to help common Assmang queries, especially mine and time slices.
+4. Note which aggregations the tool suggests and why they matter.
+5. Save your observations before making changes.
 
-**Why this matters:** This step builds your understanding of performance tuning and optimization by giving you hands-on experience with the tool.
+**What you are really testing:** Whether the cube is prepared for the kinds of grouped queries managers ask most often.
 
-**Expected result:** You should see a successful outcome or confirmation in SSDT/SSMS before moving to the next step.
+**Expected result:** You can explain how aggregations reduce repeated computation for predictable query patterns.
 
-**Troubleshooting:** If this step fails, check:
-- Is the SQL Server instance running?
-- Is the dataset `v3_assmang_mining_complete.sql` loaded?
-- Do you have the correct permissions?
-
----
-
-### Step 4: Describe a partitioning idea for monthly or yearly production facts
-
-**What to do:** Describe a partitioning idea for monthly or yearly production facts.
-
-**Why this matters:** This step builds your understanding of performance tuning and optimization by giving you hands-on experience with the tool.
-
-**Expected result:** You should see a successful outcome or confirmation in SSDT/SSMS before moving to the next step.
-
-**Troubleshooting:** If this step fails, check:
-- Is the SQL Server instance running?
-- Is the dataset `v3_assmang_mining_complete.sql` loaded?
-- Do you have the correct permissions?
+**If something goes wrong:**
+- If the designer is unavailable, document the intended design even if you cannot implement every optimisation interactively.
+- If the suggestions seem random, tie them back to your main browse and MDX query patterns.
+- If you add changes, remember that reprocessing may be required afterward.
 
 ---
 
-### Step 5: Document one optimisation trade-off between speed, freshness, and complexity
+### Step 3: Compare a broad query and a narrow query before and after processing-related changes
 
-**What to do:** Document one optimisation trade-off between speed, freshness, and complexity.
+**Use evidence instead of assumptions:**
+1. Run the two MDX comparison queries in this lab.
+2. Note how long they take and how dense the result set is.
+3. Make the relevant processing or design adjustment for your experiment.
+4. Process the affected objects again.
+5. Rerun the same MDX queries.
+6. Record whether the behaviour or user experience improved.
 
-**Why this matters:** This step builds your understanding of performance tuning and optimization by giving you hands-on experience with the tool.
+**What Microsoft guidance reinforces:** Processing is not optional housekeeping. It directly affects whether structural changes and optimisation changes are available for querying.
 
-**Expected result:** You should see a successful outcome or confirmation in SSDT/SSMS before moving to the next step.
+**Expected result:** You can describe how query breadth, processing state, and design choices combine to affect perceived performance.
 
-**Troubleshooting:** If this step fails, check:
-- Is the SQL Server instance running?
-- Is the dataset `v3_assmang_mining_complete.sql` loaded?
-- Do you have the correct permissions?
+**If something goes wrong:**
+- If the comparison is inconclusive, reduce the variables and test one change at a time.
+- If the cube becomes unqueryable, confirm no object was left unprocessed.
+- If performance gets worse, document the outcome instead of hiding it.
+
+---
+
+### Step 4: Propose a practical partitioning design for production facts
+
+**Think like a BI engineer planning for growth:**
+1. Review the grain of `FactProduction`.
+2. Decide whether yearly or monthly partitions make more sense for the data volume and refresh pattern.
+3. Explain how new periods could be processed more often than historical periods.
+4. Note which partition boundaries you would use.
+5. Explain how that design helps both maintenance and query responsiveness.
+
+**Expected result:** You can propose a partitioning approach that matches business time periods and operational refresh behaviour.
+
+**If something goes wrong:**
+- If the dataset is too small to prove partition value empirically, explain the design logically using future growth assumptions.
+- If you are unsure between month and year partitions, compare maintenance overhead against query benefit.
+- If your proposal ignores refresh frequency, revisit the business scenario.
+
+---
+
+### Step 5: Document one realistic optimisation trade-off
+
+**Close the lab by choosing, not just listing, an optimisation position:**
+1. Pick one trade-off such as faster queries versus fresher data.
+2. Describe the design choice that supports it.
+3. State the downside clearly.
+4. Tie the decision back to an Assmang reporting scenario.
+5. Write the answer so a non-technical stakeholder could still understand it.
+
+**Expected result:** You can explain that performance tuning is a business decision, not only a technical settings exercise.
+
+**If something goes wrong:**
+- If the answer sounds too generic, anchor it to one measure group or one dashboard use case.
+- If you only describe the benefit, add the cost as well.
+- If you cannot defend the trade-off, pick a narrower example and rewrite it.
 
 ---
 
@@ -193,36 +215,28 @@ WHERE ([Date].[Calendar Year].&[2024]);
 
 ## 🧰 Detailed SSMS Workflow (Use This If You Are Not Using Visual Studio)
 
-Use this exact sequence when completing the lab/exercises primarily in SSMS:
+Use this exact sequence when completing the lab or exercise primarily in SSMS:
 
-1. Open SSMS and connect to the SQL Database Engine hosting `AssmangMining`.
-2. Open a **new query window** and run the dataset script for your topic (`v1`, `v2`, or `v3`) if required.
-3. Validate dataset load with `SELECT COUNT(*)` checks on key dimension and fact tables.
-4. Open a second SSMS connection: **Connect > Analysis Services**.
-5. In Object Explorer, expand **Databases** and confirm the target SSAS database is visible.
-6. If the SSAS database is missing, ask your trainer for the deployed project name and deployment server.
-7. Expand the SSAS database and inspect:
-   - **Data Sources**
-   - **Data Source Views**
-   - **Cubes**
-   - **Dimensions**
-8. Right-click the target cube and open **Browse** to validate dimensional navigation.
-9. Test at least one business slice per task (for example Mine, Month, Commodity, or Department).
-10. Run MDX in an SSAS query window: **New Query > MDX**.
-11. Save each important query with meaningful names (for example `01-production-by-mine.mdx`).
-12. Capture evidence after each exercise:
-   - Query text
-   - Output grid screenshot
-   - One-sentence interpretation in business language
-13. If results look incorrect, run this troubleshooting chain:
-   - Check source table row counts in SQL Engine
-   - Confirm cube processing completed
-   - Validate dimension relationships and hierarchy levels
-   - Re-run the MDX with simpler axes first
-14. Before submission, record:
-   - What you tested
-   - What answer you obtained
-   - Why the answer is relevant to Assmang operations
+1. Open SSMS and connect to the **Database Engine** that hosts `AssmangMining`.
+2. Open the topic dataset script only if the lab requires a fresh load, then execute it and wait for a clean completion message in the Messages pane.
+3. Run the SQL validation queries in the file immediately after the load so you confirm counts, date ranges, and key joins before involving SSAS.
+4. Keep the Database Engine connection open so you can cross-check source numbers later.
+5. Open a second connection in the same SSMS session using **Connect > Analysis Services**.
+6. Expand **Databases** on the Analysis Services connection and refresh the tree if the expected SSAS database is not visible the first time.
+7. Confirm the deployed database name matches the training project and that the target cube is present.
+8. Expand the SSAS database and inspect the cube, dimensions, and other objects so you know the metadata you are about to query.
+9. If you need to process objects, remember the project must already be deployed and the account must have SSAS admin rights plus read access to the relational source through the data source impersonation settings.
+10. Right-click the cube or database and choose **Process** only after you know which object you are affecting.
+11. In the processing dialog, review the list of affected objects carefully because processing can cascade from a high-level object to lower-level objects.
+12. Wait for processing to finish and read warnings, not just the final success line.
+13. Open the cube browser from SSMS if available, or open an MDX query window using **New Query > MDX**.
+14. Start with the simplest possible MDX pattern: one measure on columns and one hierarchy on rows.
+15. Add a slicer only after the base query works.
+16. Compare at least one SSAS result against the SQL baseline from the Database Engine connection.
+17. Save important queries with meaningful names so you can reuse them during assessments.
+18. Capture evidence for every exercise: the input, the output, and one sentence explaining what the result means for Assmang.
+19. If the numbers look wrong, troubleshoot in this order: SQL source data, deployment state, processing state, dimension relationships, then MDX syntax.
+20. Before submission, write down what you tested, what result you obtained, and why the result matters to the business.
 
 ### SSMS Menu Path Quick Reference
 
@@ -237,44 +251,30 @@ Use this exact sequence when completing the lab/exercises primarily in SSMS:
 
 Use this path when you are building and validating directly in Visual Studio with SSDT:
 
-1. Open Visual Studio and load your SSAS solution.
-2. In Solution Explorer, confirm these project objects exist and are not showing warning icons:
-   - Data Sources
-   - Data Source Views
-   - Dimensions
-   - Cubes
-3. Open Data Source and click Test Connection.
-4. Open Data Source View (DSV) and confirm all required tables are present and related correctly.
-5. For each required dimension in this topic:
-   - Open the dimension designer.
-   - Check KeyColumns and NameColumn.
-   - Confirm user hierarchies are logically ordered.
-6. Open the cube designer and verify:
-   - Correct measure groups
-   - Correct aggregation function per measure (SUM/AVG/etc.)
-   - Dimension usage relationships are correctly mapped
-7. Deploy configuration check:
-   - Right-click project > Properties
-   - Confirm Deployment Server, Database, and Processing Option
-8. Build the project: Build > Build Solution.
-9. Fix all build errors before deployment (do not ignore warnings related to key columns or relationships).
-10. Deploy: right-click project > Deploy.
-11. Process objects if prompted; if not prompted, run manual processing:
-   - Right-click SSAS database/cube in SSDT or SSMS > Process
-12. Validate in the cube browser:
-   - Drag at least one measure
-   - Slice by at least one hierarchy related to this exercise
-13. Open SSMS (Analysis Services connection) and run 1-2 MDX validation queries for the same result.
-14. Compare browser output vs MDX output; values should align.
-15. If values differ, troubleshoot in this order:
-   - Relationship mapping in Dimension Usage
-   - Measure aggregation type
-   - Processing freshness (reprocess impacted objects)
-   - Source data quality in SQL Engine tables
-16. Save evidence for each exercise:
-   - Build/deploy outcome
-   - Browser or MDX result
-   - Short interpretation in plain business language
+1. Open Visual Studio and load the SSAS solution for the topic.
+2. In Solution Explorer, confirm the expected SSAS folders exist and are not already showing warning icons.
+3. Open **Project Properties > Deployment** before changing design objects so you know which SSAS server and database you are targeting.
+4. Open the data source and click **Test Connection**.
+5. Confirm the data source points to the SQL Database Engine instance, not the SSAS instance.
+6. Review impersonation settings because successful deployment alone is not enough; processing also needs relational read access.
+7. Open the Data Source View and verify the required tables and joins for the topic are present.
+8. Rearrange the DSV if it is unreadable so you can actually inspect it during the exercise.
+9. Open each required dimension and review `KeyColumns`, `NameColumn`, visible attributes, and user hierarchies.
+10. If the topic involves cube work, open the cube designer and inspect structure, measure groups, calculations, and the **Dimension Usage** tab.
+11. Check aggregation behaviour for business measures instead of accepting every wizard default.
+12. Save changes before building.
+13. Run **Build > Build Solution** and read the Error List carefully.
+14. Fix build errors before deployment and do not ignore relationship or key warnings unless you can explain them.
+15. Deploy the project using **Right-click Project > Deploy**.
+16. Remember what Microsoft’s SSDT deployment guidance says: deployment builds the project, validates the destination server, and then creates or updates the SSAS database objects.
+17. After deployment, process the affected objects if prompted, or right-click the cube or database and choose **Process** manually.
+18. Review the processing dialog before clicking Run because high-level processing choices can affect multiple lower-level objects.
+19. Wait for processing to complete and read warnings, not just the success banner.
+20. Open the Browser tab and test at least one real business slice for the topic.
+21. Open SSMS against Analysis Services and run one or two MDX checks against the same cube output.
+22. Compare SSDT browser results, MDX results, and SQL baseline values.
+23. If results differ, troubleshoot in this order: source data, DSV relationships, dimension design, dimension usage, aggregation logic, then processing freshness.
+24. Save evidence for the exercise: build result, deployment result, process result, browser or MDX output, and one sentence explaining the business meaning.
 
 ### Visual Studio Menu Path Quick Reference
 

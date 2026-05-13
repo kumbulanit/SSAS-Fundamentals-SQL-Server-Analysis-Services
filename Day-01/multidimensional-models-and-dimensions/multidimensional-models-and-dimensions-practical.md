@@ -27,78 +27,116 @@ Apply the theory from **Multidimensional Models and Dimensions** by completing a
 
 ## 📝 Guided Steps
 
-### Step 1: Use the Data Source View from Topic 1 and run the Dimension Wizard for `Dim_Mine`
+### Step 1: Create the `Dim_Mine` dimension from the Data Source View
 
-**What to do:** Use the Data Source View from Topic 1 and run the Dimension Wizard for `Dim_Mine`.
+**Build the first business dimension carefully:**
+1. Open the SSAS project from Topic 1 and confirm the DSV already contains `Dim_Mine`.
+2. Right-click **Dimensions** and choose **New Dimension**.
+3. In the Dimension Wizard, choose **Use an existing table**.
+4. Select `Dim_Mine` as the main table.
+5. Keep the dimension type as a regular dimension for this training exercise.
+6. Finish the wizard and open the new dimension in the designer.
 
-**Why this matters:** This step builds your understanding of multidimensional models and dimensions by giving you hands-on experience with the tool.
+**What to look for immediately:**
+- The dimension should appear under the Dimensions folder.
+- The attributes pane should show mine-related fields rather than generic placeholders.
+- The designer should open without warnings about missing keys.
 
-**Expected result:** You should see a successful outcome or confirmation in SSDT/SSMS before moving to the next step.
+**Expected result:** You now have a draft mine dimension built from relational metadata, ready to be cleaned up for business use.
 
-**Troubleshooting:** If this step fails, check:
-- Is the SQL Server instance running?
-- Is the dataset `v1_assmang_mining_base.sql` loaded?
-- Do you have the correct permissions?
-
----
-
-### Step 2: Set `MineID` as the key attribute and `MineName` as the name column
-
-**What to do:** Set `MineID` as the key attribute and `MineName` as the name column.
-
-**Why this matters:** This step builds your understanding of multidimensional models and dimensions by giving you hands-on experience with the tool.
-
-**Expected result:** You should see a successful outcome or confirmation in SSDT/SSMS before moving to the next step.
-
-**Troubleshooting:** If this step fails, check:
-- Is the SQL Server instance running?
-- Is the dataset `v1_assmang_mining_base.sql` loaded?
-- Do you have the correct permissions?
+**If something goes wrong:**
+- If `Dim_Mine` is not available in the wizard, go back to the DSV and confirm the table exists there.
+- If the wizard suggests the wrong key automatically, do not accept it without checking.
+- If the dimension opens with errors, inspect the underlying SQL table for nulls or duplicate values.
 
 ---
 
-### Step 3: Add attributes for `MineType`, `Province`, and `EstablishedYear`
+### Step 2: Set `MineID` as the key and `MineName` as the business-friendly name
 
-**What to do:** Add attributes for `MineType`, `Province`, and `EstablishedYear`.
+**Refine the dimension so users see meaningful names:**
+1. In the mine dimension designer, click the key attribute.
+2. Open the Properties pane.
+3. Set **KeyColumns** to `MineID`.
+4. Set **NameColumn** to `MineName`.
+5. Confirm the attribute name shown to users is readable.
+6. Save the dimension.
 
-**Why this matters:** This step builds your understanding of multidimensional models and dimensions by giving you hands-on experience with the tool.
+**Why this is important:** SSAS can use technical keys internally while presenting business-friendly labels to the user. If you skip this, users may browse numeric IDs instead of mine names.
 
-**Expected result:** You should see a successful outcome or confirmation in SSDT/SSMS before moving to the next step.
+**Expected result:** The dimension uses stable keys for uniqueness and meaningful mine names for browsing.
 
-**Troubleshooting:** If this step fails, check:
-- Is the SQL Server instance running?
-- Is the dataset `v1_assmang_mining_base.sql` loaded?
-- Do you have the correct permissions?
-
----
-
-### Step 4: Create a user hierarchy `Mine Type > Province > Mine Name` and process the dimension
-
-**What to do:** Create a user hierarchy `Mine Type > Province > Mine Name` and process the dimension.
-
-**Why this matters:** This step builds your understanding of multidimensional models and dimensions by giving you hands-on experience with the tool.
-
-**Expected result:** You should see a successful outcome or confirmation in SSDT/SSMS before moving to the next step.
-
-**Troubleshooting:** If this step fails, check:
-- Is the SQL Server instance running?
-- Is the dataset `v1_assmang_mining_base.sql` loaded?
-- Do you have the correct permissions?
+**If something goes wrong:**
+- If the attribute still shows IDs after the change, recheck the NameColumn property.
+- If you see duplicate-name warnings, inspect whether multiple mines share the same display name.
+- If the Properties pane is not visible, turn it on from **View > Properties Window**.
 
 ---
 
-### Step 5: Repeat the exercise for `Dim_Date` and create the `Year > Quarter > Month > Day` hierarchy
+### Step 3: Add and organise the supporting mine attributes
 
-**What to do:** Repeat the exercise for `Dim_Date` and create the `Year > Quarter > Month > Day` hierarchy.
+**Turn the raw table into an analytical dimension:**
+1. In the Attributes pane, add or keep `MineType`, `Province`, and `EstablishedYear`.
+2. Remove attributes that add little analytical value for beginners if they clutter the view.
+3. Rename attributes if needed so they read well in the browser.
+4. Open the **Attribute Relationships** tab and think about whether province naturally groups mines.
+5. Save after each meaningful change.
 
-**Why this matters:** This step builds your understanding of multidimensional models and dimensions by giving you hands-on experience with the tool.
+**What you should be aiming for:**
+- A business user should be able to answer "Which mine type is this?" and "Which province is this in?" without seeing technical noise.
+- The attribute list should feel curated, not dumped straight from the SQL table.
 
-**Expected result:** You should see a successful outcome or confirmation in SSDT/SSMS before moving to the next step.
+**Expected result:** The dimension now contains the right descriptive fields for drill-down and filtering.
 
-**Troubleshooting:** If this step fails, check:
-- Is the SQL Server instance running?
-- Is the dataset `v1_assmang_mining_base.sql` loaded?
-- Do you have the correct permissions?
+**If something goes wrong:**
+- If too many technical attributes are exposed, hide the ones that are not useful to learners.
+- If the designer becomes messy, tidy names now before cube design starts.
+- If you are unsure whether to keep an attribute, ask whether a manager would realistically browse by it.
+
+---
+
+### Step 4: Build the `Mine Type > Province > Mine Name` hierarchy and process the dimension
+
+**Create the drill path explicitly:**
+1. In the Hierarchies pane, create a new user hierarchy.
+2. Drag `Mine Type` to the top level.
+3. Drag `Province` underneath it.
+4. Drag the mine name attribute underneath province.
+5. Rename the hierarchy clearly if needed.
+6. Process the dimension when prompted, or right-click the dimension and choose **Process**.
+7. After processing, open the browser tab and test the drill-down path from mine type to province to mine.
+
+**What to check after processing:**
+- The hierarchy should expand in a sensible order.
+- Chrome, Iron Ore, and Manganese should separate correctly.
+- Province members should appear under the right mine type branch.
+
+**Expected result:** Learners can now browse the mine dimension the way a business user thinks about operations.
+
+**If something goes wrong:**
+- If processing fails, verify the project is deployed and the SSAS server is reachable.
+- If the hierarchy looks flat or odd, review which attributes were dragged into the hierarchy.
+- If province members appear duplicated unexpectedly, revisit key and name choices.
+
+---
+
+### Step 5: Build the date dimension hierarchy and confirm time drill-down works
+
+**Repeat the pattern for the most important analytical dimension:**
+1. Create or open the `Dim_Date` dimension.
+2. Confirm the key is based on the date key column and that names are readable to end users.
+3. Keep the attributes that support time analysis, especially Year, Quarter, Month, and Day.
+4. Build the user hierarchy `Year > Quarter > Month > Day`.
+5. Process the dimension.
+6. Browse the dimension and expand 2023 and 2024 to confirm the structure is natural and complete.
+
+**Why this step matters:** Time is usually the first thing users slice by. If the date dimension is weak, almost every cube query becomes harder to explain.
+
+**Expected result:** A learner can drill from year to quarter to month to day and explain why hierarchies make cube navigation easier than scanning flat table data.
+
+**If something goes wrong:**
+- If months sort alphabetically instead of chronologically, review month attributes and ordering.
+- If the hierarchy fails to browse, make sure the dimension processed successfully.
+- If levels are missing, go back and confirm the attributes were added before the hierarchy was built.
 
 ---
 
@@ -176,36 +214,28 @@ FROM dbo.Dim_Mine;
 
 ## 🧰 Detailed SSMS Workflow (Use This If You Are Not Using Visual Studio)
 
-Use this exact sequence when completing the lab/exercises primarily in SSMS:
+Use this exact sequence when completing the lab or exercise primarily in SSMS:
 
-1. Open SSMS and connect to the SQL Database Engine hosting `AssmangMining`.
-2. Open a **new query window** and run the dataset script for your topic (`v1`, `v2`, or `v3`) if required.
-3. Validate dataset load with `SELECT COUNT(*)` checks on key dimension and fact tables.
-4. Open a second SSMS connection: **Connect > Analysis Services**.
-5. In Object Explorer, expand **Databases** and confirm the target SSAS database is visible.
-6. If the SSAS database is missing, ask your trainer for the deployed project name and deployment server.
-7. Expand the SSAS database and inspect:
-   - **Data Sources**
-   - **Data Source Views**
-   - **Cubes**
-   - **Dimensions**
-8. Right-click the target cube and open **Browse** to validate dimensional navigation.
-9. Test at least one business slice per task (for example Mine, Month, Commodity, or Department).
-10. Run MDX in an SSAS query window: **New Query > MDX**.
-11. Save each important query with meaningful names (for example `01-production-by-mine.mdx`).
-12. Capture evidence after each exercise:
-   - Query text
-   - Output grid screenshot
-   - One-sentence interpretation in business language
-13. If results look incorrect, run this troubleshooting chain:
-   - Check source table row counts in SQL Engine
-   - Confirm cube processing completed
-   - Validate dimension relationships and hierarchy levels
-   - Re-run the MDX with simpler axes first
-14. Before submission, record:
-   - What you tested
-   - What answer you obtained
-   - Why the answer is relevant to Assmang operations
+1. Open SSMS and connect to the **Database Engine** that hosts `AssmangMining`.
+2. Open the topic dataset script only if the lab requires a fresh load, then execute it and wait for a clean completion message in the Messages pane.
+3. Run the SQL validation queries in the file immediately after the load so you confirm counts, date ranges, and key joins before involving SSAS.
+4. Keep the Database Engine connection open so you can cross-check source numbers later.
+5. Open a second connection in the same SSMS session using **Connect > Analysis Services**.
+6. Expand **Databases** on the Analysis Services connection and refresh the tree if the expected SSAS database is not visible the first time.
+7. Confirm the deployed database name matches the training project and that the target cube is present.
+8. Expand the SSAS database and inspect the cube, dimensions, and other objects so you know the metadata you are about to query.
+9. If you need to process objects, remember the project must already be deployed and the account must have SSAS admin rights plus read access to the relational source through the data source impersonation settings.
+10. Right-click the cube or database and choose **Process** only after you know which object you are affecting.
+11. In the processing dialog, review the list of affected objects carefully because processing can cascade from a high-level object to lower-level objects.
+12. Wait for processing to finish and read warnings, not just the final success line.
+13. Open the cube browser from SSMS if available, or open an MDX query window using **New Query > MDX**.
+14. Start with the simplest possible MDX pattern: one measure on columns and one hierarchy on rows.
+15. Add a slicer only after the base query works.
+16. Compare at least one SSAS result against the SQL baseline from the Database Engine connection.
+17. Save important queries with meaningful names so you can reuse them during assessments.
+18. Capture evidence for every exercise: the input, the output, and one sentence explaining what the result means for Assmang.
+19. If the numbers look wrong, troubleshoot in this order: SQL source data, deployment state, processing state, dimension relationships, then MDX syntax.
+20. Before submission, write down what you tested, what result you obtained, and why the result matters to the business.
 
 ### SSMS Menu Path Quick Reference
 
@@ -220,44 +250,30 @@ Use this exact sequence when completing the lab/exercises primarily in SSMS:
 
 Use this path when you are building and validating directly in Visual Studio with SSDT:
 
-1. Open Visual Studio and load your SSAS solution.
-2. In Solution Explorer, confirm these project objects exist and are not showing warning icons:
-   - Data Sources
-   - Data Source Views
-   - Dimensions
-   - Cubes
-3. Open Data Source and click Test Connection.
-4. Open Data Source View (DSV) and confirm all required tables are present and related correctly.
-5. For each required dimension in this topic:
-   - Open the dimension designer.
-   - Check KeyColumns and NameColumn.
-   - Confirm user hierarchies are logically ordered.
-6. Open the cube designer and verify:
-   - Correct measure groups
-   - Correct aggregation function per measure (SUM/AVG/etc.)
-   - Dimension usage relationships are correctly mapped
-7. Deploy configuration check:
-   - Right-click project > Properties
-   - Confirm Deployment Server, Database, and Processing Option
-8. Build the project: Build > Build Solution.
-9. Fix all build errors before deployment (do not ignore warnings related to key columns or relationships).
-10. Deploy: right-click project > Deploy.
-11. Process objects if prompted; if not prompted, run manual processing:
-   - Right-click SSAS database/cube in SSDT or SSMS > Process
-12. Validate in the cube browser:
-   - Drag at least one measure
-   - Slice by at least one hierarchy related to this exercise
-13. Open SSMS (Analysis Services connection) and run 1-2 MDX validation queries for the same result.
-14. Compare browser output vs MDX output; values should align.
-15. If values differ, troubleshoot in this order:
-   - Relationship mapping in Dimension Usage
-   - Measure aggregation type
-   - Processing freshness (reprocess impacted objects)
-   - Source data quality in SQL Engine tables
-16. Save evidence for each exercise:
-   - Build/deploy outcome
-   - Browser or MDX result
-   - Short interpretation in plain business language
+1. Open Visual Studio and load the SSAS solution for the topic.
+2. In Solution Explorer, confirm the expected SSAS folders exist and are not already showing warning icons.
+3. Open **Project Properties > Deployment** before changing design objects so you know which SSAS server and database you are targeting.
+4. Open the data source and click **Test Connection**.
+5. Confirm the data source points to the SQL Database Engine instance, not the SSAS instance.
+6. Review impersonation settings because successful deployment alone is not enough; processing also needs relational read access.
+7. Open the Data Source View and verify the required tables and joins for the topic are present.
+8. Rearrange the DSV if it is unreadable so you can actually inspect it during the exercise.
+9. Open each required dimension and review `KeyColumns`, `NameColumn`, visible attributes, and user hierarchies.
+10. If the topic involves cube work, open the cube designer and inspect structure, measure groups, calculations, and the **Dimension Usage** tab.
+11. Check aggregation behaviour for business measures instead of accepting every wizard default.
+12. Save changes before building.
+13. Run **Build > Build Solution** and read the Error List carefully.
+14. Fix build errors before deployment and do not ignore relationship or key warnings unless you can explain them.
+15. Deploy the project using **Right-click Project > Deploy**.
+16. Remember what Microsoft’s SSDT deployment guidance says: deployment builds the project, validates the destination server, and then creates or updates the SSAS database objects.
+17. After deployment, process the affected objects if prompted, or right-click the cube or database and choose **Process** manually.
+18. Review the processing dialog before clicking Run because high-level processing choices can affect multiple lower-level objects.
+19. Wait for processing to complete and read warnings, not just the success banner.
+20. Open the Browser tab and test at least one real business slice for the topic.
+21. Open SSMS against Analysis Services and run one or two MDX checks against the same cube output.
+22. Compare SSDT browser results, MDX results, and SQL baseline values.
+23. If results differ, troubleshoot in this order: source data, DSV relationships, dimension design, dimension usage, aggregation logic, then processing freshness.
+24. Save evidence for the exercise: build result, deployment result, process result, browser or MDX output, and one sentence explaining the business meaning.
 
 ### Visual Studio Menu Path Quick Reference
 

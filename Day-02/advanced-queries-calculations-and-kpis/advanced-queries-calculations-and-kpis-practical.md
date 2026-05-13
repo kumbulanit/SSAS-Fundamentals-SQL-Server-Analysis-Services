@@ -27,78 +27,102 @@ Apply the theory from **Advanced Queries, Calculations, and KPIs** by completing
 
 ## 📝 Guided Steps
 
-### Step 1: Create a calculated measure for `Cost Per Tonne` using total cost divided by tonnes produced
+### Step 1: Build a calculated measure for `Cost Per Tonne`
 
-**What to do:** Create a calculated measure for `Cost Per Tonne` using total cost divided by tonnes produced.
+**Create the calculation from validated source logic:**
+1. Review the SQL baseline query in this lab so you understand the source numbers.
+2. Open the cube designer or an MDX query window, depending on how your trainer wants calculations demonstrated.
+3. Create a helper expression for total operating cost if one does not already exist.
+4. Define `Cost Per Tonne` as total cost divided by tonnes produced.
+5. Protect the expression against divide-by-zero cases.
+6. Save the calculation and keep the formula readable.
 
-**Why this matters:** This step builds your understanding of advanced queries, calculations, and kpis by giving you hands-on experience with the tool.
+**What you should be thinking about:** A calculated measure is often safer than summing a unit-rate field because it preserves business meaning at aggregated levels.
 
-**Expected result:** You should see a successful outcome or confirmation in SSDT/SSMS before moving to the next step.
+**Expected result:** The cube can return a meaningful cost-per-tonne figure rather than an invalid raw sum.
 
-**Troubleshooting:** If this step fails, check:
-- Is the SQL Server instance running?
-- Is the dataset `v3_assmang_mining_complete.sql` loaded?
-- Do you have the correct permissions?
-
----
-
-### Step 2: Create a named set for the mines with above-average production
-
-**What to do:** Create a named set for the mines with above-average production.
-
-**Why this matters:** This step builds your understanding of advanced queries, calculations, and kpis by giving you hands-on experience with the tool.
-
-**Expected result:** You should see a successful outcome or confirmation in SSDT/SSMS before moving to the next step.
-
-**Troubleshooting:** If this step fails, check:
-- Is the SQL Server instance running?
-- Is the dataset `v3_assmang_mining_complete.sql` loaded?
-- Do you have the correct permissions?
+**If something goes wrong:**
+- If you get nulls everywhere, make sure the source measures being divided are populated.
+- If the number is unrealistically large, confirm you are not summing a rate and then dividing incorrectly.
+- If syntax errors appear, simplify the formula and test the helper measure first.
 
 ---
 
-### Step 3: Define a KPI for production target attainment using an assumed monthly target
+### Step 2: Create a named set for mines with above-average production
 
-**What to do:** Define a KPI for production target attainment using an assumed monthly target.
+**Turn a business rule into reusable MDX logic:**
+1. Start with the set of all mine members.
+2. Use `AVG` over the mine set to calculate the comparison benchmark.
+3. Wrap the logic in a `FILTER` expression.
+4. Name the set clearly so it can be reused in later queries.
+5. Run a test query that places the set on rows with `TonnesProduced` and your calculated measure on columns.
 
-**Why this matters:** This step builds your understanding of advanced queries, calculations, and kpis by giving you hands-on experience with the tool.
+**Why this matters:** Named sets allow you to encode reusable groups such as top mines, chrome operations, or underperforming sites without retyping the logic.
 
-**Expected result:** You should see a successful outcome or confirmation in SSDT/SSMS before moving to the next step.
+**Expected result:** Only mines whose production exceeds the average mine production remain in the result.
 
-**Troubleshooting:** If this step fails, check:
-- Is the SQL Server instance running?
-- Is the dataset `v3_assmang_mining_complete.sql` loaded?
-- Do you have the correct permissions?
-
----
-
-### Step 4: Browse the KPI values in the cube browser or SSMS query window
-
-**What to do:** Browse the KPI values in the cube browser or SSMS query window.
-
-**Why this matters:** This step builds your understanding of advanced queries, calculations, and kpis by giving you hands-on experience with the tool.
-
-**Expected result:** You should see a successful outcome or confirmation in SSDT/SSMS before moving to the next step.
-
-**Troubleshooting:** If this step fails, check:
-- Is the SQL Server instance running?
-- Is the dataset `v3_assmang_mining_complete.sql` loaded?
-- Do you have the correct permissions?
+**If something goes wrong:**
+- If every mine appears, the comparison logic is too broad or the set context is wrong.
+- If no mine appears, test the average calculation by itself first.
+- If values vary unexpectedly by time, note that the current query context affects the average.
 
 ---
 
-### Step 5: Document the business meaning of each calculation created
+### Step 3: Define a KPI for production target attainment
 
-**What to do:** Document the business meaning of each calculation created.
+**Model the KPI like a business scorecard, not just a formula:**
+1. Decide on an assumed monthly target value.
+2. Use the actual production measure as the KPI value.
+3. Use the target value as the KPI goal.
+4. Define a status rule so results can be interpreted as under target, near target, or on target.
+5. If your environment supports it, add a trend expression as well.
+6. Save and process the affected objects if necessary.
 
-**Why this matters:** This step builds your understanding of advanced queries, calculations, and kpis by giving you hands-on experience with the tool.
+**What a learner should be able to explain:** A KPI is not only a number. It is a business judgment layer that compares actual performance against a goal.
 
-**Expected result:** You should see a successful outcome or confirmation in SSDT/SSMS before moving to the next step.
+**Expected result:** The model can now show production performance in a way an executive can read quickly.
 
-**Troubleshooting:** If this step fails, check:
-- Is the SQL Server instance running?
-- Is the dataset `v3_assmang_mining_complete.sql` loaded?
-- Do you have the correct permissions?
+**If something goes wrong:**
+- If the KPI does not appear in the browser, process the cube again.
+- If the goal is hard-coded incorrectly, your status colors or results will be misleading.
+- If the KPI seems mathematically correct but business-wise wrong, revisit the target assumption.
+
+---
+
+### Step 4: Browse or query the calculation and KPI outputs
+
+**Validate the logic instead of trusting it blindly:**
+1. Open the Browser tab or an SSMS MDX query window.
+2. Place mines on rows.
+3. Add `TonnesProduced`, `Cost Per Tonne`, target values, and KPI outputs to columns.
+4. Optionally slice by year or month so you can see context-sensitive behaviour.
+5. Compare at least one result back to the SQL baseline logic from this lab.
+6. Record whether the KPI interpretation matches the raw numbers.
+
+**Expected result:** The calculation and KPI behave consistently when sliced by mine or time.
+
+**If something goes wrong:**
+- If the KPI disappears at some levels, verify calculation scope and processing state.
+- If the cost-per-tonne figure changes wildly by slice, check whether all contributing cost measures are aligned to the same grain.
+- If the browser is slow or blank, reconnect and make sure the cube is fully processed.
+
+---
+
+### Step 5: Document the business meaning of every calculation you created
+
+**Finish by translating technical work into business language:**
+1. Write one sentence explaining what `Cost Per Tonne` tells a mine manager.
+2. Write one sentence explaining what the above-average mines set identifies.
+3. Write one sentence explaining what the KPI target-attainment result means for operations review.
+4. Note any assumptions, especially hard-coded targets or simplified logic.
+5. Save the formulas and the explanation together so another learner can understand both the maths and the business meaning.
+
+**Expected result:** You can defend not only how the calculation works, but why it exists and how a business user should read it.
+
+**If something goes wrong:**
+- If your explanation sounds purely technical, rewrite it from a manager's point of view.
+- If the explanation and the formula do not match, fix the formula or the wording before submission.
+- If assumptions are hidden, surface them clearly so the KPI is not misinterpreted later.
 
 ---
 
@@ -215,36 +239,28 @@ WHERE ([Date].[Calendar Year].&[2024]);
 
 ## 🧰 Detailed SSMS Workflow (Use This If You Are Not Using Visual Studio)
 
-Use this exact sequence when completing the lab/exercises primarily in SSMS:
+Use this exact sequence when completing the lab or exercise primarily in SSMS:
 
-1. Open SSMS and connect to the SQL Database Engine hosting `AssmangMining`.
-2. Open a **new query window** and run the dataset script for your topic (`v1`, `v2`, or `v3`) if required.
-3. Validate dataset load with `SELECT COUNT(*)` checks on key dimension and fact tables.
-4. Open a second SSMS connection: **Connect > Analysis Services**.
-5. In Object Explorer, expand **Databases** and confirm the target SSAS database is visible.
-6. If the SSAS database is missing, ask your trainer for the deployed project name and deployment server.
-7. Expand the SSAS database and inspect:
-   - **Data Sources**
-   - **Data Source Views**
-   - **Cubes**
-   - **Dimensions**
-8. Right-click the target cube and open **Browse** to validate dimensional navigation.
-9. Test at least one business slice per task (for example Mine, Month, Commodity, or Department).
-10. Run MDX in an SSAS query window: **New Query > MDX**.
-11. Save each important query with meaningful names (for example `01-production-by-mine.mdx`).
-12. Capture evidence after each exercise:
-   - Query text
-   - Output grid screenshot
-   - One-sentence interpretation in business language
-13. If results look incorrect, run this troubleshooting chain:
-   - Check source table row counts in SQL Engine
-   - Confirm cube processing completed
-   - Validate dimension relationships and hierarchy levels
-   - Re-run the MDX with simpler axes first
-14. Before submission, record:
-   - What you tested
-   - What answer you obtained
-   - Why the answer is relevant to Assmang operations
+1. Open SSMS and connect to the **Database Engine** that hosts `AssmangMining`.
+2. Open the topic dataset script only if the lab requires a fresh load, then execute it and wait for a clean completion message in the Messages pane.
+3. Run the SQL validation queries in the file immediately after the load so you confirm counts, date ranges, and key joins before involving SSAS.
+4. Keep the Database Engine connection open so you can cross-check source numbers later.
+5. Open a second connection in the same SSMS session using **Connect > Analysis Services**.
+6. Expand **Databases** on the Analysis Services connection and refresh the tree if the expected SSAS database is not visible the first time.
+7. Confirm the deployed database name matches the training project and that the target cube is present.
+8. Expand the SSAS database and inspect the cube, dimensions, and other objects so you know the metadata you are about to query.
+9. If you need to process objects, remember the project must already be deployed and the account must have SSAS admin rights plus read access to the relational source through the data source impersonation settings.
+10. Right-click the cube or database and choose **Process** only after you know which object you are affecting.
+11. In the processing dialog, review the list of affected objects carefully because processing can cascade from a high-level object to lower-level objects.
+12. Wait for processing to finish and read warnings, not just the final success line.
+13. Open the cube browser from SSMS if available, or open an MDX query window using **New Query > MDX**.
+14. Start with the simplest possible MDX pattern: one measure on columns and one hierarchy on rows.
+15. Add a slicer only after the base query works.
+16. Compare at least one SSAS result against the SQL baseline from the Database Engine connection.
+17. Save important queries with meaningful names so you can reuse them during assessments.
+18. Capture evidence for every exercise: the input, the output, and one sentence explaining what the result means for Assmang.
+19. If the numbers look wrong, troubleshoot in this order: SQL source data, deployment state, processing state, dimension relationships, then MDX syntax.
+20. Before submission, write down what you tested, what result you obtained, and why the result matters to the business.
 
 ### SSMS Menu Path Quick Reference
 
@@ -259,44 +275,30 @@ Use this exact sequence when completing the lab/exercises primarily in SSMS:
 
 Use this path when you are building and validating directly in Visual Studio with SSDT:
 
-1. Open Visual Studio and load your SSAS solution.
-2. In Solution Explorer, confirm these project objects exist and are not showing warning icons:
-   - Data Sources
-   - Data Source Views
-   - Dimensions
-   - Cubes
-3. Open Data Source and click Test Connection.
-4. Open Data Source View (DSV) and confirm all required tables are present and related correctly.
-5. For each required dimension in this topic:
-   - Open the dimension designer.
-   - Check KeyColumns and NameColumn.
-   - Confirm user hierarchies are logically ordered.
-6. Open the cube designer and verify:
-   - Correct measure groups
-   - Correct aggregation function per measure (SUM/AVG/etc.)
-   - Dimension usage relationships are correctly mapped
-7. Deploy configuration check:
-   - Right-click project > Properties
-   - Confirm Deployment Server, Database, and Processing Option
-8. Build the project: Build > Build Solution.
-9. Fix all build errors before deployment (do not ignore warnings related to key columns or relationships).
-10. Deploy: right-click project > Deploy.
-11. Process objects if prompted; if not prompted, run manual processing:
-   - Right-click SSAS database/cube in SSDT or SSMS > Process
-12. Validate in the cube browser:
-   - Drag at least one measure
-   - Slice by at least one hierarchy related to this exercise
-13. Open SSMS (Analysis Services connection) and run 1-2 MDX validation queries for the same result.
-14. Compare browser output vs MDX output; values should align.
-15. If values differ, troubleshoot in this order:
-   - Relationship mapping in Dimension Usage
-   - Measure aggregation type
-   - Processing freshness (reprocess impacted objects)
-   - Source data quality in SQL Engine tables
-16. Save evidence for each exercise:
-   - Build/deploy outcome
-   - Browser or MDX result
-   - Short interpretation in plain business language
+1. Open Visual Studio and load the SSAS solution for the topic.
+2. In Solution Explorer, confirm the expected SSAS folders exist and are not already showing warning icons.
+3. Open **Project Properties > Deployment** before changing design objects so you know which SSAS server and database you are targeting.
+4. Open the data source and click **Test Connection**.
+5. Confirm the data source points to the SQL Database Engine instance, not the SSAS instance.
+6. Review impersonation settings because successful deployment alone is not enough; processing also needs relational read access.
+7. Open the Data Source View and verify the required tables and joins for the topic are present.
+8. Rearrange the DSV if it is unreadable so you can actually inspect it during the exercise.
+9. Open each required dimension and review `KeyColumns`, `NameColumn`, visible attributes, and user hierarchies.
+10. If the topic involves cube work, open the cube designer and inspect structure, measure groups, calculations, and the **Dimension Usage** tab.
+11. Check aggregation behaviour for business measures instead of accepting every wizard default.
+12. Save changes before building.
+13. Run **Build > Build Solution** and read the Error List carefully.
+14. Fix build errors before deployment and do not ignore relationship or key warnings unless you can explain them.
+15. Deploy the project using **Right-click Project > Deploy**.
+16. Remember what Microsoft’s SSDT deployment guidance says: deployment builds the project, validates the destination server, and then creates or updates the SSAS database objects.
+17. After deployment, process the affected objects if prompted, or right-click the cube or database and choose **Process** manually.
+18. Review the processing dialog before clicking Run because high-level processing choices can affect multiple lower-level objects.
+19. Wait for processing to complete and read warnings, not just the success banner.
+20. Open the Browser tab and test at least one real business slice for the topic.
+21. Open SSMS against Analysis Services and run one or two MDX checks against the same cube output.
+22. Compare SSDT browser results, MDX results, and SQL baseline values.
+23. If results differ, troubleshoot in this order: source data, DSV relationships, dimension design, dimension usage, aggregation logic, then processing freshness.
+24. Save evidence for the exercise: build result, deployment result, process result, browser or MDX output, and one sentence explaining the business meaning.
 
 ### Visual Studio Menu Path Quick Reference
 

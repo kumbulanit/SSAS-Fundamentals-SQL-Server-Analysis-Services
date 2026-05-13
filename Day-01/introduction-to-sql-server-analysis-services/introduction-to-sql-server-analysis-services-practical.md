@@ -27,78 +27,119 @@ Apply the theory from **Introduction to SQL Server Analysis Services** by comple
 
 ## 📝 Guided Steps
 
-### Step 1: Load `datasets/v1_assmang_mining_base.sql`
+### Step 1: Load `datasets/v1_assmang_mining_base.sql` and verify the starter warehouse
 
-**What to do:** Load `datasets/v1_assmang_mining_base.sql` into SQL Server and verify all four dimension tables exist.
+**Do this in SSMS (Database Engine):**
+1. Open SSMS and connect to the SQL Server instance that hosts `AssmangMining`.
+2. Click **File > Open > File** and open `datasets/v1_assmang_mining_base.sql`.
+3. Press **Execute** and wait for the completion message in the Messages pane.
+4. Immediately run the SQL validation queries in this lab to confirm the four base tables exist and contain data.
+5. Check that you see counts for `Dim_Mine`, `Dim_Department`, `Dim_Employee`, and `Dim_Date` before you move on.
 
-**Why this matters:** This step builds your understanding of introduction to sql server analysis services by giving you hands-on experience with the tool.
+**What you should pay attention to:**
+- `Dim_Mine` should contain the Assmang mine list.
+- `Dim_Date` should cover 2023 and 2024.
+- No validation query should return empty output or object-not-found errors.
 
-**Expected result:** You should see a successful outcome or confirmation in SSDT/SSMS before moving to the next step.
+**Expected result:** The relational database is ready and you can explain that SSAS will read from this SQL source rather than storing table definitions inside Visual Studio.
 
-**Troubleshooting:** If this step fails, check:
-- Is the SQL Server instance running?
-- Is the dataset `v1_assmang_mining_base.sql` loaded?
-- Do you have the correct permissions?
-
----
-
-### Step 2: Open Visual Studio with SSDT and create a new Analysis Services Multidimensional Project
-
-**What to do:** Open Visual Studio with SSDT and create a new Analysis Services Multidimensional Project.
-
-**Why this matters:** This step builds your understanding of introduction to sql server analysis services by giving you hands-on experience with the tool.
-
-**Expected result:** You should see a successful outcome or confirmation in SSDT/SSMS before moving to the next step.
-
-**Troubleshooting:** If this step fails, check:
-- Is the SQL Server instance running?
-- Is the dataset `v1_assmang_mining_base.sql` loaded?
-- Do you have the correct permissions?
+**If something goes wrong:**
+- If the script fails at the `USE` statement, make sure SQL Server is running and you connected to the correct instance.
+- If tables already exist but contain unexpected values, rerun the script from the top so the database is rebuilt cleanly.
+- If you get permission errors, use a login that can create databases and read data.
 
 ---
 
-### Step 3: Create a data source pointing to the `AssmangMining` database
+### Step 2: Create a new Analysis Services Multidimensional project in Visual Studio
 
-**What to do:** Create a data source pointing to the `AssmangMining` database.
+**Do this in Visual Studio with SSDT installed:**
+1. Open Visual Studio.
+2. Select **Create a new project**.
+3. Search for **Analysis Services Multidimensional and Data Mining Project**.
+4. Choose the multidimensional project template, not a tabular project template.
+5. Set the project name to `AssmangMiningCube` and save it in your training workspace.
+6. After the project opens, look in Solution Explorer and confirm you can see the SSAS folders such as Data Sources, Data Source Views, Cubes, and Dimensions.
 
-**Why this matters:** This step builds your understanding of introduction to sql server analysis services by giving you hands-on experience with the tool.
+**Why this step matters:** This is where the model metadata lives. The project does not store the mining data itself; it stores the design of how SSAS should interpret and serve that data.
 
-**Expected result:** You should see a successful outcome or confirmation in SSDT/SSMS before moving to the next step.
+**Expected result:** A clean SSAS project shell opens without build errors and the Solution Explorer structure matches a multidimensional project.
 
-**Troubleshooting:** If this step fails, check:
-- Is the SQL Server instance running?
-- Is the dataset `v1_assmang_mining_base.sql` loaded?
-- Do you have the correct permissions?
-
----
-
-### Step 4: Create a Data Source View including `Dim_Mine`, `Dim_Department`, `Dim_Employee`, and `Dim_Date`
-
-**What to do:** Create a Data Source View including `Dim_Mine`, `Dim_Department`, `Dim_Employee`, and `Dim_Date`.
-
-**Why this matters:** This step builds your understanding of introduction to sql server analysis services by giving you hands-on experience with the tool.
-
-**Expected result:** You should see a successful outcome or confirmation in SSDT/SSMS before moving to the next step.
-
-**Troubleshooting:** If this step fails, check:
-- Is the SQL Server instance running?
-- Is the dataset `v1_assmang_mining_base.sql` loaded?
-- Do you have the correct permissions?
+**If something goes wrong:**
+- If the project template is missing, SSDT support for Analysis Services is not installed.
+- If Visual Studio opens a different BI template, close it and choose the multidimensional template explicitly.
+- If the solution opens with warning icons immediately, check whether extensions or project targeting are incomplete.
 
 ---
 
-### Step 5: Deploy an empty project shell to the local SSAS instance to confirm connectivity and permissions
+### Step 3: Create a data source that connects the SSAS project to `AssmangMining`
 
-**What to do:** Deploy an empty project shell to the local SSAS instance to confirm connectivity and permissions.
+**Follow this exact path:**
+1. In Solution Explorer, right-click **Data Sources** and choose **New Data Source**.
+2. In the wizard, create a new connection to the SQL Server Database Engine instance.
+3. Select the `AssmangMining` database.
+4. Click **Test Connection** and do not continue until it succeeds.
+5. On the impersonation page, choose an option that can read the relational source during processing.
+6. Finish the wizard and rename the data source clearly if needed.
 
-**Why this matters:** This step builds your understanding of introduction to sql server analysis services by giving you hands-on experience with the tool.
+**What to check carefully:**
+- The server name must point to the SQL Database Engine, not the Analysis Services instance.
+- The database must be `AssmangMining`.
+- The impersonation choice must allow read access during processing; otherwise deployment may work but processing will fail.
 
-**Expected result:** You should see a successful outcome or confirmation in SSDT/SSMS before moving to the next step.
+**Expected result:** The project now contains a working relational connection that SSAS can use when the cube is processed.
 
-**Troubleshooting:** If this step fails, check:
-- Is the SQL Server instance running?
-- Is the dataset `v1_assmang_mining_base.sql` loaded?
-- Do you have the correct permissions?
+**If something goes wrong:**
+- If Test Connection fails, verify server name, authentication mode, and that the SQL service is running.
+- If processing later fails with read-permission errors, revisit the impersonation settings in the data source.
+- If the wrong database was selected, edit the data source immediately before building more objects on top of it.
+
+---
+
+### Step 4: Build a Data Source View with the four training dimensions
+
+**Do this inside the DSV wizard:**
+1. Right-click **Data Source Views** and choose **New Data Source View**.
+2. Select the data source you created in Step 3.
+3. Add `Dim_Mine`, `Dim_Department`, `Dim_Employee`, and `Dim_Date` to the DSV.
+4. Finish the wizard and open the DSV diagram.
+5. Confirm the table relationships appear correctly, especially `Dim_Employee` linking to department and mine.
+6. Rearrange the tables so the diagram is readable rather than cluttered.
+7. Save the DSV before closing it.
+
+**What you should verify visually:**
+- All four required tables are present.
+- Key columns look sensible and no table is isolated by mistake.
+- The DSV is readable enough that another learner could follow it.
+
+**Expected result:** You have a clean logical model layer that SSAS designers can use for dimensions and cubes.
+
+**If something goes wrong:**
+- If a table is missing, reopen the DSV and add it rather than creating a second DSV.
+- If a relationship line is missing where you expected one, inspect the SQL table keys first.
+- If the DSV designer shows stale metadata, refresh it before continuing.
+
+---
+
+### Step 5: Deploy the project shell and confirm the SSAS server accepts it
+
+**Use deployment as your first environment check:**
+1. Right-click the project and choose **Properties**.
+2. Open the **Deployment** page and enter the correct SSAS server name.
+3. Confirm the target database name is sensible for the training environment.
+4. Save the properties.
+5. Choose **Build > Build Solution** and fix any build errors first.
+6. Right-click the project and choose **Deploy**.
+7. Watch the Output window carefully. Deployment should build the project, validate the destination server, and create the SSAS database objects.
+8. Open SSMS, connect to **Analysis Services**, and confirm the deployed database now appears under **Databases**.
+
+**What to remember from Microsoft guidance:** A project must be deployed before you can process or browse it. Deployment and processing are related, but they are not the same operation.
+
+**Expected result:** The project shell deploys successfully and a new SSAS database appears even though you have not yet built a full cube.
+
+**If something goes wrong:**
+- If deployment fails immediately, double-check the deployment server name in project properties.
+- If you get server-role or permission errors, you likely do not have rights on the SSAS instance.
+- If deployment succeeds but nothing appears in SSMS, refresh the SSAS Object Explorer tree and reconnect if necessary.
 
 ---
 
@@ -176,36 +217,28 @@ FROM dbo.Dim_Date;
 
 ## 🧰 Detailed SSMS Workflow (Use This If You Are Not Using Visual Studio)
 
-Use this exact sequence when completing the lab/exercises primarily in SSMS:
+Use this exact sequence when completing the lab or exercise primarily in SSMS:
 
-1. Open SSMS and connect to the SQL Database Engine hosting `AssmangMining`.
-2. Open a **new query window** and run the dataset script for your topic (`v1`, `v2`, or `v3`) if required.
-3. Validate dataset load with `SELECT COUNT(*)` checks on key dimension and fact tables.
-4. Open a second SSMS connection: **Connect > Analysis Services**.
-5. In Object Explorer, expand **Databases** and confirm the target SSAS database is visible.
-6. If the SSAS database is missing, ask your trainer for the deployed project name and deployment server.
-7. Expand the SSAS database and inspect:
-   - **Data Sources**
-   - **Data Source Views**
-   - **Cubes**
-   - **Dimensions**
-8. Right-click the target cube and open **Browse** to validate dimensional navigation.
-9. Test at least one business slice per task (for example Mine, Month, Commodity, or Department).
-10. Run MDX in an SSAS query window: **New Query > MDX**.
-11. Save each important query with meaningful names (for example `01-production-by-mine.mdx`).
-12. Capture evidence after each exercise:
-   - Query text
-   - Output grid screenshot
-   - One-sentence interpretation in business language
-13. If results look incorrect, run this troubleshooting chain:
-   - Check source table row counts in SQL Engine
-   - Confirm cube processing completed
-   - Validate dimension relationships and hierarchy levels
-   - Re-run the MDX with simpler axes first
-14. Before submission, record:
-   - What you tested
-   - What answer you obtained
-   - Why the answer is relevant to Assmang operations
+1. Open SSMS and connect to the **Database Engine** that hosts `AssmangMining`.
+2. Open the topic dataset script only if the lab requires a fresh load, then execute it and wait for a clean completion message in the Messages pane.
+3. Run the SQL validation queries in the file immediately after the load so you confirm counts, date ranges, and key joins before involving SSAS.
+4. Keep the Database Engine connection open so you can cross-check source numbers later.
+5. Open a second connection in the same SSMS session using **Connect > Analysis Services**.
+6. Expand **Databases** on the Analysis Services connection and refresh the tree if the expected SSAS database is not visible the first time.
+7. Confirm the deployed database name matches the training project and that the target cube is present.
+8. Expand the SSAS database and inspect the cube, dimensions, and other objects so you know the metadata you are about to query.
+9. If you need to process objects, remember the project must already be deployed and the account must have SSAS admin rights plus read access to the relational source through the data source impersonation settings.
+10. Right-click the cube or database and choose **Process** only after you know which object you are affecting.
+11. In the processing dialog, review the list of affected objects carefully because processing can cascade from a high-level object to lower-level objects.
+12. Wait for processing to finish and read warnings, not just the final success line.
+13. Open the cube browser from SSMS if available, or open an MDX query window using **New Query > MDX**.
+14. Start with the simplest possible MDX pattern: one measure on columns and one hierarchy on rows.
+15. Add a slicer only after the base query works.
+16. Compare at least one SSAS result against the SQL baseline from the Database Engine connection.
+17. Save important queries with meaningful names so you can reuse them during assessments.
+18. Capture evidence for every exercise: the input, the output, and one sentence explaining what the result means for Assmang.
+19. If the numbers look wrong, troubleshoot in this order: SQL source data, deployment state, processing state, dimension relationships, then MDX syntax.
+20. Before submission, write down what you tested, what result you obtained, and why the result matters to the business.
 
 ### SSMS Menu Path Quick Reference
 
@@ -220,44 +253,30 @@ Use this exact sequence when completing the lab/exercises primarily in SSMS:
 
 Use this path when you are building and validating directly in Visual Studio with SSDT:
 
-1. Open Visual Studio and load your SSAS solution.
-2. In Solution Explorer, confirm these project objects exist and are not showing warning icons:
-   - Data Sources
-   - Data Source Views
-   - Dimensions
-   - Cubes
-3. Open Data Source and click Test Connection.
-4. Open Data Source View (DSV) and confirm all required tables are present and related correctly.
-5. For each required dimension in this topic:
-   - Open the dimension designer.
-   - Check KeyColumns and NameColumn.
-   - Confirm user hierarchies are logically ordered.
-6. Open the cube designer and verify:
-   - Correct measure groups
-   - Correct aggregation function per measure (SUM/AVG/etc.)
-   - Dimension usage relationships are correctly mapped
-7. Deploy configuration check:
-   - Right-click project > Properties
-   - Confirm Deployment Server, Database, and Processing Option
-8. Build the project: Build > Build Solution.
-9. Fix all build errors before deployment (do not ignore warnings related to key columns or relationships).
-10. Deploy: right-click project > Deploy.
-11. Process objects if prompted; if not prompted, run manual processing:
-   - Right-click SSAS database/cube in SSDT or SSMS > Process
-12. Validate in the cube browser:
-   - Drag at least one measure
-   - Slice by at least one hierarchy related to this exercise
-13. Open SSMS (Analysis Services connection) and run 1-2 MDX validation queries for the same result.
-14. Compare browser output vs MDX output; values should align.
-15. If values differ, troubleshoot in this order:
-   - Relationship mapping in Dimension Usage
-   - Measure aggregation type
-   - Processing freshness (reprocess impacted objects)
-   - Source data quality in SQL Engine tables
-16. Save evidence for each exercise:
-   - Build/deploy outcome
-   - Browser or MDX result
-   - Short interpretation in plain business language
+1. Open Visual Studio and load the SSAS solution for the topic.
+2. In Solution Explorer, confirm the expected SSAS folders exist and are not already showing warning icons.
+3. Open **Project Properties > Deployment** before changing design objects so you know which SSAS server and database you are targeting.
+4. Open the data source and click **Test Connection**.
+5. Confirm the data source points to the SQL Database Engine instance, not the SSAS instance.
+6. Review impersonation settings because successful deployment alone is not enough; processing also needs relational read access.
+7. Open the Data Source View and verify the required tables and joins for the topic are present.
+8. Rearrange the DSV if it is unreadable so you can actually inspect it during the exercise.
+9. Open each required dimension and review `KeyColumns`, `NameColumn`, visible attributes, and user hierarchies.
+10. If the topic involves cube work, open the cube designer and inspect structure, measure groups, calculations, and the **Dimension Usage** tab.
+11. Check aggregation behaviour for business measures instead of accepting every wizard default.
+12. Save changes before building.
+13. Run **Build > Build Solution** and read the Error List carefully.
+14. Fix build errors before deployment and do not ignore relationship or key warnings unless you can explain them.
+15. Deploy the project using **Right-click Project > Deploy**.
+16. Remember what Microsoft’s SSDT deployment guidance says: deployment builds the project, validates the destination server, and then creates or updates the SSAS database objects.
+17. After deployment, process the affected objects if prompted, or right-click the cube or database and choose **Process** manually.
+18. Review the processing dialog before clicking Run because high-level processing choices can affect multiple lower-level objects.
+19. Wait for processing to complete and read warnings, not just the success banner.
+20. Open the Browser tab and test at least one real business slice for the topic.
+21. Open SSMS against Analysis Services and run one or two MDX checks against the same cube output.
+22. Compare SSDT browser results, MDX results, and SQL baseline values.
+23. If results differ, troubleshoot in this order: source data, DSV relationships, dimension design, dimension usage, aggregation logic, then processing freshness.
+24. Save evidence for the exercise: build result, deployment result, process result, browser or MDX output, and one sentence explaining the business meaning.
 
 ### Visual Studio Menu Path Quick Reference
 

@@ -27,78 +27,110 @@ Apply the theory from **MDX Query Fundamentals** by completing a guided, step-by
 
 ## 📝 Guided Steps
 
-### Step 1: Open SSMS against the SSAS instance and connect to the processed Assmang cube
+### Step 1: Open an Analysis Services connection and confirm the cube is browse-ready
 
-**What to do:** Open SSMS against the SSAS instance and connect to the processed Assmang cube.
+**Set up the MDX workspace first:**
+1. Open SSMS.
+2. Choose **Connect > Analysis Services**.
+3. Enter the SSAS server used for the training cube.
+4. Expand **Databases** and find `Assmang Mining Analytics`.
+5. Verify the cube is already deployed and processed before you begin querying.
+6. Open a new MDX query window from the Analysis Services connection.
 
-**Why this matters:** This step builds your understanding of mdx query fundamentals by giving you hands-on experience with the tool.
+**What to confirm before typing MDX:**
+- You are connected to Analysis Services, not the Database Engine.
+- The cube exists under the expected database.
+- You can browse the metadata tree for measures and dimensions.
 
-**Expected result:** You should see a successful outcome or confirmation in SSDT/SSMS before moving to the next step.
+**Expected result:** You have a live MDX query window aimed at the correct cube.
 
-**Troubleshooting:** If this step fails, check:
-- Is the SQL Server instance running?
-- Is the dataset `v3_assmang_mining_complete.sql` loaded?
-- Do you have the correct permissions?
-
----
-
-### Step 2: Run a basic query returning `TonnesProduced` by mine
-
-**What to do:** Run a basic query returning `TonnesProduced` by mine.
-
-**Why this matters:** This step builds your understanding of mdx query fundamentals by giving you hands-on experience with the tool.
-
-**Expected result:** You should see a successful outcome or confirmation in SSDT/SSMS before moving to the next step.
-
-**Troubleshooting:** If this step fails, check:
-- Is the SQL Server instance running?
-- Is the dataset `v3_assmang_mining_complete.sql` loaded?
-- Do you have the correct permissions?
+**If something goes wrong:**
+- If the cube is missing, revisit deployment and processing before continuing.
+- If the connection fails, verify the SSAS service name and your permissions.
+- If metadata browsing is unavailable, reconnect and confirm you did not open a SQL query window by mistake.
 
 ---
 
-### Step 3: Add a time slicer for calendar year 2024
+### Step 2: Run the simplest useful MDX query: one measure on columns, one hierarchy on rows
 
-**What to do:** Add a time slicer for calendar year 2024.
+**Build the query in the classic MDX shape:**
+1. Start with `SELECT`.
+2. Put `[Measures].[TonnesProduced]` on **COLUMNS**.
+3. Put the mine-name members on **ROWS**.
+4. Point the query at `[Assmang Mining Analytics]` in the `FROM` clause.
+5. Execute the query and inspect the grid output.
 
-**Why this matters:** This step builds your understanding of mdx query fundamentals by giving you hands-on experience with the tool.
+**What learners should notice:**
+- MDX thinks in axes, not in a `SELECT column FROM table` pattern like SQL.
+- Measures usually go on columns first for readability.
+- A hierarchy returns members rather than raw relational rows.
 
-**Expected result:** You should see a successful outcome or confirmation in SSDT/SSMS before moving to the next step.
+**Expected result:** One row per mine with production values visible.
 
-**Troubleshooting:** If this step fails, check:
-- Is the SQL Server instance running?
-- Is the dataset `v3_assmang_mining_complete.sql` loaded?
-- Do you have the correct permissions?
-
----
-
-### Step 4: Query revenue by commodity hierarchy level instead of by individual mine
-
-**What to do:** Query revenue by commodity hierarchy level instead of by individual mine.
-
-**Why this matters:** This step builds your understanding of mdx query fundamentals by giving you hands-on experience with the tool.
-
-**Expected result:** You should see a successful outcome or confirmation in SSDT/SSMS before moving to the next step.
-
-**Troubleshooting:** If this step fails, check:
-- Is the SQL Server instance running?
-- Is the dataset `v3_assmang_mining_complete.sql` loaded?
-- Do you have the correct permissions?
+**If something goes wrong:**
+- If the measure name fails, drag it from metadata rather than typing from memory.
+- If the row axis returns nothing, confirm the hierarchy path is valid.
+- If the query runs but values look blank, the cube may not be fully processed.
 
 ---
 
-### Step 5: Use a set to return only the iron ore mines
+### Step 3: Add a slicer to restrict the result to calendar year 2024
 
-**What to do:** Use a set to return only the iron ore mines.
+**Extend the same query instead of rewriting from scratch:**
+1. Keep the measure and row axis from Step 2.
+2. Add a `WHERE` clause using the 2024 member from the date hierarchy.
+3. Execute the query again.
+4. Compare the result to the unsliced query from Step 2.
+5. Write down what changed.
 
-**Why this matters:** This step builds your understanding of mdx query fundamentals by giving you hands-on experience with the tool.
+**What this teaches:** The slicer axis narrows the query context without adding another visible axis to the grid.
 
-**Expected result:** You should see a successful outcome or confirmation in SSDT/SSMS before moving to the next step.
+**Expected result:** The mine totals change to reflect only the 2024 slice.
 
-**Troubleshooting:** If this step fails, check:
-- Is the SQL Server instance running?
-- Is the dataset `v3_assmang_mining_complete.sql` loaded?
-- Do you have the correct permissions?
+**If something goes wrong:**
+- If the year member path fails, expand the date hierarchy in metadata and drag the correct member into the query.
+- If values do not change, verify that the date dimension is related correctly to the production measure group.
+- If you see syntax errors near `WHERE`, check parentheses and member path formatting.
+
+---
+
+### Step 4: Query by a higher business level instead of individual mine members
+
+**Shift from detailed members to a summarised hierarchy level:**
+1. Replace the mine-name level on rows with the mine-type hierarchy level.
+2. Switch the measure to `[Measures].[RevenueZAR]`.
+3. Keep the 2024 slicer if you want the comparison to stay time-bounded.
+4. Execute the query.
+5. Compare the number of returned rows with the mine-level query.
+
+**What to observe:** MDX becomes powerful when you change the level of the hierarchy and ask the same business question at a different grain.
+
+**Expected result:** Revenue is aggregated by commodity grouping such as Iron Ore, Manganese, and Chrome rather than by mine.
+
+**If something goes wrong:**
+- If the hierarchy level does not exist, inspect the mine dimension design and browser metadata.
+- If totals seem identical to the detailed query, make sure you changed the level, not just the caption.
+- If the mine-type level is empty, revisit dimension processing.
+
+---
+
+### Step 5: Create a named set to isolate the iron ore mines
+
+**Use MDX logic, not manual filtering in the result grid:**
+1. Add a `WITH` clause.
+2. Define a named set for the descendants of the Iron Ore member at the mine-name level.
+3. Place the named set on rows.
+4. Put `TonnesProduced` and `RevenueZAR` on columns.
+5. Execute the query and compare it to the full mine list.
+
+**Why this matters:** Named sets let you define reusable business groupings such as iron ore operations, chrome operations, or high-performing mines.
+
+**Expected result:** Only the iron ore mines appear on rows and the output is easier to reuse in later exercises.
+
+**If something goes wrong:**
+- If the set returns nothing, double-check the member path for the Iron Ore parent.
+- If descendants return the wrong level, confirm the target hierarchy level in the `DESCENDANTS` call.
+- If the syntax feels fragile, build the set with metadata drag-and-drop and then clean the formatting.
 
 ---
 
@@ -199,36 +231,28 @@ FROM [Assmang Mining Analytics];
 
 ## 🧰 Detailed SSMS Workflow (Use This If You Are Not Using Visual Studio)
 
-Use this exact sequence when completing the lab/exercises primarily in SSMS:
+Use this exact sequence when completing the lab or exercise primarily in SSMS:
 
-1. Open SSMS and connect to the SQL Database Engine hosting `AssmangMining`.
-2. Open a **new query window** and run the dataset script for your topic (`v1`, `v2`, or `v3`) if required.
-3. Validate dataset load with `SELECT COUNT(*)` checks on key dimension and fact tables.
-4. Open a second SSMS connection: **Connect > Analysis Services**.
-5. In Object Explorer, expand **Databases** and confirm the target SSAS database is visible.
-6. If the SSAS database is missing, ask your trainer for the deployed project name and deployment server.
-7. Expand the SSAS database and inspect:
-   - **Data Sources**
-   - **Data Source Views**
-   - **Cubes**
-   - **Dimensions**
-8. Right-click the target cube and open **Browse** to validate dimensional navigation.
-9. Test at least one business slice per task (for example Mine, Month, Commodity, or Department).
-10. Run MDX in an SSAS query window: **New Query > MDX**.
-11. Save each important query with meaningful names (for example `01-production-by-mine.mdx`).
-12. Capture evidence after each exercise:
-   - Query text
-   - Output grid screenshot
-   - One-sentence interpretation in business language
-13. If results look incorrect, run this troubleshooting chain:
-   - Check source table row counts in SQL Engine
-   - Confirm cube processing completed
-   - Validate dimension relationships and hierarchy levels
-   - Re-run the MDX with simpler axes first
-14. Before submission, record:
-   - What you tested
-   - What answer you obtained
-   - Why the answer is relevant to Assmang operations
+1. Open SSMS and connect to the **Database Engine** that hosts `AssmangMining`.
+2. Open the topic dataset script only if the lab requires a fresh load, then execute it and wait for a clean completion message in the Messages pane.
+3. Run the SQL validation queries in the file immediately after the load so you confirm counts, date ranges, and key joins before involving SSAS.
+4. Keep the Database Engine connection open so you can cross-check source numbers later.
+5. Open a second connection in the same SSMS session using **Connect > Analysis Services**.
+6. Expand **Databases** on the Analysis Services connection and refresh the tree if the expected SSAS database is not visible the first time.
+7. Confirm the deployed database name matches the training project and that the target cube is present.
+8. Expand the SSAS database and inspect the cube, dimensions, and other objects so you know the metadata you are about to query.
+9. If you need to process objects, remember the project must already be deployed and the account must have SSAS admin rights plus read access to the relational source through the data source impersonation settings.
+10. Right-click the cube or database and choose **Process** only after you know which object you are affecting.
+11. In the processing dialog, review the list of affected objects carefully because processing can cascade from a high-level object to lower-level objects.
+12. Wait for processing to finish and read warnings, not just the final success line.
+13. Open the cube browser from SSMS if available, or open an MDX query window using **New Query > MDX**.
+14. Start with the simplest possible MDX pattern: one measure on columns and one hierarchy on rows.
+15. Add a slicer only after the base query works.
+16. Compare at least one SSAS result against the SQL baseline from the Database Engine connection.
+17. Save important queries with meaningful names so you can reuse them during assessments.
+18. Capture evidence for every exercise: the input, the output, and one sentence explaining what the result means for Assmang.
+19. If the numbers look wrong, troubleshoot in this order: SQL source data, deployment state, processing state, dimension relationships, then MDX syntax.
+20. Before submission, write down what you tested, what result you obtained, and why the result matters to the business.
 
 ### SSMS Menu Path Quick Reference
 
@@ -243,44 +267,30 @@ Use this exact sequence when completing the lab/exercises primarily in SSMS:
 
 Use this path when you are building and validating directly in Visual Studio with SSDT:
 
-1. Open Visual Studio and load your SSAS solution.
-2. In Solution Explorer, confirm these project objects exist and are not showing warning icons:
-   - Data Sources
-   - Data Source Views
-   - Dimensions
-   - Cubes
-3. Open Data Source and click Test Connection.
-4. Open Data Source View (DSV) and confirm all required tables are present and related correctly.
-5. For each required dimension in this topic:
-   - Open the dimension designer.
-   - Check KeyColumns and NameColumn.
-   - Confirm user hierarchies are logically ordered.
-6. Open the cube designer and verify:
-   - Correct measure groups
-   - Correct aggregation function per measure (SUM/AVG/etc.)
-   - Dimension usage relationships are correctly mapped
-7. Deploy configuration check:
-   - Right-click project > Properties
-   - Confirm Deployment Server, Database, and Processing Option
-8. Build the project: Build > Build Solution.
-9. Fix all build errors before deployment (do not ignore warnings related to key columns or relationships).
-10. Deploy: right-click project > Deploy.
-11. Process objects if prompted; if not prompted, run manual processing:
-   - Right-click SSAS database/cube in SSDT or SSMS > Process
-12. Validate in the cube browser:
-   - Drag at least one measure
-   - Slice by at least one hierarchy related to this exercise
-13. Open SSMS (Analysis Services connection) and run 1-2 MDX validation queries for the same result.
-14. Compare browser output vs MDX output; values should align.
-15. If values differ, troubleshoot in this order:
-   - Relationship mapping in Dimension Usage
-   - Measure aggregation type
-   - Processing freshness (reprocess impacted objects)
-   - Source data quality in SQL Engine tables
-16. Save evidence for each exercise:
-   - Build/deploy outcome
-   - Browser or MDX result
-   - Short interpretation in plain business language
+1. Open Visual Studio and load the SSAS solution for the topic.
+2. In Solution Explorer, confirm the expected SSAS folders exist and are not already showing warning icons.
+3. Open **Project Properties > Deployment** before changing design objects so you know which SSAS server and database you are targeting.
+4. Open the data source and click **Test Connection**.
+5. Confirm the data source points to the SQL Database Engine instance, not the SSAS instance.
+6. Review impersonation settings because successful deployment alone is not enough; processing also needs relational read access.
+7. Open the Data Source View and verify the required tables and joins for the topic are present.
+8. Rearrange the DSV if it is unreadable so you can actually inspect it during the exercise.
+9. Open each required dimension and review `KeyColumns`, `NameColumn`, visible attributes, and user hierarchies.
+10. If the topic involves cube work, open the cube designer and inspect structure, measure groups, calculations, and the **Dimension Usage** tab.
+11. Check aggregation behaviour for business measures instead of accepting every wizard default.
+12. Save changes before building.
+13. Run **Build > Build Solution** and read the Error List carefully.
+14. Fix build errors before deployment and do not ignore relationship or key warnings unless you can explain them.
+15. Deploy the project using **Right-click Project > Deploy**.
+16. Remember what Microsoft’s SSDT deployment guidance says: deployment builds the project, validates the destination server, and then creates or updates the SSAS database objects.
+17. After deployment, process the affected objects if prompted, or right-click the cube or database and choose **Process** manually.
+18. Review the processing dialog before clicking Run because high-level processing choices can affect multiple lower-level objects.
+19. Wait for processing to complete and read warnings, not just the success banner.
+20. Open the Browser tab and test at least one real business slice for the topic.
+21. Open SSMS against Analysis Services and run one or two MDX checks against the same cube output.
+22. Compare SSDT browser results, MDX results, and SQL baseline values.
+23. If results differ, troubleshoot in this order: source data, DSV relationships, dimension design, dimension usage, aggregation logic, then processing freshness.
+24. Save evidence for the exercise: build result, deployment result, process result, browser or MDX output, and one sentence explaining the business meaning.
 
 ### Visual Studio Menu Path Quick Reference
 

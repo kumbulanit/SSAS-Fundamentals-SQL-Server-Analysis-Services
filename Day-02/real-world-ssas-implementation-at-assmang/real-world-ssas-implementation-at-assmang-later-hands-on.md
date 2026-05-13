@@ -16,36 +16,57 @@ These exercises are designed for **independent practice** after the guided lab. 
 
 ---
 
-## Exercise 1
+## How To Work Through These Exercises
 
-### Task
+Use this repeatable method for every exercise instead of jumping straight to the answer:
+
+1. Read the task and rewrite it as a simple business question in your own words.
+2. Decide whether the answer should come from explanation only, SSDT inspection, SSMS browsing, SQL validation, or MDX output.
+3. If the task depends on model objects, first confirm the relevant cube, dimension, measure, hierarchy, or KPI exists before writing conclusions.
+4. If the task depends on numbers, get a baseline from SQL or existing browser output before writing the final answer.
+5. Start with the smallest possible test. For example, browse one measure for one mine before trying a more complex view.
+6. Expand gradually until you have enough evidence to answer the question confidently.
+7. Record what you checked, what result you saw, and what that result means in plain business language.
+8. If an exercise asks for a recommendation or explanation, support it with one concrete observation from the model or data.
+
+## Evidence Checklist For Each Exercise
+
+Before you mark an exercise complete, make sure you can show all of the following where relevant:
+
+- The object you inspected, such as a dimension, hierarchy, measure group, KPI, or MDX query.
+- The output you observed, such as a browser grid, MDX result, build result, or processing result.
+- A short explanation of why that output answers the task.
+- At least one Assmang-specific business interpretation, not just a technical description.
+
+## If You Get Stuck
+
+Use this recovery sequence:
+
+1. Return to the guided practical for the same topic and repeat the closest worked example.
+2. Check the theory page for the business meaning of the concept before changing the model.
+3. Validate source data in SQL if the cube result looks suspicious.
+4. Validate deployment and processing state if the SSAS object exists but numbers look incomplete.
+
+## Exercise 1
 
 Create a mini solution blueprint for an executive production dashboard sourced from the cube.
 
 ### Hints
 
-- Refer back to the theory for **Real-World SSAS Implementation at Assmang** if you get stuck.
 - Think about how this connects to a real business question at Assmang.
 - There may be multiple correct approaches — choose the one you can explain clearly.
-
 ### Deliverable
 
-- A written answer (1-2 paragraphs) OR a screenshot of your SSDT/SSMS result.
 - Be prepared to explain your reasoning to the trainer.
+Objective
 
----
-
-## Exercise 2
-
-### Task
-
-Define a daily, weekly, and monthly runbook for cube maintenance.
-
-### Hints
-
-- Refer back to the theory for **Real-World SSAS Implementation at Assmang** if you get stuck.
-- Think about how this connects to a real business question at Assmang.
-- There may be multiple correct approaches — choose the one you can explain clearly.
+Procedure
+**Step 2:** Dashboard pages: (1) Operations = TonnesProduced by Mine/Month drillable to dept, (2) Finance = RevenueMln vs BudgetMln quarterly trends, (3) Safety = ComplianceScore KPI by mine  
+**Step 3:** MDX queries: Production by Mine/Dept/Date; Revenue by Mine/Quarter; Safety KPI slice
+**Step 5:** Architecture: SSAS cube → Power BI/Tableau; role-based security (COO all mines, regional director assigned only)
+**Step 6:** Performance: <2 sec query response SLA; audit logging; read-only access
+- **Evidence:** Wireframe, sample queries, role matrix
+- **Assmang Context:** "Executives drive staffing/budget/escalation daily. Dashboard: 'Khumani -8% → investigate; Sishen safety red → audit.' Facts enable decisions across 5 mines, 3K employees."
 
 ### Deliverable
 
@@ -81,52 +102,19 @@ Your exercises are considered successful when:
 - You can explain **why** the design or query choice fits Assmang's reporting needs.
 - You can connect your answer back to dimensions, measures, hierarchies, MDX, or deployment where relevant.
 - Your work is **documented clearly** enough that a colleague could understand it.
-
----
-
 ## 💡 Stretch Challenge (Optional)
 
 If you finish early, try to extend one of the exercises above by combining it with a concept from a previous topic. For example, if this topic covers measures, try connecting your measure design to a specific dimension hierarchy from an earlier topic.
 
----
-
 *Assmang Pty Ltd — SSAS Fundamentals | Day 02 Independent Practice*
 
 ---
-
-## 🧰 Detailed SSMS Workflow (Use This If You Are Not Using Visual Studio)
-
-Use this exact sequence when completing the lab/exercises primarily in SSMS:
-
-1. Open SSMS and connect to the SQL Database Engine hosting `AssmangMining`.
-2. Open a **new query window** and run the dataset script for your topic (`v1`, `v2`, or `v3`) if required.
-3. Validate dataset load with `SELECT COUNT(*)` checks on key dimension and fact tables.
-4. Open a second SSMS connection: **Connect > Analysis Services**.
-5. In Object Explorer, expand **Databases** and confirm the target SSAS database is visible.
-6. If the SSAS database is missing, ask your trainer for the deployed project name and deployment server.
-7. Expand the SSAS database and inspect:
-   - **Data Sources**
-   - **Data Source Views**
-   - **Cubes**
-   - **Dimensions**
-8. Right-click the target cube and open **Browse** to validate dimensional navigation.
-9. Test at least one business slice per task (for example Mine, Month, Commodity, or Department).
-10. Run MDX in an SSAS query window: **New Query > MDX**.
-11. Save each important query with meaningful names (for example `01-production-by-mine.mdx`).
-12. Capture evidence after each exercise:
-   - Query text
-   - Output grid screenshot
-   - One-sentence interpretation in business language
-13. If results look incorrect, run this troubleshooting chain:
-   - Check source table row counts in SQL Engine
-   - Confirm cube processing completed
-   - Validate dimension relationships and hierarchy levels
-   - Re-run the MDX with simpler axes first
-14. Before submission, record:
-   - What you tested
-   - What answer you obtained
-   - Why the answer is relevant to Assmang operations
-
+1. Open SSMS and connect to the **Database Engine** that hosts `AssmangMining`.
+2. Open the topic dataset script only if the lab requires a fresh load, then execute it and wait for a clean completion message in the Messages pane.
+8. Expand the SSAS database and inspect the cube, dimensions, and other objects so you know the metadata you are about to query.
+9. If you need to process objects, remember the project must already be deployed and the account must have SSAS admin rights plus read access to the relational source through the data source impersonation settings.
+16. Compare at least one SSAS result against the SQL baseline from the Database Engine connection.
+17. Save important queries with meaningful names so you can reuse them during assessments.
 ### SSMS Menu Path Quick Reference
 
 - Connect to SQL Engine: `File > Connect Object Explorer > Database Engine`
@@ -140,44 +128,30 @@ Use this exact sequence when completing the lab/exercises primarily in SSMS:
 
 Use this path when you are building and validating directly in Visual Studio with SSDT:
 
-1. Open Visual Studio and load your SSAS solution.
-2. In Solution Explorer, confirm these project objects exist and are not showing warning icons:
-   - Data Sources
-   - Data Source Views
-   - Dimensions
-   - Cubes
-3. Open Data Source and click Test Connection.
-4. Open Data Source View (DSV) and confirm all required tables are present and related correctly.
-5. For each required dimension in this topic:
-   - Open the dimension designer.
-   - Check KeyColumns and NameColumn.
-   - Confirm user hierarchies are logically ordered.
-6. Open the cube designer and verify:
-   - Correct measure groups
-   - Correct aggregation function per measure (SUM/AVG/etc.)
-   - Dimension usage relationships are correctly mapped
-7. Deploy configuration check:
-   - Right-click project > Properties
-   - Confirm Deployment Server, Database, and Processing Option
-8. Build the project: Build > Build Solution.
-9. Fix all build errors before deployment (do not ignore warnings related to key columns or relationships).
-10. Deploy: right-click project > Deploy.
-11. Process objects if prompted; if not prompted, run manual processing:
-   - Right-click SSAS database/cube in SSDT or SSMS > Process
-12. Validate in the cube browser:
-   - Drag at least one measure
-   - Slice by at least one hierarchy related to this exercise
-13. Open SSMS (Analysis Services connection) and run 1-2 MDX validation queries for the same result.
-14. Compare browser output vs MDX output; values should align.
-15. If values differ, troubleshoot in this order:
-   - Relationship mapping in Dimension Usage
-   - Measure aggregation type
-   - Processing freshness (reprocess impacted objects)
-   - Source data quality in SQL Engine tables
-16. Save evidence for each exercise:
-   - Build/deploy outcome
-   - Browser or MDX result
-   - Short interpretation in plain business language
+1. Open Visual Studio and load the SSAS solution for the topic.
+2. In Solution Explorer, confirm the expected SSAS folders exist and are not already showing warning icons.
+3. Open **Project Properties > Deployment** before changing design objects so you know which SSAS server and database you are targeting.
+4. Open the data source and click **Test Connection**.
+5. Confirm the data source points to the SQL Database Engine instance, not the SSAS instance.
+6. Review impersonation settings because successful deployment alone is not enough; processing also needs relational read access.
+7. Open the Data Source View and verify the required tables and joins for the topic are present.
+8. Rearrange the DSV if it is unreadable so you can actually inspect it during the exercise.
+9. Open each required dimension and review `KeyColumns`, `NameColumn`, visible attributes, and user hierarchies.
+10. If the topic involves cube work, open the cube designer and inspect structure, measure groups, calculations, and the **Dimension Usage** tab.
+11. Check aggregation behaviour for business measures instead of accepting every wizard default.
+12. Save changes before building.
+13. Run **Build > Build Solution** and read the Error List carefully.
+14. Fix build errors before deployment and do not ignore relationship or key warnings unless you can explain them.
+15. Deploy the project using **Right-click Project > Deploy**.
+16. Remember what Microsoft’s SSDT deployment guidance says: deployment builds the project, validates the destination server, and then creates or updates the SSAS database objects.
+17. After deployment, process the affected objects if prompted, or right-click the cube or database and choose **Process** manually.
+18. Review the processing dialog before clicking Run because high-level processing choices can affect multiple lower-level objects.
+19. Wait for processing to complete and read warnings, not just the success banner.
+20. Open the Browser tab and test at least one real business slice for the topic.
+21. Open SSMS against Analysis Services and run one or two MDX checks against the same cube output.
+22. Compare SSDT browser results, MDX results, and SQL baseline values.
+23. If results differ, troubleshoot in this order: source data, DSV relationships, dimension design, dimension usage, aggregation logic, then processing freshness.
+24. Save evidence for the exercise: build result, deployment result, process result, browser or MDX output, and one sentence explaining the business meaning.
 
 ### Visual Studio Menu Path Quick Reference
 
