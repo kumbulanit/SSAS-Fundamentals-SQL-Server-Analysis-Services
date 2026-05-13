@@ -5,6 +5,9 @@
 -- Validates: Production and Operating Costs fact tables through cube
 -- Cube: Assmang Mining Analytics
 -- Purpose: Verify production metrics, revenue, costs, and key measures
+--
+-- INSTRUCTIONS: Copy and paste ONE query at a time into SSMS and execute.
+-- Each query must be run separately (SSMS does not allow multiple MDX statements).
 -- ========================================================================
 
 -- ========================================================================
@@ -12,150 +15,163 @@
 -- Expected: Combined tonnes produced by all 5 mines for year 2023
 -- Beeshoek: ~3,708,000 tonnes | Khumani: ~5,520,000 tonnes | Black Rock: ~1,985,000 tonnes
 -- Dwarsrivier: ~1,287,000 tonnes | Machadodorp: ~1,016,000 tonnes | Total: ~13.5M
+-- Copy this entire SELECT block and run separately
 -- ========================================================================
-SELECT
-    [Measures].[Tonnes Produced] ON COLUMNS,
-    [Mine].[Mine Name].Members ON ROWS
-FROM [Assmang Mining Analytics]
-WHERE [Date].[Calendar Year].[2023];
+-- SELECT
+--     [Measures].[Tonnes Produced] ON COLUMNS,
+--     [Mine].[Mine Name].Members ON ROWS
+-- FROM [Assmang Mining Analytics]
+-- WHERE [Date].[Calendar Year].[2023];
 
 -- ========================================================================
 -- QUERY 2: Production by Mine Type - 2023
 -- Expected: Iron Ore, Manganese, Chrome production aggregated by mineral type
 -- Validates: Mine Type hierarchy rollup in dimensional structure
+-- Copy this entire SELECT block and run separately
 -- ========================================================================
-SELECT
-    [Measures].[Tonnes Produced] ON COLUMNS,
-    [Mine].[Mine Type].Members ON ROWS
-FROM [Assmang Mining Analytics]
-WHERE [Date].[Calendar Year].[2023];
+-- SELECT
+--     [Measures].[Tonnes Produced] ON COLUMNS,
+--     [Mine].[Mine Type].Members ON ROWS
+-- FROM [Assmang Mining Analytics]
+-- WHERE [Date].[Calendar Year].[2023];
 
 -- ========================================================================
 -- QUERY 3: Monthly Production Trend - Beeshoek Mine 2023
 -- Expected: 12 data points, showing seasonal variations
 -- Monthly average ~309,000 tonnes for Beeshoek
+-- Copy this entire SELECT block and run separately
 -- ========================================================================
-SELECT
-    [Measures].[Tonnes Produced] ON COLUMNS,
-    [Date].[Calendar Year].[2023].[Calendar Quarter].[Q1]:
-    [Date].[Calendar Year].[2023].[Calendar Quarter].[Q4] ON ROWS
-FROM [Assmang Mining Analytics]
-WHERE [Mine].[Mine Name].[Beeshoek Mine];
+-- SELECT
+--     [Measures].[Tonnes Produced] ON COLUMNS,
+--     [Date].[Calendar Year].[2023].[Calendar Quarter].[Q1]:
+--     [Date].[Calendar Year].[2023].[Calendar Quarter].[Q4] ON ROWS
+-- FROM [Assmang Mining Analytics]
+-- WHERE [Mine].[Mine Name].[Beeshoek Mine];
 
 -- ========================================================================
 -- QUERY 4: Average Grade Quality by Mine - 2023
 -- Expected: Iron Ore grade 62-68%, Manganese 48-51%, Chrome 45-48%
 -- Validates: Grade measure calculations across mining operations
+-- Copy this entire SELECT block and run separately
 -- ========================================================================
-SELECT
-    [Measures].[Average Grade] ON COLUMNS,
-    [Mine].[Mine Name].Members ON ROWS
-FROM [Assmang Mining Analytics]
-WHERE [Date].[Calendar Year].[2023];
+-- SELECT
+--     [Measures].[Average Grade] ON COLUMNS,
+--     [Mine].[Mine Name].Members ON ROWS
+-- FROM [Assmang Mining Analytics]
+-- WHERE [Date].[Calendar Year].[2023];
 
 -- ========================================================================
 -- QUERY 5: Total Revenue by Mine - 2023
 -- Expected: Revenue in ZAR for each mine
 -- Beeshoek: ~1.83B | Khumani: ~2.82B | Black Rock: ~1.22B
 -- Dwarsrivier: ~974M | Machadodorp: ~975M | Total: ~7.9B ZAR
+-- Copy this entire SELECT block and run separately
 -- ========================================================================
-SELECT
-    [Measures].[Revenue ZAR] ON COLUMNS,
-    [Mine].[Mine Name].Members ON ROWS
-FROM [Assmang Mining Analytics]
-WHERE [Date].[Calendar Year].[2023];
+-- SELECT
+--     [Measures].[Revenue ZAR] ON COLUMNS,
+--     [Mine].[Mine Name].Members ON ROWS
+-- FROM [Assmang Mining Analytics]
+-- WHERE [Date].[Calendar Year].[2023];
 
 -- ========================================================================
 -- QUERY 6: Cost Per Tonne Analysis - 2023
 -- Expected: Unit cost varies by mine (varies by commodity and efficiency)
 -- Iron Ore: ~600-700 ZAR/tonne | Manganese: ~1,100-1,200 | Chrome: ~1,200-1,300
+-- Copy this entire SELECT block and run separately
 -- ========================================================================
-SELECT
-    [Measures].[Average Cost Per Tonne] ON COLUMNS,
-    [Mine].[Mine Name].Members ON ROWS
-FROM [Assmang Mining Analytics]
-WHERE [Date].[Calendar Year].[2023];
+-- SELECT
+--     [Measures].[Average Cost Per Tonne] ON COLUMNS,
+--     [Mine].[Mine Name].Members ON ROWS
+-- FROM [Assmang Mining Analytics]
+-- WHERE [Date].[Calendar Year].[2023];
 
 -- ========================================================================
 -- QUERY 7: Operating Costs by Department - Beeshoek Mine 2023
 -- Expected: Distribution across Mining Operations, Engineering, Safety departments
 -- Mining Ops dominant cost (~70%), Engineering (~15%), Safety (~5%)
+-- Copy this entire SELECT block and run separately
 -- ========================================================================
-SELECT
-    [Department].[Department Name].Members ON COLUMNS,
-    [Measures].[Total Operating Cost] ON ROWS
-FROM [Assmang Mining Analytics]
-WHERE [Mine].[Mine Name].[Beeshoek Mine]
-AND [Date].[Calendar Year].[2023];
+-- SELECT
+--     [Department].[Department Name].Members ON COLUMNS,
+--     [Measures].[Total Operating Cost] ON ROWS
+-- FROM [Assmang Mining Analytics]
+-- WHERE [Mine].[Mine Name].[Beeshoek Mine]
+-- AND [Date].[Calendar Year].[2023];
 
 -- ========================================================================
 -- QUERY 8: Cost Breakdown by Category - All Mines 2023
 -- Expected: Labor, Equipment, Maintenance, Safety, Utilities, Other costs
 -- Labor typically largest (~45-50%), Equipment (~20-25%), Maintenance (~15%)
+-- Copy this entire SELECT block and run separately
 -- ========================================================================
-SELECT
-    {
-        [Measures].[Labor Cost],
-        [Measures].[Equipment Cost],
-        [Measures].[Maintenance Cost],
-        [Measures].[Safety Cost],
-        [Measures].[Utilities Cost],
-        [Measures].[Other Cost]
-    } ON COLUMNS,
-    [Mine].[Mine Name].Members ON ROWS
-FROM [Assmang Mining Analytics]
-WHERE [Date].[Calendar Year].[2023];
+-- SELECT
+--     {
+--         [Measures].[Labor Cost],
+--         [Measures].[Equipment Cost],
+--         [Measures].[Maintenance Cost],
+--         [Measures].[Safety Cost],
+--         [Measures].[Utilities Cost],
+--         [Measures].[Other Cost]
+--     } ON COLUMNS,
+--     [Mine].[Mine Name].Members ON ROWS
+-- FROM [Assmang Mining Analytics]
+-- WHERE [Date].[Calendar Year].[2023];
 
 -- ========================================================================
 -- QUERY 9: YTD Comparison 2023 vs 2024 Production
 -- Expected: Validates data loaded for both years
 -- 2023: Full year (12 months) | 2024: YTD partial (Jan-Mar only)
+-- Copy this entire SELECT block and run separately
 -- ========================================================================
-SELECT
-    [Date].[Calendar Year].Members ON COLUMNS,
-    [Measures].[Tonnes Produced] ON ROWS
-FROM [Assmang Mining Analytics]
-WHERE [Mine].[Mine Name].[Khumani Mine];
+-- SELECT
+--     [Date].[Calendar Year].Members ON COLUMNS,
+--     [Measures].[Tonnes Produced] ON ROWS
+-- FROM [Assmang Mining Analytics]
+-- WHERE [Mine].[Mine Name].[Khumani Mine];
 
 -- ========================================================================
 -- QUERY 10: Production Efficiency - Tonnes per Unit Cost
 -- Expected: Higher efficiency = more tonnes per ZAR spent
 -- Validates: Calculated measure showing productivity metrics
+-- Copy this entire SELECT block and run separately
 -- ========================================================================
-SELECT
-    [Measures].[Tonnes Produced] ON COLUMNS,
-    [Measures].[Total Operating Cost] ON COLUMNS,
-    [Mine].[Mine Name].Members ON ROWS
-FROM [Assmang Mining Analytics]
-WHERE [Date].[Calendar Year].[2023];
+-- SELECT
+--     [Measures].[Tonnes Produced] ON COLUMNS,
+--     [Measures].[Total Operating Cost] ON COLUMNS,
+--     [Mine].[Mine Name].Members ON ROWS
+-- FROM [Assmang Mining Analytics]
+-- WHERE [Date].[Calendar Year].[2023];
 
 -- ========================================================================
 -- QUERY 11: Quarterly Production Trend - All Mines 2023
 -- Expected: 4 quarters of data per mine
 -- Shows seasonal patterns: typically Q3-Q4 strongest, Q2-Q3 variable
+-- Copy this entire SELECT block and run separately
 -- ========================================================================
-SELECT
-    [Date].[Calendar Year].[2023].[Calendar Quarter].Members ON COLUMNS,
-    [Mine].[Mine Name].Members ON ROWS
-FROM [Assmang Mining Analytics]
-WHERE [Measures].[Tonnes Produced];
+-- SELECT
+--     [Date].[Calendar Year].[2023].[Calendar Quarter].Members ON COLUMNS,
+--     [Mine].[Mine Name].Members ON ROWS
+-- FROM [Assmang Mining Analytics]
+-- WHERE [Measures].[Tonnes Produced];
 
 -- ========================================================================
 -- QUERY 12: Department Cost Distribution Comparison - 2023
 -- Expected: Compare costs across all 6 departments
 -- Mining Operations highest (~70-75%), Engineering (~15%), other support (~10%)
+-- Copy this entire SELECT block and run separately
 -- ========================================================================
-SELECT
-    [Department].[Department Name].Members ON COLUMNS,
-    [Measures].[Total Operating Cost] ON ROWS
-FROM [Assmang Mining Analytics]
-WHERE [Date].[Calendar Year].[2023];
+-- SELECT
+--     [Department].[Department Name].Members ON COLUMNS,
+--     [Measures].[Total Operating Cost] ON ROWS
+-- FROM [Assmang Mining Analytics]
+-- WHERE [Date].[Calendar Year].[2023];
 
 -- ========================================================================
 -- SUMMARY VALIDATION QUERY - Fact Table Completeness
 -- ========================================================================
 -- Returns key metrics to validate FactProduction and FactOperatingCosts
 -- are properly loaded and aggregated in the cube
+-- Copy this entire SELECT block and run separately
 -- ========================================================================
 SELECT
     {
