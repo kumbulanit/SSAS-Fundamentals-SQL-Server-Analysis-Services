@@ -263,10 +263,17 @@ A: For a project the size of Assmang's training cube, this typically takes a few
 
 The following diagram shows how this topic fits into the bigger picture:
 
-```text
-COLUMNS: [Measures].[RevenueZAR]
-ROWS:    [Mine].[Mine Name].Members
-SLICER:  [Date].[Calendar Year].&[2024]
+```mermaid
+flowchart LR
+    A[MDX SELECT Statement] --> B[COLUMNS Axis]
+    A --> C[ROWS Axis]
+    A --> D[WHERE Slicer]
+    B --> E[Measures such as RevenueZAR]
+    C --> F[Dimension Members such as Mine]
+    D --> G[Filters such as Calendar Year 2024]
+    E --> H[Result Grid in SSMS]
+    F --> H
+    G --> H
 ```
 
 ### How to read this diagram
@@ -308,110 +315,66 @@ Here are the most important terms for this topic. Don't worry about memorising t
 
 ---
 
-## ✅ Best Practices for Beginners
 
-Follow these rules from Day 1 and your SSAS projects will be much more successful:
+## 🧭 Additional Diagrams
 
-
-### 1. Always start with a business question
-Before building anything technical, write down the question you're trying to answer. For example: "The CEO wants to see monthly revenue by mine for the last 2 years." This drives every design decision.
-
-### 2. Use clear, business-friendly names
-Don't name a dimension `Dim_001` or a measure `M_Rev`. Instead use `Mine` and `Revenue ZAR`. The people using your cube are not programmers — they need names that make instant sense.
-
-### 3. Keep it simple at first
-Start with 3-4 dimensions and 5-6 measures. You can always add more later. A simple cube that works is infinitely better than a complex cube that confuses everyone.
-
-### 4. Test with a real user
-After building your cube, sit down with a business user (not a developer) and ask them to find an answer. Watch where they get confused. Fix those areas.
-
-### 5. Document everything
-Write down what each measure means, what each KPI threshold is, and when data is refreshed. Six months from now, you (or your replacement) will thank yourself.
-
-### 6. Process and validate every time
-After any change to the cube, always process it AND check the results. An unprocessed cube looks fine in the designer but returns no data to users.
-
-### 7. Plan for growth
-Assmang's data will grow. Design your cube so that adding a new year of data or a new mine doesn't require rebuilding everything from scratch.
-
----
-
-## ⚠️ Common Mistakes (and How to Avoid Them)
-
-Every beginner makes some of these mistakes. Knowing about them in advance will save you hours of frustration:
-
-
-| # | Mistake | What goes wrong | How to prevent it |
-|---|---------|----------------|-------------------|
-| 1 | Building without a business question | You create objects nobody uses, wasting time and confusing users | Always start with: "What question am I answering?" |
-| 2 | Using technical names | Users see `Dim_Mine.MineID` instead of just "Mine" | Set display names in the dimension designer |
-| 3 | Forgetting to process | Cube deploys successfully but shows zero data | Always process after deployment and check results |
-| 4 | Summing percentages | Grade shows 340% because it summed 68% + 65% + 72% + 67% + 68% | Set aggregation to AVERAGE for ratios |
-| 5 | No hierarchies | Users must scroll through 730 individual dates instead of drilling Year > Month | Create hierarchies for every dimension where drill-down makes sense |
-| 6 | Not testing with business users | Cube works technically but nobody can use it | Demo to a non-technical user before promoting to production |
-| 7 | No documentation | Nobody knows what the KPI thresholds are or when data refreshes | Keep a living document with business rules and schedules |
-| 8 | Ignoring source data quality | Cube shows wrong totals because source data has duplicates or NULLs | Validate source data before cube processing |
-
----
-
-## ❓ Beginner FAQ
-
-### "Do I need to know how to program?"
-No. SSAS development uses mostly visual tools (drag and drop in SSDT). You will learn some MDX query syntax in Day 2, but it's much simpler than full programming.
-
-### "How is this different from a normal Excel report?"
-An Excel report shows you one fixed view of data. An SSAS cube lets you explore data from ANY angle — by mine, by month, by department, by commodity type — all without rebuilding the report. It's like the difference between a printed map and Google Maps.
-
-### "How long does it take to learn SSAS?"
-The basics (this 2-day course) will get you building and querying cubes. Becoming an expert takes months of practice, but you can be productive within days.
-
-### "What if I make a mistake?"
-SSAS is very forgiving during development. You can change dimensions, measures, and hierarchies as many times as you want before deploying to production. The dataset can be reloaded at any time.
-
-### "Who uses the cube after we build it?"
-Anyone with Excel or Power BI can connect to the cube and explore data. They don't need SSAS knowledge — they just use familiar tools (pivot tables, charts) that connect to the cube behind the scenes.
-
----
-
-## 📝 Topic Summary
-
-In this topic you learned about **MDX Query Fundamentals**.
-
-### Key takeaways:
-
-- ✅ Understand the structure of a basic MDX SELECT statement.
-- ✅ Work with measures, members, sets, tuples, and slicers.
-- ✅ Query the Assmang cube for common analytical views.
-- ✅ Recognise how MDX differs from SQL thinking.
-
-### What to do next:
-
-1. Complete the **practical lab** (guided, step-by-step) using dataset `v3_assmang_mining_complete.sql`
-2. Attempt the **later hands-on exercises** (independent practice)
-3. Complete the **assessment** to test your understanding
-4. Move on to the next topic when you feel confident
-
-### How to know you understand this topic:
-
-- You can explain the key concepts to a colleague in plain English
-- You can identify where this topic fits in the overall SSAS workflow
-- You can connect the concepts to a real Assmang business question
-- You completed the practical lab successfully
-
-## Visual Diagram
+### Diagram 1: MDX Query Anatomy
 
 ```mermaid
-flowchart TB
-	Q[MDX Query] --> C[Columns Axis\nMeasures]
-	Q --> R[Rows Axis\nMembers / Sets]
-	Q --> W[Where Clause\nSlicer Context]
-	C --> E[Cell Coordinates]
-	R --> E
-	W --> E
-	E --> O[Result Grid in SSMS / Excel]
+flowchart TD
+    A[SELECT] --> B[COLUMNS Axis]
+    A --> C[ROWS Axis]
+    A --> D[FROM Cube]
+    A --> E[WHERE Slicer]
 ```
 
----
+### Diagram 2: Context Evaluation
 
-*Assmang Pty Ltd — SSAS Fundamentals Training | Day 02*  
-*Course: SSAS100 | Level: Beginner | Topic: MDX Query Fundamentals*
+```mermaid
+flowchart LR
+    A[Current Member Context] --> B[Measure Evaluation]
+    B --> C[Cell Value]
+    D[Slicer/Filter Context] --> B
+```
+
+### Diagram 3: Reusable Query Patterns
+
+```mermaid
+graph TD
+    A[Basic tuple queries] --> B[Set-based rows]
+    B --> C[Crossjoin for multi-dimension views]
+    C --> D[Named sets and calculated members]
+```
+
+## 📌 Topic-Specific Summary
+
+This topic teaches cube interrogation. MDX fluency enables analysts to validate business logic, investigate anomalies, and build reusable analytical patterns beyond drag-and-drop reporting tools.
+
+MDX is often feared because of syntax, but at beginner level it is just a structured way to say: what number, by what rows, under what filter.
+
+## Deep Dive in Layman Terms
+
+Think of MDX as asking the cube a precise question:
+
+- COLUMNS = what numbers you want.
+- ROWS = how you want to list them.
+- WHERE = the filter context.
+
+Once this pattern is clear, most beginner MDX queries are small variations of the same idea.
+
+### Assmang-style example
+
+"Show Tonnes Produced by mine for 2024" becomes one MDX query. If the answer looks wrong, MDX helps you isolate whether the issue is the measure, the dimension member, or the year filter.
+
+### Clarity diagram: MDX thinking model
+
+```mermaid
+flowchart LR
+    A[Business Question] --> B[Map to COLUMNS]
+    A --> C[Map to ROWS]
+    A --> D[Map to WHERE]
+    B --> E[Execute MDX]
+    C --> E
+    D --> E
+    E --> F[Validate Result]
+```

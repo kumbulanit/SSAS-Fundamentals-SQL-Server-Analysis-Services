@@ -251,9 +251,15 @@ A: For a project the size of Assmang's training cube, this typically takes a few
 
 The following diagram shows how this topic fits into the bigger picture:
 
-```text
-Query Pattern -> Aggregation Match? -> Fast Response
-               -> No Match -> Detail Scan -> Slower Response
+```mermaid
+flowchart LR
+    A[Incoming Query Pattern] --> B{Aggregation Match}
+    B -->|Yes| C[Precalculated Aggregate Hit]
+    C --> D[Fast Response]
+    B -->|No| E[Detail-Level Scan]
+    E --> F[Slower Response]
+    D --> G[Monitoring and Tuning Feedback]
+    F --> G
 ```
 
 ### How to read this diagram
@@ -295,114 +301,68 @@ Here are the most important terms for this topic. Don't worry about memorising t
 
 ---
 
-## ✅ Best Practices for Beginners
 
-Follow these rules from Day 1 and your SSAS projects will be much more successful:
+## 🧭 Additional Diagrams
 
+### Diagram 1: Performance Levers
 
-### 1. Always start with a business question
-Before building anything technical, write down the question you're trying to answer. For example: "The CEO wants to see monthly revenue by mine for the last 2 years." This drives every design decision.
+```mermaid
+graph LR
+    A[Storage Mode] --> D[Query Performance]
+    B[Aggregations] --> D
+    C[Partitions] --> D
+    E[Cache Strategy] --> D
+```
 
-### 2. Use clear, business-friendly names
-Don't name a dimension `Dim_001` or a measure `M_Rev`. Instead use `Mine` and `Revenue ZAR`. The people using your cube are not programmers — they need names that make instant sense.
-
-### 3. Keep it simple at first
-Start with 3-4 dimensions and 5-6 measures. You can always add more later. A simple cube that works is infinitely better than a complex cube that confuses everyone.
-
-### 4. Test with a real user
-After building your cube, sit down with a business user (not a developer) and ask them to find an answer. Watch where they get confused. Fix those areas.
-
-### 5. Document everything
-Write down what each measure means, what each KPI threshold is, and when data is refreshed. Six months from now, you (or your replacement) will thank yourself.
-
-### 6. Process and validate every time
-After any change to the cube, always process it AND check the results. An unprocessed cube looks fine in the designer but returns no data to users.
-
-### 7. Plan for growth
-Assmang's data will grow. Design your cube so that adding a new year of data or a new mine doesn't require rebuilding everything from scratch.
-
----
-
-## ⚠️ Common Mistakes (and How to Avoid Them)
-
-Every beginner makes some of these mistakes. Knowing about them in advance will save you hours of frustration:
-
-
-| # | Mistake | What goes wrong | How to prevent it |
-|---|---------|----------------|-------------------|
-| 1 | Building without a business question | You create objects nobody uses, wasting time and confusing users | Always start with: "What question am I answering?" |
-| 2 | Using technical names | Users see `Dim_Mine.MineID` instead of just "Mine" | Set display names in the dimension designer |
-| 3 | Forgetting to process | Cube deploys successfully but shows zero data | Always process after deployment and check results |
-| 4 | Summing percentages | Grade shows 340% because it summed 68% + 65% + 72% + 67% + 68% | Set aggregation to AVERAGE for ratios |
-| 5 | No hierarchies | Users must scroll through 730 individual dates instead of drilling Year > Month | Create hierarchies for every dimension where drill-down makes sense |
-| 6 | Not testing with business users | Cube works technically but nobody can use it | Demo to a non-technical user before promoting to production |
-| 7 | No documentation | Nobody knows what the KPI thresholds are or when data refreshes | Keep a living document with business rules and schedules |
-| 8 | Ignoring source data quality | Cube shows wrong totals because source data has duplicates or NULLs | Validate source data before cube processing |
-
----
-
-## ❓ Beginner FAQ
-
-### "Do I need to know how to program?"
-No. SSAS development uses mostly visual tools (drag and drop in SSDT). You will learn some MDX query syntax in Day 2, but it's much simpler than full programming.
-
-### "How is this different from a normal Excel report?"
-An Excel report shows you one fixed view of data. An SSAS cube lets you explore data from ANY angle — by mine, by month, by department, by commodity type — all without rebuilding the report. It's like the difference between a printed map and Google Maps.
-
-### "How long does it take to learn SSAS?"
-The basics (this 2-day course) will get you building and querying cubes. Becoming an expert takes months of practice, but you can be productive within days.
-
-### "What if I make a mistake?"
-SSAS is very forgiving during development. You can change dimensions, measures, and hierarchies as many times as you want before deploying to production. The dataset can be reloaded at any time.
-
-### "Who uses the cube after we build it?"
-Anyone with Excel or Power BI can connect to the cube and explore data. They don't need SSAS knowledge — they just use familiar tools (pivot tables, charts) that connect to the cube behind the scenes.
-
----
-
-## 📝 Topic Summary
-
-In this topic you learned about **Performance Tuning and Optimization**.
-
-### Key takeaways:
-
-- ✅ Understand how storage mode and aggregation design affect performance.
-- ✅ Recognise common causes of slow cube queries.
-- ✅ Understand partitioning and caching at a beginner level.
-- ✅ Apply practical optimisation decisions in an Assmang reporting context.
-
-### What to do next:
-
-1. Complete the **practical lab** (guided, step-by-step) using dataset `v3_assmang_mining_complete.sql`
-2. Attempt the **later hands-on exercises** (independent practice)
-3. Complete the **assessment** to test your understanding
-4. Move on to the next topic when you feel confident
-
-### How to know you understand this topic:
-
-- You can explain the key concepts to a colleague in plain English
-- You can identify where this topic fits in the overall SSAS workflow
-- You can connect the concepts to a real Assmang business question
-- You completed the practical lab successfully
-
-## Visual Diagram
+### Diagram 2: Partitioning Strategy
 
 ```mermaid
 flowchart TD
-    S[Workload Pattern] --> D1{Need fastest query speed?}
-    D1 -->|Yes| M[MOLAP]
-    D1 -->|No| D2{Need near real-time data?}
-    D2 -->|Yes| R[ROLAP]
-    D2 -->|Balanced| H[HOLAP]
-
-    M --> A[Aggregation Design]
-    R --> A
-    H --> A
-    A --> P[Partition Strategy]
-    P --> C[Cache Warmup and Query Validation]
+    A[FactProduction] --> B[Partition by Year]
+    B --> C[2023]
+    B --> D[2024]
+    B --> E[2025]
 ```
 
----
+### Diagram 3: Tuning Workflow
 
-*Assmang Pty Ltd — SSAS Fundamentals Training | Day 02*  
-*Course: SSAS100 | Level: Beginner | Topic: Performance Tuning and Optimization*
+```mermaid
+flowchart LR
+    A[Capture baseline query times] --> B[Apply one optimization]
+    B --> C[Reprocess affected objects]
+    C --> D[Rerun benchmark queries]
+    D --> E[Keep or rollback change]
+```
+
+## 📌 Topic-Specific Summary
+
+This topic focuses on measurable optimisation. Effective tuning requires baseline evidence, isolated changes, and before/after benchmarking to avoid introducing performance regressions.
+
+The practical mindset here is scientific: measure first, change one thing, measure again. Never tune by guessing.
+
+## Deep Dive in Layman Terms
+
+Performance is not one switch. It is the combined result of storage choices, aggregations, partitions, and cache behavior.
+
+For beginners, the safe order is:
+
+1. Identify slow queries.
+2. Confirm whether slowness is from detail scans or model design.
+3. Apply one optimization at a time.
+4. Re-test with the same query set.
+
+### Assmang-style example
+
+If monthly executive dashboards are slow every Monday morning, warm-up strategy and aggregation design can reduce queue time significantly without changing report layout.
+
+### Clarity diagram: Safe tuning loop
+
+```mermaid
+flowchart TD
+    A[Capture Baseline] --> B[Apply One Change]
+    B --> C[Reprocess]
+    C --> D[Retest Same Workload]
+    D --> E{Improved?}
+    E -->|Yes| F[Keep Change]
+    E -->|No| G[Rollback and Try Next]
+```
