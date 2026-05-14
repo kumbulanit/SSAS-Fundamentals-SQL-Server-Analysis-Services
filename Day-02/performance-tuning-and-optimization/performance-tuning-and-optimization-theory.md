@@ -365,102 +365,75 @@ Improvement: 100x faster
 
 **Lesson:** Pre-calculated aggregations are everything. Without them, cubes are slow. With them, cubes are instant.
 
-**Q: Do I need to be a programmer to understand aggregation design?**  
-A: No. This concept is about business logic and design thinking. The tools (SSDT) provide visual interfaces for most of the work.
-
-**Q: What happens if we get aggregation design wrong?**  
-A: The cube will still work technically, but users may get confusing results, slow performance, or missing data. That's why we follow best practices from the start.
-
-**Q: How long does it take to set up aggregation design for a real project?**  
-A: For a project the size of Assmang's training cube, this typically takes a few hours of design work plus a few hours of implementation and testing.
-
 ---
 
 ## 3. Partitioning and scalability
 
-### 💬 In plain English
+A partition is a physical subdivision of a measure group's data. SSAS processes partitions independently, which becomes very valuable for large datasets like Assmang's multi-year production history.
 
-Let's break down **partitioning and scalability** in the simplest possible terms:
+### Why partitions matter
 
-**→** Large fact data can be partitioned by time or business area.
+Without partitions, processing Assmang's 3-year production history every night means re-loading ALL data: 2022, 2023, and 2024. With year-based partitions:
+- Processing only the **2024 partition** takes about one-third the time
+- The **2022 and 2023 partitions** stay untouched and available to users during the nightly refresh
 
-**→** Partitioning supports manageability, faster processing windows, and targeted optimisation.
+### Practical partitioning plan for Assmang
 
-### 📚 Detailed explanation
+| Partition name | Data slice | Process frequency | Typical time |
+|---------------|-----------|-------------------|--------------|
+| FactProduction_2022 | Date year = 2022 | Monthly (rarely changes) | ~15 min |
+| FactProduction_2023 | Date year = 2023 | Weekly | ~20 min |
+| FactProduction_2024 | Date year = 2024 | Nightly | ~8 min |
 
-This concept is important because it directly affects how well the cube works for business users. Here is a deeper look:
+**Result:** Nightly processing window drops from 43+ minutes to ~8 minutes.
 
+### How to create a partition in SSDT
 
-**Point 1: Large fact data can be partitioned by time or business area.**
+1. In the cube designer, click the **Measure Groups** area and find the measure group you want to partition
+2. Right-click the measure group → **Partitions**
+3. Click **New Partition**
+4. In the Source binding, set the **Slice** property to restrict which data this partition holds — e.g. `[Date].[Calendar Year].&[2024]`
+5. Name the partition clearly: `FactProduction_2024`
+6. To process only one partition: right-click it → **Process Partition** → **Process Full**
 
-What this means in practice: When you apply this at Assmang, it means that large fact data can be partitioned by time or business area. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-**Point 2: Partitioning supports manageability, faster processing windows, and targeted optimisation.**
-
-What this means in practice: When you apply this at Assmang, it means that partitioning supports manageability, faster processing windows, and targeted optimisation. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-
-### 🏭 Assmang scenario
-
-**Situation:** A production manager at Khumani Mine asks: "Can I see this month's iron ore output compared to last month, broken down by shift?"
-
-**How partitioning and scalability helps:** Because the cube already has the right structure (dimensions for time and mine, measures for production), this question can be answered in seconds using Excel or Power BI — no SQL coding needed, no waiting for IT.
-
-
-### ❓ Frequently Asked Questions
-
-**Q: Do I need to be a programmer to understand partitioning and scalability?**  
-A: No. This concept is about business logic and design thinking. The tools (SSDT) provide visual interfaces for most of the work.
-
-**Q: What happens if we get partitioning and scalability wrong?**  
-A: The cube will still work technically, but users may get confusing results, slow performance, or missing data. That's why we follow best practices from the start.
-
-**Q: How long does it take to set up partitioning and scalability for a real project?**  
-A: For a project the size of Assmang's training cube, this typically takes a few hours of design work plus a few hours of implementation and testing.
+> ⚠️ **The Slice property is critical:** SSAS uses Slice to skip partitions that cannot contain the answer to a query. If Slice is missing or wrong, SSAS scans ALL partitions — your processing wins, but your query speed gains disappear entirely.
 
 ---
 
-## 4. Caching and practical tuning
+## 4. Caching and practical tuning steps
 
-### 💬 In plain English
+SSAS has a built-in memory cache that stores recent query results automatically. You do not configure the cache manually — but you can take actions that improve how effectively it works.
 
-Let's break down **caching and practical tuning** in the simplest possible terms:
+### The four practical tuning steps for beginners
 
-**→** Repeated queries can benefit from cache reuse.
+**Step 1: Run the Aggregation Design Wizard after your first full process**
 
-**→** Good dimension design, clean hierarchies, and sensible calculations all contribute to better performance.
+After processing the cube for the first time, go to: SSDT → Cube designer → **Aggregations** tab → **Design Aggregations**. Start with **30% storage** as the recommended setting. This covers most common query patterns without wasting excessive disk space.
 
-### 📚 Detailed explanation
+**Step 2: Keep calculations simple**
 
-This concept is important because it directly affects how well the cube works for business users. Here is a deeper look:
+Calculated measures that use `NonEmpty`, large `CrossJoin` sets, or nested IIF expressions slow down every query that involves them. Where possible, pre-aggregate in the SQL Server ETL layer rather than in MDX calculations.
 
+**Step 3: Use a benchmark query to measure before and after**
 
-**Point 1: Repeated queries can benefit from cache reuse.**
+Before and after any change, run this baseline query in SSMS to compare timing:
 
-What this means in practice: When you apply this at Assmang, it means that repeated queries can benefit from cache reuse. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
+```sql
+-- In SSMS connected to Analysis Services
+SELECT
+    { [Measures].[Tonnes Produced], [Measures].[Cost Per Tonne] } ON COLUMNS,
+    [Mine].[Mine Name].Members ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE ([Date].[Calendar].[Calendar Year].&[2024])
+```
 
-**Point 2: Good dimension design, clean hierarchies, and sensible calculations all contribute to better performance.**
+A well-tuned Assmang cube should return this query in under 1 second. Record the time before and after each tuning action.
 
-What this means in practice: When you apply this at Assmang, it means that good dimension design, clean hierarchies, and sensible calculations all contribute to better performance. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
+**Step 4: Pre-warm the cache before peak hours (optional)**
 
+For scheduled dashboards that run at 08:00, consider running the above benchmark query at 07:55. This pre-loads the most common aggregations into memory before users connect.
 
-### 🏭 Assmang scenario
-
-**Situation:** A production manager at Khumani Mine asks: "Can I see this month's iron ore output compared to last month, broken down by shift?"
-
-**How caching and practical tuning helps:** Because the cube already has the right structure (dimensions for time and mine, measures for production), this question can be answered in seconds using Excel or Power BI — no SQL coding needed, no waiting for IT.
-
-
-### ❓ Frequently Asked Questions
-
-**Q: Do I need to be a programmer to understand caching and practical tuning?**  
-A: No. This concept is about business logic and design thinking. The tools (SSDT) provide visual interfaces for most of the work.
-
-**Q: What happens if we get caching and practical tuning wrong?**  
-A: The cube will still work technically, but users may get confusing results, slow performance, or missing data. That's why we follow best practices from the start.
-
-**Q: How long does it take to set up caching and practical tuning for a real project?**  
-A: For a project the size of Assmang's training cube, this typically takes a few hours of design work plus a few hours of implementation and testing.
+> ℹ️ **Normal behaviour:** The first query after processing is always slower (cold cache). Subsequent identical or similar queries are much faster (warm cache). This is expected — it is not a bug.
 
 ---
 
@@ -487,37 +460,9 @@ flowchart LR
 
 ### Why this matters
 
-Without SSAS (the middle layer), every time a manager wants an answer, someone has to write SQL code against the raw database. With SSAS, the analytical structure is pre-built, so users can explore data independently using familiar tools like Excel.
+Without performance tuning, a cube that works fine in development can become unacceptably slow in production. A morning executive dashboard that takes 2 minutes to load instead of 2 seconds erodes trust in the analytics platform. Users stop relying on it and revert to manual Excel files — defeating the purpose of building the cube.
 
 ---
-
-## 📖 Key Terminology Reference
-
-Here are the most important terms for this topic. Don't worry about memorising them all — you will learn them naturally through practice:
-
-
-| Term | Plain English Definition | Example at Assmang |
-|------|------------------------|-------------------|
-| **Cube** | A pre-built analytical structure that lets users explore data from many angles | The "Assmang Mining Analytics" cube containing all production and cost data |
-| **Dimension** | A category you use to slice data (like filters in Excel) | Mine, Date, Department, Employee — these are the "by what" categories |
-| **Hierarchy** | A drill-down path from general to specific | Year → Quarter → Month → Day (time hierarchy) |
-| **Member** | One specific value within a dimension | "Beeshoek Mine" is a member of the Mine dimension |
-| **Measure** | A number you want to analyse | Tonnes Produced, Revenue in ZAR, Cost Per Tonne |
-| **Measure Group** | A collection of related measures from one business area | Production Measures (tonnes + grade + revenue) |
-| **Fact Table** | The database table that stores the raw numbers | FactProduction, FactOperatingCosts |
-| **Processing** | Loading data into the cube and building pre-calculated summaries | Running a nightly job that refreshes yesterday's production data |
-| **Aggregation** | A pre-calculated total or average stored for speed | Total tonnes per mine per month (calculated once, queried many times) |
-| **MDX** | The query language used to ask questions of a cube | Similar to SQL, but designed for multidimensional analysis |
-| **MOLAP** | Storage mode where data is stored inside the cube for maximum speed | Default choice for Assmang — gives sub-second query times |
-| **ROLAP** | Storage mode where data stays in SQL Server (slower but always fresh) | Used when real-time data is more important than speed |
-| **KPI** | A traffic-light indicator showing whether a target is being met | Production KPI: Green if >= 90% of target, Red if < 70% |
-| **SSDT** | SQL Server Data Tools — the IDE where you design and build cubes | Visual Studio with the SSAS project templates |
-| **SSMS** | SQL Server Management Studio — for administration and testing | Where you deploy cubes and run MDX queries |
-| **Data Source View (DSV)** | A logical view of which database tables the cube uses | Selecting Dim_Mine, Dim_Date, FactProduction for inclusion |
-| **Deployment** | Pushing your cube design from your computer to the SSAS server | Like publishing a website — makes it available to users |
-
----
-
 
 ## 🧭 Additional Diagrams
 

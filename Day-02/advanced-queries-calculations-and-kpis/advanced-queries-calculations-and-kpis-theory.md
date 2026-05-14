@@ -434,95 +434,84 @@ END
 
 ## 3. KPIs in SSAS
 
-### 💬 In plain English
+A KPI (Key Performance Indicator) in SSAS is different from a simple measure. A measure gives you a number. A KPI tells you whether that number is **good, warning, or bad** relative to a target.
 
-Let's break down **kpis in ssas** in the simplest possible terms:
+### The four parts of a KPI
 
-**→** A KPI combines value, goal, status, and often trend.
+| Part | What it contains | Example at Assmang |
+|------|-----------------|-------------------|
+| **Value** | The actual measure | `[Measures].[Tonnes Produced]` |
+| **Goal** | The target to compare against | `[Measures].[Production Target]` |
+| **Status** | -1 (bad), 0 (warning), 1 (good) based on a CASE WHEN expression | Result of comparing Value to Goal |
+| **Trend** | Direction of change (improving / declining) | Comparison of current vs. prior period |
 
-**→** At Assmang, KPIs can be created for safety score, production target attainment, or cost control.
+### The KPI Status Expression — what beginners always get wrong
 
-**→** KPIs help executives consume analytics visually and consistently.
+The Status Expression must return exactly **-1, 0, or 1**. Do NOT return text like "Green" or "Red" — SSAS requires numeric status values; text will cause an error.
 
-### 📚 Detailed explanation
+```mdx
+-- Correct KPI Status Expression for Production Attainment
+CASE
+    WHEN [Measures].[Production Target] = 0 THEN 0
+    WHEN [Measures].[Tonnes Produced] / [Measures].[Production Target] >= 0.9 THEN 1
+    WHEN [Measures].[Tonnes Produced] / [Measures].[Production Target] >= 0.7 THEN 0
+    ELSE -1
+END
+```
 
-This concept is important because it directly affects how well the cube works for business users. Here is a deeper look:
+> ⚠️ **Division by zero:** Always check for a zero target before dividing. If `[Measures].[Production Target]` is 0, the expression will throw a division-by-zero error. The CASE statement above handles this by returning 0 (warning) when the target is missing.
 
+### Three KPIs Assmang would use in production
 
-**Point 1: A KPI combines value, goal, status, and often trend.**
-
-What this means in practice: When you apply this at Assmang, it means that a kpi combines value, goal, status, and often trend. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-**Point 2: At Assmang, KPIs can be created for safety score, production target attainment, or cost control.**
-
-What this means in practice: When you apply this at Assmang, it means that at assmang, kpis can be created for safety score, production target attainment, or cost control. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-**Point 3: KPIs help executives consume analytics visually and consistently.**
-
-What this means in practice: When you apply this at Assmang, it means that kpis help executives consume analytics visually and consistently. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-
-### 🏭 Assmang scenario
-
-**Situation:** A production manager at Khumani Mine asks: "Can I see this month's iron ore output compared to last month, broken down by shift?"
-
-**How kpis in ssas helps:** Because the cube already has the right structure (dimensions for time and mine, measures for production), this question can be answered in seconds using Excel or Power BI — no SQL coding needed, no waiting for IT.
-
-
-### ❓ Frequently Asked Questions
-
-**Q: Do I need to be a programmer to understand kpis in ssas?**  
-A: No. This concept is about business logic and design thinking. The tools (SSDT) provide visual interfaces for most of the work.
-
-**Q: What happens if we get kpis in ssas wrong?**  
-A: The cube will still work technically, but users may get confusing results, slow performance, or missing data. That's why we follow best practices from the start.
-
-**Q: How long does it take to set up kpis in ssas for a real project?**  
-A: For a project the size of Assmang's training cube, this typically takes a few hours of design work plus a few hours of implementation and testing.
+| KPI Name | Business Question | Green (1) | Warning (0) | Red (-1) |
+|----------|------------------|-----------|-------------|----------|
+| **Production Attainment** | Did we hit our tonne target? | ≥ 90% of target | 70–89% | < 70% |
+| **Cost Efficiency** | Is cost per tonne acceptable? | ≤ R 380/t | R 381–420/t | > R 420/t |
+| **Safety Compliance** | Did we achieve required incident-free hours? | ≥ 95% score | 80–94% | < 80% |
 
 ---
 
-## 4. Time-based logic
+## 4. Time-based calculations
 
-### 💬 In plain English
+Time-based calculations are the most commonly requested MDX calculations. They answer one question: "compared to when?"
 
-Let's break down **time-based logic** in the simplest possible terms:
+### The four time-based patterns you will use most
 
-**→** MDX calculations often compare current month to previous month, current year to previous year, or actual to target.
+| Pattern | Business question | MDX function used |
+|---------|-------------------|-------------------|
+| **Previous period** | What was last month's value? | `ParallelPeriod()` |
+| **Period-to-date** | What is the cumulative total from Jan 1? | `YTD()` |
+| **Month-over-month change** | How much did we change vs. last month? | Subtraction using `ParallelPeriod` |
+| **% attainment** | Are we on target? | Division: Actual ÷ Target × 100 |
 
-**→** This is where clean date hierarchies become especially valuable.
+### ParallelPeriod — the workhorse of time intelligence
 
-### 📚 Detailed explanation
+`ParallelPeriod()` moves the calculation context back by a given number of periods. Here is how to create a "Previous Month" calculated measure:
 
-This concept is important because it directly affects how well the cube works for business users. Here is a deeper look:
+```mdx
+-- Previous month tonnes (as a calculated measure in SSDT)
+CREATE MEMBER CURRENTCUBE.[Measures].[Tonnes Prior Month]
+AS
+    (
+        [Measures].[Tonnes Produced],
+        ParallelPeriod([Date].[Calendar].[Calendar Month], 1, [Date].[Calendar].CurrentMember)
+    ),
+FORMAT_STRING = "#,##0",
+VISIBLE = 1;
+```
 
+### Year-to-date total
 
-**Point 1: MDX calculations often compare current month to previous month, current year to previous year, or actual to target.**
+```mdx
+-- YTD Production (cumulative total from January to the current month)
+CREATE MEMBER CURRENTCUBE.[Measures].[YTD Tonnes]
+AS
+    SUM(YTD(), [Measures].[Tonnes Produced]),
+FORMAT_STRING = "#,##0",
+VISIBLE = 1;
+```
 
-What this means in practice: When you apply this at Assmang, it means that mdx calculations often compare current month to previous month, current year to previous year, or actual to target. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-**Point 2: This is where clean date hierarchies become especially valuable.**
-
-What this means in practice: When you apply this at Assmang, it means that this is where clean date hierarchies become especially valuable. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-
-### 🏭 Assmang scenario
-
-**Situation:** A production manager at Khumani Mine asks: "Can I see this month's iron ore output compared to last month, broken down by shift?"
-
-**How time-based logic helps:** Because the cube already has the right structure (dimensions for time and mine, measures for production), this question can be answered in seconds using Excel or Power BI — no SQL coding needed, no waiting for IT.
-
-
-### ❓ Frequently Asked Questions
-
-**Q: Do I need to be a programmer to understand time-based logic?**  
-A: No. This concept is about business logic and design thinking. The tools (SSDT) provide visual interfaces for most of the work.
-
-**Q: What happens if we get time-based logic wrong?**  
-A: The cube will still work technically, but users may get confusing results, slow performance, or missing data. That's why we follow best practices from the start.
-
-**Q: How long does it take to set up time-based logic for a real project?**  
-A: For a project the size of Assmang's training cube, this typically takes a few hours of design work plus a few hours of implementation and testing.
+> ℹ️ **Why clean date hierarchies matter:** `ParallelPeriod` and `YTD` only work correctly when your Date dimension has a proper Year → Quarter → Month hierarchy with correct attribute relationships. If any level is missing or the relationships are wrong, these functions produce incorrect results or throw errors.
 
 ---
 
@@ -547,37 +536,9 @@ flowchart LR
 
 ### Why this matters
 
-Without SSAS (the middle layer), every time a manager wants an answer, someone has to write SQL code against the raw database. With SSAS, the analytical structure is pre-built, so users can explore data independently using familiar tools like Excel.
+Without calculated measures and KPIs, a cube is just a collection of raw totals. Business users need derived context — cost per tonne, percentage attainment, trend direction — not just raw sums. This layer converts SSAS from a data store into a decision-support tool that speaks management language.
 
 ---
-
-## 📖 Key Terminology Reference
-
-Here are the most important terms for this topic. Don't worry about memorising them all — you will learn them naturally through practice:
-
-
-| Term | Plain English Definition | Example at Assmang |
-|------|------------------------|-------------------|
-| **Cube** | A pre-built analytical structure that lets users explore data from many angles | The "Assmang Mining Analytics" cube containing all production and cost data |
-| **Dimension** | A category you use to slice data (like filters in Excel) | Mine, Date, Department, Employee — these are the "by what" categories |
-| **Hierarchy** | A drill-down path from general to specific | Year → Quarter → Month → Day (time hierarchy) |
-| **Member** | One specific value within a dimension | "Beeshoek Mine" is a member of the Mine dimension |
-| **Measure** | A number you want to analyse | Tonnes Produced, Revenue in ZAR, Cost Per Tonne |
-| **Measure Group** | A collection of related measures from one business area | Production Measures (tonnes + grade + revenue) |
-| **Fact Table** | The database table that stores the raw numbers | FactProduction, FactOperatingCosts |
-| **Processing** | Loading data into the cube and building pre-calculated summaries | Running a nightly job that refreshes yesterday's production data |
-| **Aggregation** | A pre-calculated total or average stored for speed | Total tonnes per mine per month (calculated once, queried many times) |
-| **MDX** | The query language used to ask questions of a cube | Similar to SQL, but designed for multidimensional analysis |
-| **MOLAP** | Storage mode where data is stored inside the cube for maximum speed | Default choice for Assmang — gives sub-second query times |
-| **ROLAP** | Storage mode where data stays in SQL Server (slower but always fresh) | Used when real-time data is more important than speed |
-| **KPI** | A traffic-light indicator showing whether a target is being met | Production KPI: Green if >= 90% of target, Red if < 70% |
-| **SSDT** | SQL Server Data Tools — the IDE where you design and build cubes | Visual Studio with the SSAS project templates |
-| **SSMS** | SQL Server Management Studio — for administration and testing | Where you deploy cubes and run MDX queries |
-| **Data Source View (DSV)** | A logical view of which database tables the cube uses | Selecting Dim_Mine, Dim_Date, FactProduction for inclusion |
-| **Deployment** | Pushing your cube design from your computer to the SSAS server | Like publishing a website — makes it available to users |
-
----
-
 
 ## 🧭 Additional Diagrams
 

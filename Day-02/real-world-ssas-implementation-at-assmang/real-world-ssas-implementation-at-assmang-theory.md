@@ -376,119 +376,75 @@ STEP 11: Nightly Cube Auto-Updates
 
 **Result:** Data democratization achieved. No SQL queries, no IT requests, instant answers to business questions.
 
-**How target cube design helps:** Because the cube already has the right structure (dimensions for time and mine, measures for production), this question can be answered in seconds using Excel or Power BI — no SQL coding needed, no waiting for IT.
-
-
-### ❓ Frequently Asked Questions
-
-**Q: Do I need to be a programmer to understand target cube design?**  
-A: No. This concept is about business logic and design thinking. The tools (SSDT) provide visual interfaces for most of the work.
-
-**Q: What happens if we get target cube design wrong?**  
-A: The cube will still work technically, but users may get confusing results, slow performance, or missing data. That's why we follow best practices from the start.
-
-**Q: How long does it take to set up target cube design for a real project?**  
-A: For a project the size of Assmang's training cube, this typically takes a few hours of design work plus a few hours of implementation and testing.
-
 ---
 
-## 3. Integration and consumption
+## 3. Connecting client tools to your Assmang cube
 
-### 💬 In plain English
+Once the cube is deployed and processed, three client tools can connect to it. Each serves a different audience.
 
-Let's break down **integration and consumption** in the simplest possible terms:
+### Connecting Excel (for analysts and self-service users)
 
-**→** Excel is useful for analysts and pivot-based exploration.
+1. Open Excel → **Data** tab → **Get Data** → **From Database** → **From Analysis Services**
+2. Server name: your SSAS server (e.g., `LOCALHOST` or `SERVERNAME\SSAS`)
+3. Database: `Assmang Mining Analytics`
+4. Click **Next** → select the cube → **Finish**
+5. Choose **PivotTable** — you now have a live pivot table backed by the cube
 
-**→** Power BI can consume SSAS live for dashboarding.
+**What Excel users can do:** Drag measures into Values, dimension attributes into Rows/Columns/Filters, and drill into hierarchies using the (+) expand button.
 
-**→** SSMS and MDX remain valuable for admin testing and technical validation.
+### Connecting Power BI (for dashboards and sharing)
 
-### 📚 Detailed explanation
+1. Open Power BI Desktop → **Get Data** → **Analysis Services**
+2. Server: your SSAS server address
+3. Choose **Connect live** — do NOT use Import mode (Import breaks the real-time connection)
+4. Select the cube → drag the measures and dimensions you need onto the report canvas
 
-This concept is important because it directly affects how well the cube works for business users. Here is a deeper look:
+> ⚠️ **Live connection means cube security applies:** Power BI users only see what their cube role permits. If you have set up a "Mine Managers" role that restricts to one mine, Power BI users in that role will only see that mine's data — even in Power BI.
 
+### Using SSMS for administration and validation
 
-**Point 1: Excel is useful for analysts and pivot-based exploration.**
+SSMS is the correct tool for developers and administrators, not for end users:
+- Browse dimension members to confirm what data is in the cube
+- Run MDX queries to spot-check measure values against SQL baseline
+- View processing status and the timestamp of the last successful process
+- Manage roles and review security assignments
 
-What this means in practice: When you apply this at Assmang, it means that excel is useful for analysts and pivot-based exploration. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-**Point 2: Power BI can consume SSAS live for dashboarding.**
-
-What this means in practice: When you apply this at Assmang, it means that power bi can consume ssas live for dashboarding. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-**Point 3: SSMS and MDX remain valuable for admin testing and technical validation.**
-
-What this means in practice: When you apply this at Assmang, it means that ssms and mdx remain valuable for admin testing and technical validation. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-
-### 🏭 Assmang scenario
-
-**Situation:** A production manager at Khumani Mine asks: "Can I see this month's iron ore output compared to last month, broken down by shift?"
-
-**How integration and consumption helps:** Because the cube already has the right structure (dimensions for time and mine, measures for production), this question can be answered in seconds using Excel or Power BI — no SQL coding needed, no waiting for IT.
-
-
-### ❓ Frequently Asked Questions
-
-**Q: Do I need to be a programmer to understand integration and consumption?**  
-A: No. This concept is about business logic and design thinking. The tools (SSDT) provide visual interfaces for most of the work.
-
-**Q: What happens if we get integration and consumption wrong?**  
-A: The cube will still work technically, but users may get confusing results, slow performance, or missing data. That's why we follow best practices from the start.
-
-**Q: How long does it take to set up integration and consumption for a real project?**  
-A: For a project the size of Assmang's training cube, this typically takes a few hours of design work plus a few hours of implementation and testing.
+> ℹ️ **When to use which tool:** Excel for business user self-service analysis. Power BI for shared dashboards with managed refresh. SSMS for cube developers testing and administering the model.
 
 ---
 
 ## 4. Operations and maintenance
 
-### 💬 In plain English
+A deployed cube is not a one-time task. It is an operational service that needs ongoing attention.
 
-Let's break down **operations and maintenance** in the simplest possible terms:
+### The nightly processing workflow at Assmang
 
-**→** Plan processing windows, environment promotion, backup, and documentation.
+```
+06:00  ETL job loads yesterday's production data into SQL Server warehouse
+06:45  ETL completes — warehouse tables are fully updated
+07:00  SSAS SQL Server Agent job triggers: Process Update on all partitions
+07:25  Processing completes — cube is now current
+07:30  Business users arrive and query up-to-date data
+```
 
-**→** Monitor slow queries, aggregation effectiveness, and business definition changes over time.
+> ⚠️ **Stale data risk:** If processing fails at 07:00, users at 07:30 will query the previous night's data. They will not know this unless monitoring alerts fire. Silent failures are the most dangerous operational failure mode.
 
-**→** Treat SSAS as a governed semantic layer, not just a technical object.
+### Five operational tasks to set up
 
-### 📚 Detailed explanation
+| Task | How to implement | Why it matters |
+|------|-----------------|----------------|
+| **Schedule nightly processing** | SQL Server Agent job → SSAS XMLA ProcessUpdate command | Keeps cube data fresh without manual action |
+| **Email alerts on failure** | SQL Server Agent job → Notifications tab → email on failure | You know immediately when processing breaks |
+| **Daily backup** | SQL Server Agent → back up the SSAS `.abf` file | Restore capability if the cube database is corrupted |
+| **Validation query after processing** | Run baseline MDX query in Agent job after process step | Confirms cube is responsive before users arrive |
+| **Change documentation** | Maintain a measure definition register | Prevents "what does this number mean?" disagreements |
 
-This concept is important because it directly affects how well the cube works for business users. Here is a deeper look:
+### Common operational mistakes beginners make
 
-
-**Point 1: Plan processing windows, environment promotion, backup, and documentation.**
-
-What this means in practice: When you apply this at Assmang, it means that plan processing windows, environment promotion, backup, and documentation. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-**Point 2: Monitor slow queries, aggregation effectiveness, and business definition changes over time.**
-
-What this means in practice: When you apply this at Assmang, it means that monitor slow queries, aggregation effectiveness, and business definition changes over time. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-**Point 3: Treat SSAS as a governed semantic layer, not just a technical object.**
-
-What this means in practice: When you apply this at Assmang, it means that treat ssas as a governed semantic layer, not just a technical object. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-
-### 🏭 Assmang scenario
-
-**Situation:** A production manager at Khumani Mine asks: "Can I see this month's iron ore output compared to last month, broken down by shift?"
-
-**How operations and maintenance helps:** Because the cube already has the right structure (dimensions for time and mine, measures for production), this question can be answered in seconds using Excel or Power BI — no SQL coding needed, no waiting for IT.
-
-
-### ❓ Frequently Asked Questions
-
-**Q: Do I need to be a programmer to understand operations and maintenance?**  
-A: No. This concept is about business logic and design thinking. The tools (SSDT) provide visual interfaces for most of the work.
-
-**Q: What happens if we get operations and maintenance wrong?**  
-A: The cube will still work technically, but users may get confusing results, slow performance, or missing data. That's why we follow best practices from the start.
-
-**Q: How long does it take to set up operations and maintenance for a real project?**  
-A: For a project the size of Assmang's training cube, this typically takes a few hours of design work plus a few hours of implementation and testing.
+- **Deploying without re-processing:** A deployment pushes model structure changes to the server, but does NOT reload data. Always run Process Full or Process Update after deployment.
+- **Ignoring failed processing jobs:** Stale data looks identical to fresh data. Users have no way to detect it unless you monitor and alert.
+- **Renaming measures without notifying users:** Renaming `Revenue (ZAR)` to `Revenue Gross (ZAR)` silently breaks every existing Excel and Power BI report that references the old name.
+- **No role-based security in production:** Without security roles, all users connected to SSAS can see all data including cost and salary information.
 
 ---
 
@@ -514,37 +470,9 @@ flowchart LR
 
 ### Why this matters
 
-Without SSAS (the middle layer), every time a manager wants an answer, someone has to write SQL code against the raw database. With SSAS, the analytical structure is pre-built, so users can explore data independently using familiar tools like Excel.
+Without operational discipline around processing, monitoring, and change management, the cube will eventually serve stale or incorrect data to decision-makers. The technical build is only half the work. Processing schedules, failure alerts, backup procedures, and change documentation are what make a cube trustworthy in production long-term.
 
 ---
-
-## 📖 Key Terminology Reference
-
-Here are the most important terms for this topic. Don't worry about memorising them all — you will learn them naturally through practice:
-
-
-| Term | Plain English Definition | Example at Assmang |
-|------|------------------------|-------------------|
-| **Cube** | A pre-built analytical structure that lets users explore data from many angles | The "Assmang Mining Analytics" cube containing all production and cost data |
-| **Dimension** | A category you use to slice data (like filters in Excel) | Mine, Date, Department, Employee — these are the "by what" categories |
-| **Hierarchy** | A drill-down path from general to specific | Year → Quarter → Month → Day (time hierarchy) |
-| **Member** | One specific value within a dimension | "Beeshoek Mine" is a member of the Mine dimension |
-| **Measure** | A number you want to analyse | Tonnes Produced, Revenue in ZAR, Cost Per Tonne |
-| **Measure Group** | A collection of related measures from one business area | Production Measures (tonnes + grade + revenue) |
-| **Fact Table** | The database table that stores the raw numbers | FactProduction, FactOperatingCosts |
-| **Processing** | Loading data into the cube and building pre-calculated summaries | Running a nightly job that refreshes yesterday's production data |
-| **Aggregation** | A pre-calculated total or average stored for speed | Total tonnes per mine per month (calculated once, queried many times) |
-| **MDX** | The query language used to ask questions of a cube | Similar to SQL, but designed for multidimensional analysis |
-| **MOLAP** | Storage mode where data is stored inside the cube for maximum speed | Default choice for Assmang — gives sub-second query times |
-| **ROLAP** | Storage mode where data stays in SQL Server (slower but always fresh) | Used when real-time data is more important than speed |
-| **KPI** | A traffic-light indicator showing whether a target is being met | Production KPI: Green if >= 90% of target, Red if < 70% |
-| **SSDT** | SQL Server Data Tools — the IDE where you design and build cubes | Visual Studio with the SSAS project templates |
-| **SSMS** | SQL Server Management Studio — for administration and testing | Where you deploy cubes and run MDX queries |
-| **Data Source View (DSV)** | A logical view of which database tables the cube uses | Selecting Dim_Mine, Dim_Date, FactProduction for inclusion |
-| **Deployment** | Pushing your cube design from your computer to the SSAS server | Like publishing a website — makes it available to users |
-
----
-
 
 ## 🧭 Additional Diagrams
 

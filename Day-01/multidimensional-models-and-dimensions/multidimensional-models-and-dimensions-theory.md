@@ -416,119 +416,72 @@ All
 
 **Time saved:** 2 hours → 2 minutes
 
-**How assmang dimensions helps:** Because the cube already has the right structure (dimensions for time and mine, measures for production), this question can be answered in seconds using Excel or Power BI — no SQL coding needed, no waiting for IT.
-
-
-### ❓ Frequently Asked Questions
-
-**Q: Do I need to be a programmer to understand assmang dimensions?**  
-A: No. This concept is about business logic and design thinking. The tools (SSDT) provide visual interfaces for most of the work.
-
-**Q: What happens if we get assmang dimensions wrong?**  
-A: The cube will still work technically, but users may get confusing results, slow performance, or missing data. That's why we follow best practices from the start.
-
-**Q: How long does it take to set up assmang dimensions for a real project?**  
-A: For a project the size of Assmang's training cube, this typically takes a few hours of design work plus a few hours of implementation and testing.
-
 ---
 
 ## 3. Hierarchies and drill paths
 
-### 💬 In plain English
+A hierarchy is an ordered path from broad to specific within a dimension. Without a hierarchy, users see a flat list of hundreds of members. With a hierarchy, they follow a logical path.
 
-Let's break down **hierarchies and drill paths** in the simplest possible terms:
+### How hierarchies work in practice
 
-**→** A hierarchy gives users a guided navigation path rather than a flat list of attributes.
+**Mine hierarchy:**
+```
+All Mines → Mine Type → Province → Mine Name
+```
+Starting at the top, a user can click to expand: All Mines → Iron Ore → Northern Cape → Khumani Mine.
 
-**→** Examples include Time: Year > Quarter > Month > Day and Mine: Mine Type > Province > Mine Name.
+**Date hierarchy:**
+```
+All Dates → Year → Quarter → Month → Day
+```
+A user drilling from Q1 2024 → January 2024 → specific day follows this path naturally.
 
-**→** Good hierarchies make Excel pivot navigation and MDX browsing easier.
+### Hierarchy design: what SSDT needs from you
 
-### 📚 Detailed explanation
+When you create a user hierarchy in SSDT, you must:
+1. Define the **attribute relationship** between each level (Year → Quarter → Month → Day)
+2. Set the **KeyColumn** for each level to a unique value in the dimension table
+3. Mark the **Key Attribute** (lowest granularity, usually Date Key or Mine Key)
 
-This concept is important because it directly affects how well the cube works for business users. Here is a deeper look:
+> ⚠️ **The most common beginner mistake:** Hiding the Key Attribute after building a hierarchy. SSAS uses the Key Attribute internally even when it is not visible. If you hide it before attribute relationships are correct, drill-down breaks silently — no error, just wrong or missing members.
 
+### Hierarchy examples at Assmang
 
-**Point 1: A hierarchy gives users a guided navigation path rather than a flat list of attributes.**
-
-What this means in practice: When you apply this at Assmang, it means that a hierarchy gives users a guided navigation path rather than a flat list of attributes. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-**Point 2: Examples include Time: Year > Quarter > Month > Day and Mine: Mine Type > Province > Mine Name.**
-
-What this means in practice: When you apply this at Assmang, it means that examples include time: year > quarter > month > day and mine: mine type > province > mine name. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-**Point 3: Good hierarchies make Excel pivot navigation and MDX browsing easier.**
-
-What this means in practice: When you apply this at Assmang, it means that good hierarchies make excel pivot navigation and mdx browsing easier. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-
-### 🏭 Assmang scenario
-
-**Situation:** A production manager at Khumani Mine asks: "Can I see this month's iron ore output compared to last month, broken down by shift?"
-
-**How hierarchies and drill paths helps:** Because the cube already has the right structure (dimensions for time and mine, measures for production), this question can be answered in seconds using Excel or Power BI — no SQL coding needed, no waiting for IT.
-
-
-### ❓ Frequently Asked Questions
-
-**Q: Do I need to be a programmer to understand hierarchies and drill paths?**  
-A: No. This concept is about business logic and design thinking. The tools (SSDT) provide visual interfaces for most of the work.
-
-**Q: What happens if we get hierarchies and drill paths wrong?**  
-A: The cube will still work technically, but users may get confusing results, slow performance, or missing data. That's why we follow best practices from the start.
-
-**Q: How long does it take to set up hierarchies and drill paths for a real project?**  
-A: For a project the size of Assmang's training cube, this typically takes a few hours of design work plus a few hours of implementation and testing.
+| Hierarchy | Level 1 | Level 2 | Level 3 | Level 4 |
+|-----------|---------|---------|---------|---------|
+| **Mine** | Mine Type (Iron / Manganese) | Province | Mine Name | — |
+| **Date** | Year | Quarter | Month | Day |
+| **Department** | Division | Business Unit | Department | — |
+| **Employee Grade** | Employment Type | Grade Band | Grade | — |
 
 ---
 
 ## 4. Slowly changing dimensions
 
-### 💬 In plain English
+A Slowly Changing Dimension (SCD) describes what to do when a dimension member's attributes change over time. For example: a mine shifts its status from "Active" to "Care and Maintenance" — what happens to historical production data?
 
-Let's break down **slowly changing dimensions** in the simplest possible terms:
+### The two types relevant to Assmang
 
-**→** Type 1 overwrites old values and is useful when history is not required.
+**SCD Type 1 — Overwrite (no history):**
+- New value replaces the old value in the dimension table
+- Historical records now all show the new value
+- Use when: the change was a correction, and history does not matter (e.g., fixing a mine name spelling error)
 
-**→** Type 2 preserves historical versions and is useful when reporting must reflect old business states.
+**SCD Type 2 — Add new row (keep history):**
+- Old row is end-dated, new row is inserted with the new value
+- Historical records link to the old row, new records link to the new row
+- Use when: the change is real and history matters (e.g., a department restructure mid-year means Q1 and Q2 should show different reporting lines)
 
-**→** Beginners should understand the concept even if the training implementation stays simple.
+### At Assmang: which type for which dimension?
 
-### 📚 Detailed explanation
+| Dimension | Typical approach | Reason |
+|-----------|-----------------|--------|
+| **Mine** | Type 1 | Mine names and types rarely change; corrections can overwrite |
+| **Date** | Not applicable | Dates are fixed — they never change |
+| **Department** | Type 2 | Organisational restructures happen; historical comparisons must reflect the old structure |
+| **Employee** | Type 2 | Grade changes and promotions must be traceable for HR reporting |
 
-This concept is important because it directly affects how well the cube works for business users. Here is a deeper look:
-
-
-**Point 1: Type 1 overwrites old values and is useful when history is not required.**
-
-What this means in practice: When you apply this at Assmang, it means that type 1 overwrites old values and is useful when history is not required. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-**Point 2: Type 2 preserves historical versions and is useful when reporting must reflect old business states.**
-
-What this means in practice: When you apply this at Assmang, it means that type 2 preserves historical versions and is useful when reporting must reflect old business states. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-**Point 3: Beginners should understand the concept even if the training implementation stays simple.**
-
-What this means in practice: When you apply this at Assmang, it means that beginners should understand the concept even if the training implementation stays simple. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-
-### 🏭 Assmang scenario
-
-**Situation:** A production manager at Khumani Mine asks: "Can I see this month's iron ore output compared to last month, broken down by shift?"
-
-**How slowly changing dimensions helps:** Because the cube already has the right structure (dimensions for time and mine, measures for production), this question can be answered in seconds using Excel or Power BI — no SQL coding needed, no waiting for IT.
-
-
-### ❓ Frequently Asked Questions
-
-**Q: Do I need to be a programmer to understand slowly changing dimensions?**  
-A: No. This concept is about business logic and design thinking. The tools (SSDT) provide visual interfaces for most of the work.
-
-**Q: What happens if we get slowly changing dimensions wrong?**  
-A: The cube will still work technically, but users may get confusing results, slow performance, or missing data. That's why we follow best practices from the start.
-
-**Q: How long does it take to set up slowly changing dimensions for a real project?**  
-A: For a project the size of Assmang's training cube, this typically takes a few hours of design work plus a few hours of implementation and testing.
+> ℹ️ **For this training course:** The v1–v3 datasets use Type 1 for simplicity. You will implement a static dimension table. Understanding Type 2 prepares you for the real-world Assmang implementation discussed on Day 2.
 
 ---
 
@@ -554,37 +507,9 @@ flowchart TD
 
 ### Why this matters
 
-Without SSAS (the middle layer), every time a manager wants an answer, someone has to write SQL code against the raw database. With SSAS, the analytical structure is pre-built, so users can explore data independently using familiar tools like Excel.
+Without clear dimension hierarchies, business users face a flat list of hundreds of members and no guided path to explore. Good dimension design means a mine manager can answer their own question — starting at a province level and drilling to a specific mine — without calling IT for a custom SQL query.
 
 ---
-
-## 📖 Key Terminology Reference
-
-Here are the most important terms for this topic. Don't worry about memorising them all — you will learn them naturally through practice:
-
-
-| Term | Plain English Definition | Example at Assmang |
-|------|------------------------|-------------------|
-| **Cube** | A pre-built analytical structure that lets users explore data from many angles | The "Assmang Mining Analytics" cube containing all production and cost data |
-| **Dimension** | A category you use to slice data (like filters in Excel) | Mine, Date, Department, Employee — these are the "by what" categories |
-| **Hierarchy** | A drill-down path from general to specific | Year → Quarter → Month → Day (time hierarchy) |
-| **Member** | One specific value within a dimension | "Beeshoek Mine" is a member of the Mine dimension |
-| **Measure** | A number you want to analyse | Tonnes Produced, Revenue in ZAR, Cost Per Tonne |
-| **Measure Group** | A collection of related measures from one business area | Production Measures (tonnes + grade + revenue) |
-| **Fact Table** | The database table that stores the raw numbers | FactProduction, FactOperatingCosts |
-| **Processing** | Loading data into the cube and building pre-calculated summaries | Running a nightly job that refreshes yesterday's production data |
-| **Aggregation** | A pre-calculated total or average stored for speed | Total tonnes per mine per month (calculated once, queried many times) |
-| **MDX** | The query language used to ask questions of a cube | Similar to SQL, but designed for multidimensional analysis |
-| **MOLAP** | Storage mode where data is stored inside the cube for maximum speed | Default choice for Assmang — gives sub-second query times |
-| **ROLAP** | Storage mode where data stays in SQL Server (slower but always fresh) | Used when real-time data is more important than speed |
-| **KPI** | A traffic-light indicator showing whether a target is being met | Production KPI: Green if >= 90% of target, Red if < 70% |
-| **SSDT** | SQL Server Data Tools — the IDE where you design and build cubes | Visual Studio with the SSAS project templates |
-| **SSMS** | SQL Server Management Studio — for administration and testing | Where you deploy cubes and run MDX queries |
-| **Data Source View (DSV)** | A logical view of which database tables the cube uses | Selecting Dim_Mine, Dim_Date, FactProduction for inclusion |
-| **Deployment** | Pushing your cube design from your computer to the SSAS server | Like publishing a website — makes it available to users |
-
----
-
 
 ## 🧭 Additional Diagrams
 

@@ -442,37 +442,9 @@ flowchart LR
 
 ### Why this matters
 
-Without SSAS (the middle layer), every time a manager wants an answer, someone has to write SQL code against the raw database. With SSAS, the analytical structure is pre-built, so users can explore data independently using familiar tools like Excel.
+Without MDX fluency, debugging a cube that returns wrong results is nearly impossible. When a Power BI report shows an incorrect number, MDX is how you isolate whether the problem is in the source data, the dimension structure, or the measure calculation. Even basic MDX skill makes you a far more effective SSAS developer.
 
 ---
-
-## 📖 Key Terminology Reference
-
-Here are the most important terms for this topic. Don't worry about memorising them all — you will learn them naturally through practice:
-
-
-| Term | Plain English Definition | Example at Assmang |
-|------|------------------------|-------------------|
-| **Cube** | A pre-built analytical structure that lets users explore data from many angles | The "Assmang Mining Analytics" cube containing all production and cost data |
-| **Dimension** | A category you use to slice data (like filters in Excel) | Mine, Date, Department, Employee — these are the "by what" categories |
-| **Hierarchy** | A drill-down path from general to specific | Year → Quarter → Month → Day (time hierarchy) |
-| **Member** | One specific value within a dimension | "Beeshoek Mine" is a member of the Mine dimension |
-| **Measure** | A number you want to analyse | Tonnes Produced, Revenue in ZAR, Cost Per Tonne |
-| **Measure Group** | A collection of related measures from one business area | Production Measures (tonnes + grade + revenue) |
-| **Fact Table** | The database table that stores the raw numbers | FactProduction, FactOperatingCosts |
-| **Processing** | Loading data into the cube and building pre-calculated summaries | Running a nightly job that refreshes yesterday's production data |
-| **Aggregation** | A pre-calculated total or average stored for speed | Total tonnes per mine per month (calculated once, queried many times) |
-| **MDX** | The query language used to ask questions of a cube | Similar to SQL, but designed for multidimensional analysis |
-| **MOLAP** | Storage mode where data is stored inside the cube for maximum speed | Default choice for Assmang — gives sub-second query times |
-| **ROLAP** | Storage mode where data stays in SQL Server (slower but always fresh) | Used when real-time data is more important than speed |
-| **KPI** | A traffic-light indicator showing whether a target is being met | Production KPI: Green if >= 90% of target, Red if < 70% |
-| **SSDT** | SQL Server Data Tools — the IDE where you design and build cubes | Visual Studio with the SSAS project templates |
-| **SSMS** | SQL Server Management Studio — for administration and testing | Where you deploy cubes and run MDX queries |
-| **Data Source View (DSV)** | A logical view of which database tables the cube uses | Selecting Dim_Mine, Dim_Date, FactProduction for inclusion |
-| **Deployment** | Pushing your cube design from your computer to the SSAS server | Like publishing a website — makes it available to users |
-
----
-
 
 ## 🧭 Additional Diagrams
 
