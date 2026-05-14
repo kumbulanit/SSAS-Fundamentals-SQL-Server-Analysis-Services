@@ -59,67 +59,78 @@ Write and validate an MDX query that isolates production for chrome-specific min
 ### Procedure
 
 **Step 1: Understand the Business Question**
-- Assmang mines multiple commodities: chrome, platinum, iron ore
-- Chrome operations: Sishen and Khumani mines
+- Assmang mines multiple commodities: iron ore, manganese, and chrome
+- The chrome mine is **Dwarsrivier** (Limpopo province)
 - Business question: "What was total chrome production in 2024?"
-- Expected answer: A single number representing all chrome tonnes (summed across both chrome mines)
+- Expected answer: A single number representing all chrome tonnes from Dwarsrivier
 
-**Step 2: Identify Dimensions and Members**
-- In SSMS, open Assmang Mining Analytics cube browser
-- Expand Mine dimension; identify chrome mine members: "Sishen", "Khumani"
-- Expand Date dimension; identify 2024 members: "2024" (if exists) or navigate via hierarchy
-- Note: If no "Commodity" or "OperationType" dimension exists, must filter by mine name
+**Step 2: Identify the Correct Member Reference**
+- In SSMS, open the Assmang Mining Analytics cube browser
+- Expand the **Mine** dimension → **Mine Geography** hierarchy
+- Expand Chrome → Limpopo → you will see **Dwarsrivier Mine**
+- The correct member path is: `[Mine].[Mine Geography].[Mine Name].&[Dwarsrivier]`
+- For filtering by commodity group, use: `[Mine].[Mine Type].&[Chrome]`
 
-**Step 3: Write Basic MDX Query**
-- Template:
-	```
-	SELECT [Measures].[TonnesProduced] ON COLUMNS,
-				 [Mine].[Chrome Mines] ON ROWS
-	FROM [AssmangMiningAnalytics]
-	WHERE [Date].[2024]
-	```
-- Issue: [Mine].[Chrome Mines] is not a member; must use set or filter
+> ⚠️ **Common mistake:** `[Mine].[Chrome Mines]` is **not** a valid member expression — it looks like an attribute value but is not. Always specify the full hierarchy path: `[Mine].[Mine Type].&[Chrome]` or `[Mine].[Mine Name].&[Dwarsrivier]`.
 
-**Step 4: Refine Query with Filtering**
-- Approach 1 (Explicit Set):
-	```
-	SELECT [Measures].[TonnesProduced] ON COLUMNS
-	FROM [AssmangMiningAnalytics]
-	WHERE ([Mine].[Sishen], [Mine].[Khumani], [Date].[2024])
-	```
-- Approach 2 (Named Set, if exists):
-	```
-	SELECT [Measures].[TonnesProduced] ON COLUMNS
-	FROM [AssmangMiningAnalytics]
-	WHERE ([CromeMines], [Date].[2024])
-	```
+**Step 3: Write the MDX Query**
 
-**Step 5: Prepare SSMS for Query Execution**
-- Open SSMS and connect to **Analysis Services** (not Database Engine)
-- Right-click **Assmang Mining Analytics** database and select **New Query > MDX**
-- In the query toolbar, confirm the database dropdown shows **`AssmangMiningAnalytics`**
-- If dropdown is blank, select the database from the dropdown menu
-- This sets the `CurrentCatalog` property required by the MDX parser
+> ✅ **COPY AND PASTE into a new SSMS MDX query window:**
 
-**Step 6: Test and Validate**
-- In the MDX query window, paste your query and execute
-- Result should show: Single number (total chrome tonnes in 2024)
-- Cross-check: Run SQL baseline query (SUM(TonnesProduced) FROM FactProduction WHERE MineID IN (Sishen, Khumani) AND DateID >= 2024-01-01)
-- Verify: MDX result = SQL result (exact match required)
+```mdx
+-- Exercise 1: Chrome production in 2024
+-- Uses Mine Type hierarchy to filter to chrome operations
+SELECT
+    { [Measures].[TonnesProduced] } ON COLUMNS
+FROM [Assmang Mining Analytics]
+WHERE (
+    [Mine].[Mine Type].&[Chrome],
+    [Date].[Calendar Year].&[2024]
+);
+```
 
-**Step 7: Document Query and Interpretation**
-- Write 1–2 paragraphs explaining:
-	- What the query does (filters to chrome mines and 2024)
-	- Why this structure (WHERE clause for slicing, one measure on columns)
-	- Business interpretation (e.g., "Assmang's chrome operations produced X tonnes in 2024")
-	- Any variations tried (if Approach 1 vs Approach 2 were compared)
+> 📸 **Expected result:** A single value — Dwarsrivier chrome tonnes for 2024, approximately 187,200 tonnes (based on ~15,600 t/month × 12 months).
+
+**Step 4: Validate Against SQL Baseline**
+
+> ✅ **COPY AND PASTE into an SSMS SQL query window (Database Engine connection):**
+
+```sql
+-- SQL baseline for chrome production 2024
+SELECT SUM(fp.TonnesProduced) AS ChromeTonnes2024
+FROM FactProduction fp
+INNER JOIN Dim_Mine dm ON fp.MineID = dm.MineID
+INNER JOIN Dim_Date dd ON fp.DateID = dd.DateID
+WHERE dm.MineType = 'Chrome'
+  AND dd.CalendarYear = 2024;
+```
+
+> The MDX result and the SQL result should match exactly. If they differ, check that the cube has been processed after the latest data load.
+
+**Step 5: Extend the Query to Show Mine Name on Rows**
+
+> ✅ **COPY AND PASTE:**
+
+```mdx
+-- Extended: show chrome production by mine name on rows
+SELECT
+    { [Measures].[TonnesProduced] } ON COLUMNS,
+    [Mine].[Mine Geography].[Mine Name].MEMBERS ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE (
+    [Mine].[Mine Type].&[Chrome],
+    [Date].[Calendar Year].&[2024]
+);
+```
+
+> 📸 **Expected result:** 1 row — Dwarsrivier Mine with its 2024 total. (There is only one chrome mine in the Assmang dataset.)
 
 ### Deliverable
 
-- **Input:** Chrome mine names; requirement to filter to 2024 only
-- **Output:** Working MDX query + 1–2 paragraph explanation
-- **Evidence:** Screenshot of SSMS query window showing MDX query and result; comparison to SQL baseline showing matching result
-- **Assmang Context:** Example: \"Chrome production is a key line of business for Assmang. The query 'SELECT TonnesProduced WHERE Sishen + Khumani + 2024' gives us exactly 1.2M tonnes for the year. Operations team uses this number to compare against budget and plan Q1 next year's chrome volume.\"
+- **Input:** Chrome mine filter requirement, 2024 date filter
+- **Output:** Working MDX query + SQL baseline comparison
+- **Evidence:** Screenshot of SSMS MDX window with result; SQL baseline query showing same total
+- **Assmang Context:** "Dwarsrivier is Assmang's chrome mine in Limpopo. The query shows how MDX can isolate one commodity group from a mixed-commodity cube using the Mine Type attribute hierarchy."
 
 ---
 
@@ -127,72 +138,74 @@ Write and validate an MDX query that isolates production for chrome-specific min
 
 ### Objective
 
-Write an MDX query that displays revenue by quarter for a single Assmang mine, structured with proper axis organization.
+Write an MDX query that displays revenue by quarter for a single Assmang mine, structured with proper axis organisation.
 
 ### Procedure
 
 **Step 1: Clarify the Business Question**
-- Mine managers want: "Show Sishen revenue for each quarter in 2024"
-- Expected result: A matrix with quarters as rows and revenue as the value
-- Example output:
-	```
-	Sishen 2024 Revenue
-	Q1 2024: 45.5 M ZAR
-	Q2 2024: 52.3 M ZAR
-	Q3 2024: 48.1 M ZAR
-	Q4 2024: 53.2 M ZAR
-	```
+- Mine managers want: "Show Khumani revenue for each quarter in 2024"
+- Khumani is Assmang's **largest iron ore mine** in the Northern Cape (~45,200 t/month)
+- Expected result: 4 rows — one revenue value per quarter
 
 **Step 2: Identify MDX Components**
-- Measure: [Measures].[RevenueMln] (or [OperatingCost] or appropriate revenue measure)
-- Dimension for rows: [Date].[Quarter] members (Q1 2024, Q2 2024, etc.)
-- Slicer (WHERE): [Mine].[Sishen]
-- Note: Quarters are typically nested in years in the Date hierarchy
+- Measure: `[Measures].[Revenue (ZAR)]`
+- Dimension for rows: Calendar Quarter members within 2024
+- Slicer (WHERE): `[Mine].[Mine Name].&[Khumani]`
 
-**Step 3: Write Query Structure**
-- Template:
-	```
-	SELECT [Measures].[RevenueMln] ON COLUMNS,
-				 [Date].[Quarter].Members ON ROWS
-	FROM [AssmangMiningAnalytics]
-	WHERE ([Mine].[Sishen], [Date].[2024])
-	```
-- Structure explanation: Measure on COLUMNS (vertical axis), Date/Quarter on ROWS (horizontal axis)
+> ⚠️ **Correct member syntax:** Write `[Mine].[Mine Name].&[Khumani]` — NOT `[Mine].[Khumani]`. The `.&[value]` syntax is the key-value lookup for an attribute member.
 
-**Step 4: Refine for 2024 Only**
-- If query returns all quarters (not just 2024), add year filter:
-	```
-	SELECT [Measures].[RevenueMln] ON COLUMNS,
-				 [Date].[2024].[Quarter].Members ON ROWS
-	FROM [AssmangMiningAnalytics]
-	WHERE [Mine].[Sishen]
-	```
+**Step 3: Write the MDX Query**
 
-**Step 5: Prepare SSMS Query Window**
-- Open SSMS and connect to **Analysis Services** (not Database Engine)
-- Right-click **Assmang Mining Analytics** and select **New Query > MDX**
-- In the toolbar, select **`AssmangMiningAnalytics`** from the database dropdown
-- This sets the `CurrentCatalog` required by the MDX parser
+> ✅ **COPY AND PASTE into a new SSMS MDX query window:**
 
-**Step 6: Test and Validate**
-- Paste your query into the SSMS MDX query window
-- Execute and inspect results
-- Verify: Four quarters (Q1, Q2, Q3, Q4) with one revenue value each
-- Cross-check: Run SQL baseline (SUM(Revenue) FROM FactProduction WHERE MineID=Sishen AND Quarter=Q1 2024, etc.)
-- Confirm: MDX quarterly totals = SQL sum for each quarter
+```mdx
+-- Exercise 2: Khumani revenue by quarter for 2024
+SELECT
+    { [Measures].[Revenue (ZAR)] } ON COLUMNS,
+    [Date].[Calendar].[Calendar Quarter].MEMBERS ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE (
+    [Mine].[Mine Name].&[Khumani],
+    [Date].[Calendar Year].&[2024]
+);
+```
 
-**Step 7: Document Query**
-- Write 1–2 paragraphs explaining:
-	- Query structure (measure on COLUMNS, quarter on ROWS, mine in WHERE)
-	- Why this layout (readable for managers; quarters down column, one revenue value)
-	- Business interpretation (e.g., "Q2 was Sishen's strongest quarter with 52.3 M ZAR")
+> 📸 **Expected result:** 4 rows — Q1 2024, Q2 2024, Q3 2024, Q4 2024 — each with a ZAR revenue figure.
+
+**Step 4: Validate Against SQL Baseline**
+
+> ✅ **COPY AND PASTE into an SSMS SQL query window:**
+
+```sql
+-- SQL baseline: Khumani revenue by quarter 2024
+SELECT
+    dd.CalendarYear,
+    dd.CalendarQuarterOfYear,
+    SUM(fp.RevenueZAR) AS RevenueZAR
+FROM FactProduction fp
+INNER JOIN Dim_Mine dm ON fp.MineID = dm.MineID
+INNER JOIN Dim_Date dd ON fp.DateID = dd.DateID
+WHERE dm.MineName = 'Khumani'
+  AND dd.CalendarYear = 2024
+GROUP BY dd.CalendarYear, dd.CalendarQuarterOfYear
+ORDER BY dd.CalendarQuarterOfYear;
+```
+
+> The SQL result should show 4 rows (Q1–Q4) matching the MDX output. If totals differ, confirm the cube has been processed.
+
+**Step 5: Document the Query Structure**
+
+Write one short paragraph explaining:
+- Why `[Date].[Calendar].[Calendar Quarter].MEMBERS` goes on ROWS (it lists the quarters as row labels)
+- Why `[Mine].[Mine Name].&[Khumani]` goes in WHERE (it slices to one mine without creating a row for it)
+- What the result tells a manager: "Q2 was Khumani's strongest quarter" or similar
 
 ### Deliverable
 
-- **Input:** Requirement to show Sishen 2024 revenue by quarter
-- **Output:** Working MDX query + 1–2 paragraph explanation
-- **Evidence:** Screenshot of query and result (4 rows of quarterly revenue); SQL baseline validation; explanation of why ROWS/COLUMNS structure was chosen
-- **Assmang Context:** Example: \"Sishen mine leadership tracks quarterly revenue for budget planning and production scheduling. The query 'SELECT RevenueMln ON COLUMNS, Date.Quarter.Members ON ROWS WHERE Sishen, 2024' gives them the exact trend: Q2 peak (52.3M), Q3 dip (48.1M). They use this to adjust Q4 strategy and staffing plans.\"
+- **Input:** Khumani 2024 revenue by quarter requirement
+- **Output:** Working MDX query showing 4 quarterly rows + SQL baseline
+- **Evidence:** Screenshot of MDX result (4 rows); SQL baseline matching totals; explanation of axis choices
+- **Assmang Context:** "Khumani is Assmang's highest-volume iron ore mine. Quarterly revenue tracking helps operations and finance teams compare against production targets and identify seasonal patterns."
 
 ---
 
@@ -238,13 +251,13 @@ Explain the three axes of MDX queries (COLUMNS, ROWS, WHERE/slicer) using Assman
 - Business question: "Show production by mine by quarter for 2024"
 - Query structure:
 	```
-	ROWS: [Mine].[Mine].Members → Sishen, Khumani, Phalaborwa
-	COLUMNS: [Date].[Quarter].Members → Q1, Q2, Q3, Q4
-	WHERE: [Date].[2024], [Department].[Extraction]
+	ROWS: [Mine].[Mine Name].[Mine Name].MEMBERS → Beeshoek, Black Rock, Dwarsrivier, Khumani
+	COLUMNS: [Date].[Calendar].[Calendar Quarter].MEMBERS → Q1 2024, Q2 2024, Q3 2024, Q4 2024
+	WHERE: [Date].[Calendar Year].&[2024]
 	MEASURE: [Measures].[TonnesProduced]
 	```
-- Result: 3 mines × 4 quarters = 12-cell grid
-- Each cell = tonnes produced by that mine in that quarter (extraction dept only)
+- Result: 4 mines × 4 quarters = 16-cell grid
+- Each cell = tonnes produced by that mine in that quarter for 2024
 
 **Step 6: Document Explanation**
 - Write 1–2 paragraphs or a table explaining:
@@ -284,81 +297,26 @@ If you finish early, try to extend one of the exercises above by combining it wi
 
 ---
 
-## 🧰 Detailed SSMS Workflow (Use This If You Are Not Using Visual Studio)
+## 🧰 Quick Reference
 
-Use this exact sequence when completing the lab or exercise primarily in SSMS:
+### Open an MDX Query Window in SSMS
+1. Connect to **Analysis Services** in Object Explorer
+2. Right-click **AssmangMiningAnalytics** → **New Query → MDX**
+3. Select **`AssmangMiningAnalytics`** from the toolbar dropdown **before** typing any MDX
+4. Press **F5** to run
 
-1. Open SSMS and connect to the **Database Engine** that hosts `AssmangMining`.
-2. Open the topic dataset script only if the lab requires a fresh load, then execute it and wait for a clean completion message in the Messages pane.
-3. Run the SQL validation queries in the file immediately after the load so you confirm counts, date ranges, and key joins before involving SSAS.
-4. Keep the Database Engine connection open so you can cross-check source numbers later.
-5. Open a second connection in the same SSMS session using **Connect > Analysis Services**.
-6. Expand **Databases** on the Analysis Services connection and refresh the tree if the expected SSAS database is not visible the first time.
-7. Confirm the deployed database name matches the training project and that the target cube is present.
-8. Expand the SSAS database and inspect the cube, dimensions, and other objects so you know the metadata you are about to query.
-9. If you need to process objects, remember the project must already be deployed and the account must have SSAS admin rights plus read access to the relational source through the data source impersonation settings.
-10. Right-click the cube or database and choose **Process** only after you know which object you are affecting.
-11. In the processing dialog, review the list of affected objects carefully because processing can cascade from a high-level object to lower-level objects.
-12. Wait for processing to finish and read warnings, not just the final success line.
-13. Open the cube browser from SSMS if available, or open an MDX query window using **New Query > MDX**.
-14. **IMPORTANT:** In the MDX query toolbar, select the cube database from the dropdown menu. This sets the `CurrentCatalog` property required by the MDX parser. If the dropdown is blank or shows the wrong database, click it and select **`AssmangMiningAnalytics`**.
-15. Start with the simplest possible MDX pattern: one measure on columns and one hierarchy on rows.
-16. Add a slicer only after the base query works.
-16. Compare at least one SSAS result against the SQL baseline from the Database Engine connection.
-17. Save important queries with meaningful names so you can reuse them during assessments.
-18. Capture evidence for every exercise: the input, the output, and one sentence explaining what the result means for Assmang.
-19. If the numbers look wrong, troubleshoot in this order: SQL source data, deployment state, processing state, dimension relationships, then MDX syntax.
-20. Before submission, write down what you tested, what result you obtained, and why the result matters to the business.
+### Build and Deploy in Visual Studio (SSDT)
+1. **Build:** Build → Build Solution → wait for "Build succeeded" (0 errors)
+2. **Deploy:** Right-click project → Deploy → wait for "Deployment completed successfully"
+3. **Process:** SSMS → Analysis Services connection → right-click database → Process → Run → wait for all Success rows
 
-### SSMS Menu Path Quick Reference
+### Key Menu Paths
+- New SQL query: SSMS toolbar → **New Query**
+- Connect to SSAS: SSMS Object Explorer → **Connect → Analysis Services**
+- Open MDX query: SSAS connection → right-click database → **New Query → MDX**
+- Cube browser: Visual Studio → Cube Designer → **Browser** tab
 
-- Connect to SQL Engine: `File > Connect Object Explorer > Database Engine`
-- Connect to SSAS: `Object Explorer > Connect > Analysis Services`
-- Open SQL query: `Toolbar > New Query`
-- Open MDX query: `Analysis Services connection > New Query > MDX`
-- Browse cube: `SSAS Database > Cubes > [Cube Name] > Browse`
-- Process object (if permissions allow): `Right-click Cube/Dimension > Process`
-
-## Detailed Visual Studio (SSDT) Workflow (Step-by-Step)
-
-Use this path when you are building and validating directly in Visual Studio with SSDT:
-
-1. Open Visual Studio and load the SSAS solution for the topic.
-2. In Solution Explorer, confirm the expected SSAS folders exist and are not already showing warning icons.
-3. Open **Project Properties > Deployment** before changing design objects so you know which SSAS server and database you are targeting.
-4. Open the data source and click **Test Connection**.
-5. Confirm the data source points to the SQL Database Engine instance, not the SSAS instance.
-6. Review impersonation settings because successful deployment alone is not enough; processing also needs relational read access.
-7. Open the Data Source View and verify the required tables and joins for the topic are present.
-8. Rearrange the DSV if it is unreadable so you can actually inspect it during the exercise.
-9. Open each required dimension and review `KeyColumns`, `NameColumn`, visible attributes, and user hierarchies.
-10. If the topic involves cube work, open the cube designer and inspect structure, measure groups, calculations, and the **Dimension Usage** tab.
-11. Check aggregation behaviour for business measures instead of accepting every wizard default.
-12. Save changes before building.
-13. Run **Build > Build Solution** and read the Error List carefully.
-14. Fix build errors before deployment and do not ignore relationship or key warnings unless you can explain them.
-15. Deploy the project using **Right-click Project > Deploy**.
-16. Remember what Microsoft’s SSDT deployment guidance says: deployment builds the project, validates the destination server, and then creates or updates the SSAS database objects.
-17. After deployment, process the affected objects if prompted, or right-click the cube or database and choose **Process** manually.
-18. Review the processing dialog before clicking Run because high-level processing choices can affect multiple lower-level objects.
-19. Wait for processing to complete and read warnings, not just the success banner.
-20. Open the Browser tab and test at least one real business slice for the topic.
-21. Open SSMS against Analysis Services and run one or two MDX checks against the same cube output.
-22. Compare SSDT browser results, MDX results, and SQL baseline values.
-23. If results differ, troubleshoot in this order: source data, DSV relationships, dimension design, dimension usage, aggregation logic, then processing freshness.
-24. Save evidence for the exercise: build result, deployment result, process result, browser or MDX output, and one sentence explaining the business meaning.
-
-### Visual Studio Menu Path Quick Reference
-
-- Open solution: File > Open > Project/Solution
-- Build: Build > Build Solution
-- Deploy: Solution Explorer > Right-click SSAS Project > Deploy
-- Project deployment settings: Right-click SSAS Project > Properties > Deployment
-- Process object: Right-click Cube/Dimension > Process
-- Cube browser: Open Cube Designer > Browser tab
-
-### Evidence Standard (What Good Submission Looks Like)
-
-- Include **input + output + explanation** for each major task.
-- Explanations should answer: **what changed, what you observed, and why it matters**.
-- Prefer short and precise evidence over long screenshots with no commentary.
+### Evidence Standard
+- Include **input + output + explanation** for each major task
+- Explanations should answer: what changed, what you observed, and why it matters for Assmang
+- Prefer short and precise evidence over long screenshots with no commentary

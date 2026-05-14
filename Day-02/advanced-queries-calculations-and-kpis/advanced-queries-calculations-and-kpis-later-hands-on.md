@@ -77,8 +77,16 @@ Design a Safety Compliance KPI for Assmang that translates raw compliance scores
 - In SSDT cube designer, create new KPI (or calculated measure + status expression)
 - KPI component 1 (Value): [Measures].[ComplianceScore]
 - KPI component 2 (Goal): 95 (target is ≥95%)
-- KPI component 3 (Status Expression): IIF([ComplianceScore] >= 95, 1, IIF([ComplianceScore] >= 80, 0, -1))
-	- Status = 1 (Green), 0 (Amber), -1 (Red)
+- KPI component 3 (Status Expression):
+
+> ✅ **COPY AND PASTE this expression into the KPI Status Expression field in the SSDT KPI designer:**
+
+```mdx
+IIF([Measures].[ComplianceScore] >= 95, 1,
+    IIF([Measures].[ComplianceScore] >= 80, 0, -1))
+```
+
+> `1` = Green (≥95%), `0` = Amber (80–94%), `-1` = Red (<80%)
 
 **Step 4: Test KPI in Browser**
 - In SSMS Cube Browser, browse KPI and observe:
@@ -131,12 +139,18 @@ Create a calculated measure that expresses maintenance costs as a percentage of 
 - Note aggregation function for each (should be Sum)
 
 **Step 3: Design Calculated Measure**
-- Calculated measure name: `MaintenanceCostPercent` or `MaintenanceCostPct`
+- Calculated measure name: `MaintenanceCostPercent`
 - MDX formula:
-	```
-	([Measures].[MaintenanceCost] / [Measures].[TotalOperatingCost]) * 100
-	```
-- Test formula logic: If MaintenanceCost = 150 and TotalOperatingCost = 1000, result = 15% ✓
+
+> ✅ **COPY AND PASTE this formula into the Calculations tab expression field in SSDT:**
+
+```mdx
+([Measures].[MaintenanceCost] / [Measures].[TotalOperatingCost]) * 100
+```
+
+> Add `FORMAT_STRING = "0.00"` to display with 2 decimal places.
+
+- Test formula logic: If MaintenanceCost = 150 and TotalOperatingCost = 1000, result = 15.00 ✓
 
 **Step 4: Add to Cube in SSDT**
 - In Calculations tab of cube designer, insert new calculation
@@ -180,60 +194,80 @@ Create a reusable named set for Assmang's chrome mining operations and demonstra
 - Example: Instead of ([Mine].[Sishen], [Mine].[Khumani]) in every query, reference [ChromeMines]
 - Advantage for Assmang: If chrome operations expand (add a new mine), update named set once; all queries automatically use the new list
 
-**Step 2: Identify Chrome Mines**
-- Inspect Assmang's mine portfolio: Sishen and Khumani are chrome-focused
-- Other mines: Phalaborwa (platinum), etc.
-- Define named set members: [Mine].[Sishen] and [Mine].[Khumani]
+**Step 2: Identify the Chrome Mine**
+- Inspect Assmang's mine portfolio:
+  - **Khumani** — iron ore, Northern Cape
+  - **Beeshoek** — iron ore, Northern Cape
+  - **Black Rock** — manganese, Northern Cape
+  - **Dwarsrivier** — **chrome**, Limpopo ← this is the only chrome mine
+- Define named set member: `[Mine].[Mine Name].&[Dwarsrivier]`
+
+> ⚠️ **Common mistake:** Sishen does not exist in the Assmang dataset. Khumani is an **iron ore** mine, not chrome. The chrome mine is **Dwarsrivier**.
 
 **Step 3: Create Named Set in SSDT Cube**
 - In cube designer, go to Calculations tab
-- Add new calculation > Named Set
+- Add new calculation → Named Set
 - Name: `ChromeMines`
-- Expression: `{[Mine].[Sishen], [Mine].[Khumani]}`
+- Expression:
+
+> ✅ **COPY AND PASTE this expression into the Named Set Expression field in SSDT:**
+
+```mdx
+{ [Mine].[Mine Name].&[Dwarsrivier] }
+```
+
+> This set contains only Dwarsrivier, Assmang's single chrome mine. If additional chrome mines are ever added to the dataset, add them to this set and all queries update automatically.
+
 - Save and deploy
 
 **Step 4: Write Query #1 Using Named Set**
-- Query: "Show total production for chrome operations, by year"
-- Without named set:
-	```
-	SELECT [Measures].[TonnesProduced] ON COLUMNS,
-				 [Date].[Year].Members ON ROWS
-	FROM [AssmangMiningAnalytics]
-	WHERE ([Mine].[Sishen], [Mine].[Khumani])
-	```
-- With named set:
-	```
-	SELECT [Measures].[TonnesProduced] ON COLUMNS,
-				 [Date].[Year].Members ON ROWS
-	FROM [AssmangMiningAnalytics]
-	WHERE [ChromeMines]
-	```
-- Execute in SSMS and record result (e.g., 1.5 M tonnes in 2024)
+- Query: "Show total production for chrome operations by year"
+
+> ✅ **COPY AND PASTE into a new SSMS MDX query window:**
+
+```mdx
+-- Without named set (verbose):
+SELECT { [Measures].[TonnesProduced] } ON COLUMNS,
+       [Date].[Calendar].[Calendar Year].MEMBERS ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE ( [Mine].[Mine Name].&[Dwarsrivier] );
+
+-- With named set (concise — after defining [ChromeMines] in the cube):
+SELECT { [Measures].[TonnesProduced] } ON COLUMNS,
+       [Date].[Calendar].[Calendar Year].MEMBERS ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE [ChromeMines];
+```
+
+> 📸 **Expected result:** 2 rows — 2023 and 2024 — each showing Dwarsrivier's total chrome tonnes (~187,200 per year)
 
 **Step 5: Write Query #2 Using Same Named Set**
-- Query: "Show cost per tonne for chrome operations, by mine"
-- With named set:
-	```
-	SELECT [Measures].[CostPerTonneZAR] ON COLUMNS,
-				 [ChromeMines] ON ROWS
-	FROM [AssmangMiningAnalytics]
-	WHERE [Date].[2024]
-	```
-- Execute in SSMS and record result (e.g., Sishen 450 ZAR/t, Khumani 480 ZAR/t)
+- Query: "Show cost per tonne for chrome operations in 2024"
+
+> ✅ **COPY AND PASTE into a new SSMS MDX query window:**
+
+```mdx
+SELECT { [Measures].[Cost Per Tonne ZAR] } ON COLUMNS,
+       [ChromeMines] ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE ( [Date].[Calendar Year].&[2024] );
+```
+
+> 📸 **Expected result:** 1 row — Dwarsrivier Mine with its 2024 cost per tonne figure (approximately R350–R500/t depending on dataset values)
 
 **Step 6: Document Named Set**
 - Write 1–2 paragraphs explaining:
-	- What the named set represents (chrome mines: Sishen + Khumani)
+	- What the named set represents (Dwarsrivier — Assmang's only chrome mine in Limpopo)
 	- Why it's useful (consistency, maintainability, reduces query complexity)
-	- Business meaning (enables quick chrome-vs-platinum comparisons)
-	- Example: "If Assmang acquires a third chrome mine in the future, update [ChromeMines] once; all reports automatically include new mine"
+	- Business meaning (enables quick chrome-vs-iron-ore comparisons across reports)
+	- Example: "If Assmang acquires a second chrome mine in future, update [ChromeMines] once; all reports automatically include the new mine"
 
 ### Deliverable
 
-- **Input:** Mine dimension with chrome mines identified (Sishen, Khumani)
+- **Input:** Mine dimension with chrome mine identified (Dwarsrivier)
 - **Output:** Named set definition + two complete MDX queries using the named set
-- **Evidence:** Screenshots of (1) SSDT Calculations tab showing [ChromeMines] definition, (2) Query #1 result (production by year), (3) Query #2 result (cost per tonne by mine); one-line comparison showing how named set simplified the WHERE clause
-- **Assmang Context:** Example: \"Chrome represents 40% of Assmang's revenue. Operations dashboard has 15+ reports filtering by chrome mines. Using [ChromeMines] named set, queries are consistent and maintainable. When Assmang adds Mogalakwena mine to chrome portfolio next year, they update [ChromeMines] once and all 15 reports automatically reflect the expansion without code changes.\"
+- **Evidence:** Screenshots of (1) SSDT Calculations tab showing [ChromeMines] definition, (2) Query #1 result (production by year for Dwarsrivier), (3) Query #2 result (cost per tonne for chrome); one-line comparison showing how named set simplified the WHERE clause
+- **Assmang Context:** "Dwarsrivier is Assmang's only chrome mine. Chrome is a high-value commodity. Using a [ChromeMines] named set means all dashboards filtering to chrome operations stay consistent. When a second chrome mine is added to the portfolio, update one expression and all 10+ reports update automatically."
 
 ---
 
@@ -258,80 +292,26 @@ If you finish early, try to extend one of the exercises above by combining it wi
 
 ---
 
-## 🧰 Detailed SSMS Workflow (Use This If You Are Not Using Visual Studio)
+## 🧰 Quick Reference
 
-Use this exact sequence when completing the lab or exercise primarily in SSMS:
+### Open an MDX Query Window in SSMS
+1. Connect to **Analysis Services** in Object Explorer
+2. Right-click **AssmangMiningAnalytics** → **New Query → MDX**
+3. Select **`AssmangMiningAnalytics`** from the toolbar dropdown **before** typing any MDX
+4. Press **F5** to run
 
-1. Open SSMS and connect to the **Database Engine** that hosts `AssmangMining`.
-2. Open the topic dataset script only if the lab requires a fresh load, then execute it and wait for a clean completion message in the Messages pane.
-3. Run the SQL validation queries in the file immediately after the load so you confirm counts, date ranges, and key joins before involving SSAS.
-4. Keep the Database Engine connection open so you can cross-check source numbers later.
-5. Open a second connection in the same SSMS session using **Connect > Analysis Services**.
-6. Expand **Databases** on the Analysis Services connection and refresh the tree if the expected SSAS database is not visible the first time.
-7. Confirm the deployed database name matches the training project and that the target cube is present.
-8. Expand the SSAS database and inspect the cube, dimensions, and other objects so you know the metadata you are about to query.
-9. If you need to process objects, remember the project must already be deployed and the account must have SSAS admin rights plus read access to the relational source through the data source impersonation settings.
-10. Right-click the cube or database and choose **Process** only after you know which object you are affecting.
-11. In the processing dialog, review the list of affected objects carefully because processing can cascade from a high-level object to lower-level objects.
-12. Wait for processing to finish and read warnings, not just the final success line.
-13. Open the cube browser from SSMS if available, or open an MDX query window using **New Query > MDX**.
-14. Start with the simplest possible MDX pattern: one measure on columns and one hierarchy on rows.
-15. Add a slicer only after the base query works.
-16. Compare at least one SSAS result against the SQL baseline from the Database Engine connection.
-17. Save important queries with meaningful names so you can reuse them during assessments.
-18. Capture evidence for every exercise: the input, the output, and one sentence explaining what the result means for Assmang.
-19. If the numbers look wrong, troubleshoot in this order: SQL source data, deployment state, processing state, dimension relationships, then MDX syntax.
-20. Before submission, write down what you tested, what result you obtained, and why the result matters to the business.
+### Build and Deploy in Visual Studio (SSDT)
+1. **Build:** Build → Build Solution → wait for "Build succeeded" (0 errors)
+2. **Deploy:** Right-click project → Deploy → wait for "Deployment completed successfully"
+3. **Process:** SSMS → Analysis Services connection → right-click database → Process → Run → wait for all Success rows
 
-### SSMS Menu Path Quick Reference
+### Key Menu Paths
+- New SQL query: SSMS toolbar → **New Query**
+- Connect to SSAS: SSMS Object Explorer → **Connect → Analysis Services**
+- Open MDX query: SSAS connection → right-click database → **New Query → MDX**
+- Cube browser: Visual Studio → Cube Designer → **Browser** tab
 
-- Connect to SQL Engine: `File > Connect Object Explorer > Database Engine`
-- Connect to SSAS: `Object Explorer > Connect > Analysis Services`
-- Open SQL query: `Toolbar > New Query`
-- Open MDX query: `Analysis Services connection > New Query > MDX`
-- Browse cube: `SSAS Database > Cubes > [Cube Name] > Browse`
-- Process object (if permissions allow): `Right-click Cube/Dimension > Process`
-
-## Detailed Visual Studio (SSDT) Workflow (Step-by-Step)
-
-Use this path when you are building and validating directly in Visual Studio with SSDT:
-
-1. Open Visual Studio and load the SSAS solution for the topic.
-2. In Solution Explorer, confirm the expected SSAS folders exist and are not already showing warning icons.
-3. Open **Project Properties > Deployment** before changing design objects so you know which SSAS server and database you are targeting.
-4. Open the data source and click **Test Connection**.
-5. Confirm the data source points to the SQL Database Engine instance, not the SSAS instance.
-6. Review impersonation settings because successful deployment alone is not enough; processing also needs relational read access.
-7. Open the Data Source View and verify the required tables and joins for the topic are present.
-8. Rearrange the DSV if it is unreadable so you can actually inspect it during the exercise.
-9. Open each required dimension and review `KeyColumns`, `NameColumn`, visible attributes, and user hierarchies.
-10. If the topic involves cube work, open the cube designer and inspect structure, measure groups, calculations, and the **Dimension Usage** tab.
-11. Check aggregation behaviour for business measures instead of accepting every wizard default.
-12. Save changes before building.
-13. Run **Build > Build Solution** and read the Error List carefully.
-14. Fix build errors before deployment and do not ignore relationship or key warnings unless you can explain them.
-15. Deploy the project using **Right-click Project > Deploy**.
-16. Remember what Microsoft’s SSDT deployment guidance says: deployment builds the project, validates the destination server, and then creates or updates the SSAS database objects.
-17. After deployment, process the affected objects if prompted, or right-click the cube or database and choose **Process** manually.
-18. Review the processing dialog before clicking Run because high-level processing choices can affect multiple lower-level objects.
-19. Wait for processing to complete and read warnings, not just the success banner.
-20. Open the Browser tab and test at least one real business slice for the topic.
-21. Open SSMS against Analysis Services and run one or two MDX checks against the same cube output.
-22. Compare SSDT browser results, MDX results, and SQL baseline values.
-23. If results differ, troubleshoot in this order: source data, DSV relationships, dimension design, dimension usage, aggregation logic, then processing freshness.
-24. Save evidence for the exercise: build result, deployment result, process result, browser or MDX output, and one sentence explaining the business meaning.
-
-### Visual Studio Menu Path Quick Reference
-
-- Open solution: File > Open > Project/Solution
-- Build: Build > Build Solution
-- Deploy: Solution Explorer > Right-click SSAS Project > Deploy
-- Project deployment settings: Right-click SSAS Project > Properties > Deployment
-- Process object: Right-click Cube/Dimension > Process
-- Cube browser: Open Cube Designer > Browser tab
-
-### Evidence Standard (What Good Submission Looks Like)
-
-- Include **input + output + explanation** for each major task.
-- Explanations should answer: **what changed, what you observed, and why it matters**.
-- Prefer short and precise evidence over long screenshots with no commentary.
+### Evidence Standard
+- Include **input + output + explanation** for each major task
+- Explanations should answer: what changed, what you observed, and why it matters for Assmang
+- Prefer short and precise evidence over long screenshots with no commentary

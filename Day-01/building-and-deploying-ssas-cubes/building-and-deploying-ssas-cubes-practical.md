@@ -59,34 +59,47 @@ Apply the theory from **Building and Deploying SSAS Cubes** by completing a guid
 
 **Build or review the cube deliberately:**
 1. Open the cube designer for `Assmang Mining Analytics`.
-2. Verify that the measure groups for production and operating costs are present.
-3. Confirm the business dimensions required for slicing are attached to the cube.
-4. Check that the cube name is business-friendly and consistent across the project.
-5. If the cube does not exist yet, use the Cube Wizard to create it with the v2 fact tables.
+2. Check whether the cube already has measure groups. If it does, skip to the screenshot check below. If it does not exist yet, follow the Cube Wizard steps below.
 
-**What you should be able to say after this step:** This cube is the analytical surface the business will query, and it contains the facts and dimensions needed for mine, time, and department analysis.
+**If you need to create the cube from scratch (Cube Wizard):**
+1. In Solution Explorer, right-click **Cubes** → **New Cube**
+2. On the "Select Creation Method" page, choose **Use existing tables**
+3. On the "Select Measure Group Tables" page, tick **both** fact tables:
+   - `FactProduction` ← this becomes the Production measure group
+   - `FactOperatingCosts` ← this becomes the Operating Costs measure group
+4. On the "Select Measures" page, keep these and **uncheck** any surrogate keys (columns ending in ID):
+   - From FactProduction: `TonnesProduced`, `RevenueZAR`, `Grade`
+   - From FactOperatingCosts: `LaborCostZAR`, `MaintenanceCostZAR`, `EquipmentCostZAR`
+5. On the "Select Existing Dimensions" page, tick all four: **Mine, Date, Department, Employee**
+6. Set the cube name to **`Assmang Mining Analytics`**
+7. Click **Finish**
 
-**Expected result:** One coherent cube contains the v2 analytical content rather than scattered partial objects.
+**Verify the cube structure:**
+- Confirm the cube name is `Assmang Mining Analytics` (business-friendly)
+- Confirm both measure groups are present
+- If names are too technical (e.g., `FactProduction` instead of `Production`), right-click the measure group → **Rename**
+
+**Expected result:** One coherent cube contains both measure groups and all four dimensions.
 
 **If something goes wrong:**
-- If the measure groups are incomplete, revisit the Cube Wizard or cube structure.
-- If dimensions are missing, make sure they exist in the project and then add them to the cube.
-- If names are confusing, fix captions before deployment so users do not inherit messy labels.
+- If only one measure group appears, right-click the Measures panel → **New Measure Group** → select the missing fact table.
+- If dimensions are missing from the right panel, right-click the dimension panel → **Add Cube Dimension** and select from the project.
+- If names are confusing, fix captions before deployment — users should not see warehouse-style table names.
 
 > 📸 **Screenshot Checkpoint 2 — Cube Structure tab showing both measure groups:**
 > The Cube Structure tab left panel shows:
 > ```
 > ▼ Measures
 >   ▼ Production
->       TonnesProduced
->       RevenueZAR
+>       Tonnes Produced
+>       Revenue (ZAR)
 >       Grade
 >   ▼ Operating Costs
->       LaborCostZAR
->       MaintenanceCostZAR
->       EquipmentCostZAR
+>       Labor Cost (ZAR)
+>       Maintenance Cost (ZAR)
+>       Equipment Cost (ZAR)
 > ```
-> Right panel shows dimension boxes connected to the cube. If you see only one measure group, the second fact table needs to be added via right-click → New Measure Group.
+> Right panel shows 4 dimension boxes connected to the cube. If you see only one measure group, add the second fact table via right-click → New Measure Group.
 
 ---
 
@@ -94,34 +107,49 @@ Apply the theory from **Building and Deploying SSAS Cubes** by completing a guid
 
 **This is where many beginner projects break:**
 1. Open the **Dimension Usage** tab in the cube designer.
-2. Look at each intersection between a dimension and a measure group.
-3. Confirm regular relationships exist where the foreign-key design supports them.
-4. Pay particular attention to `Dim_Date`, `Dim_Mine`, and `Dim_Department` because those dimensions drive most browsing in this course.
-5. If a relationship is missing or incorrect, edit it now.
-6. Save the cube before moving on.
+2. Look at the grid — rows are dimensions, columns are measure groups.
+3. Every cell that should filter must show **Regular**. Empty = no relationship = the dimension cannot filter that measure group.
+4. Use the table below to verify each relationship. If a cell is empty, click it → **Edit Relationship** → set the relationship type and the matching key columns:
 
-**What you are verifying:** When a learner filters by mine or month, the measures should genuinely change because the cube knows how the dimensions relate to the fact tables.
+| Dimension | Fact Table Column | Dimension Column | Expected cell |
+|-----------|-----------------|-----------------|---------------|
+| Mine Dimension | `FactProduction.MineID` | `Dim_Mine.MineID` | Regular |
+| Mine Dimension | `FactOperatingCosts.MineID` | `Dim_Mine.MineID` | Regular |
+| Date Dimension | `FactProduction.DateID` | `Dim_Date.DateID` | Regular |
+| Date Dimension | `FactOperatingCosts.DateID` | `Dim_Date.DateID` | Regular |
+| Department Dimension | `FactOperatingCosts.DepartmentID` | `Dim_Department.DepartmentID` | Regular |
 
-**Expected result:** Dimension filters map correctly to the measure groups and the cube is ready for meaningful processing.
+> ⚠️ **Department does NOT link to FactProduction in the v2 dataset** — this is expected. FactProduction has no DepartmentID column. Leave that cell empty.
+
+**How to fix an empty cell:**
+1. Click the empty cell in the Dimension Usage grid
+2. Click the small button that appears (pencil/edit icon)
+3. In the relationship dialog, set:
+   - **Relationship type:** Regular
+   - **Granularity attribute:** the fact-table foreign key column (e.g., `MineID`)
+   - **Dimension columns:** the dimension key column (e.g., `Dim_Mine.MineID`)
+4. Click OK → Save
+
+**Expected result:** Dimension filters map correctly to the measure groups and the cube is ready for processing.
 
 **If something goes wrong:**
-- If a relationship cell is empty, revisit the DSV and fact-to-dimension key paths.
+- If a relationship cell is empty, revisit the DSV and check the foreign-key paths.
 - If browsing later shows repeated totals on every row, this tab is a primary suspect.
-- If you are unsure about a relationship type, prefer fixing the source model rather than guessing in the cube designer.
+- If you are unsure about a relationship type, prefer fixing the source model rather than guessing.
 
 > 📸 **Screenshot Checkpoint 3 — Dimension Usage tab:**
 > The Dimension Usage tab shows a grid where:
 > - Rows = Dimensions (Mine, Date, Department, Employee)
 > - Columns = Measure Groups (Production, Operating Costs)
-> - Each cell = the relationship type (should show "Regular" for most)
-> Example:
+> - Each cell = the relationship type
 > ```
 >                    Production    Operating Costs
 > Mine Dimension     Regular       Regular
 > Date Dimension     Regular       Regular
-> Department Dim     Regular       Regular
+> Department Dim     (empty)       Regular
+> Employee Dim       (empty)       (empty)
 > ```
-> Empty cells mean NO relationship — the dimension cannot filter that measure group. Fix this before deploying.
+> Empty cells for Employee are expected — FactProduction and FactOperatingCosts don't join to employees directly in v2.
 
 ---
 
@@ -160,19 +188,47 @@ Apply the theory from **Building and Deploying SSAS Cubes** by completing a guid
 
 **Use both browser logic and business logic:**
 1. Open the Browser tab in the cube designer.
-2. Drag a production measure such as `TonnesProduced` into the data area.
+2. Drag a production measure such as `Tonnes Produced` into the data area.
 3. Add `Mine Name` to rows.
 4. Add a time hierarchy or month-level attribute so you can see the trend over time.
 5. Add one operating-cost measure and confirm the slice changes when you move across mines or dates.
-6. Compare one or two totals with the SQL validation queries in this lab.
-7. Record whether the output matches expectation before you consider the deployment complete.
+6. Compare the browser totals against the SQL validation queries in this lab.
+7. Run the MDX validation query below in SSMS to confirm the cube returns the expected mine-level numbers.
 
-**Expected result:** The cube returns believable mine-by-time views for both production and costs, which is the minimum readiness check before business release.
+**Expected result:** The cube returns believable mine-by-time views for both production and costs.
 
 **If something goes wrong:**
-- If the browser tab shows no data, process the cube again and confirm dimensions are not left unprocessed.
+- If the browser tab shows no data, process the cube again.
 - If every row shows the same value, revisit Dimension Usage.
-- If the cube browser works but SSMS does not, reconnect to Analysis Services and verify you are hitting the same deployed database.
+- If the cube browser works but SSMS MDX does not, reconnect to Analysis Services and verify you are querying the same database.
+
+---
+
+## MDX Validation Query (Run in SSMS against SSAS after Step 4)
+
+> ⚠️ **Before running MDX:** Open an MDX query window (Analysis Services connection → right-click database → New Query → MDX), then select `AssmangMiningAnalytics` from the toolbar dropdown.
+
+> ✅ **COPY THIS ENTIRE BLOCK:**
+
+```mdx
+-- Validate cube: Tonnes Produced by mine for 2024
+-- Compare results to your SQL validation query from Check 2
+SELECT
+    { [Measures].[Tonnes Produced], [Measures].[Revenue (ZAR)] } ON COLUMNS,
+    [Mine].[Mine Name].[Mine Name].MEMBERS ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE ( [Date].[Calendar Year].&[2024] );
+```
+
+> 📸 **Expected MDX result:** A grid with one row per mine, showing 2024 totals:
+> ```
+> Mine Name          Tonnes Produced    Revenue (ZAR)
+> Beeshoek Mine      32,500             18,200,000
+> Black Rock Mine    28,100             12,600,000
+> Dwarsrivier Mine   15,600              9,500,000
+> Khumani Mine       45,200             28,500,000
+> ```
+> Compare Khumani Mine's TonnesProduced here to the SQL query result from **Check 2**. The numbers should match. If they differ significantly, the dimension relationships in Step 3 may be wrong.
 
 ---
 
@@ -180,12 +236,12 @@ Apply the theory from **Building and Deploying SSAS Cubes** by completing a guid
 
 Before marking this lab as complete, confirm:
 
-- [ ] The relevant SQL dataset was loaded and verified
-- [ ] The SSAS project was opened without errors
-- [ ] All objects created in this lab are visible in Solution Explorer
-- [ ] Processing completed successfully (check Output window)
-- [ ] The cube browser or SSMS query returns expected results
-- [ ] You can explain what each object does in business terms
+- [ ] v2 dataset loaded — `FactProduction` and `FactOperatingCosts` both show > 0 rows in the table counts query
+- [ ] Orphan rows check returns 0 — no fact rows are missing their dimension joins
+- [ ] Cube has two measure groups visible in Cube Structure tab: **Production** and **Operating Costs**
+- [ ] Dimension Usage tab shows "Regular" in all expected cells (Mine × Production, Mine × Costs, Date × Production, Date × Costs)
+- [ ] Deployment and processing completed without errors in the Output window
+- [ ] MDX validation query returns Khumani Mine with TonnesProduced matching the SQL Check 2 result
 
 ---
 
@@ -265,80 +321,26 @@ WHERE m.MineID IS NULL OR dp.DepartmentID IS NULL OR dd.DateID IS NULL;
 
 ---
 
-## 🧰 Detailed SSMS Workflow (Use This If You Are Not Using Visual Studio)
+## 🧰 Quick Reference
 
-Use this exact sequence when completing the lab or exercise primarily in SSMS:
+### Open an MDX Query Window in SSMS
+1. Connect to **Analysis Services** in Object Explorer
+2. Right-click **AssmangMiningAnalytics** → **New Query → MDX**
+3. Select **`AssmangMiningAnalytics`** from the toolbar dropdown **before** typing any MDX
+4. Press **F5** to run
 
-1. Open SSMS and connect to the **Database Engine** that hosts `AssmangMining`.
-2. Open the topic dataset script only if the lab requires a fresh load, then execute it and wait for a clean completion message in the Messages pane.
-3. Run the SQL validation queries in the file immediately after the load so you confirm counts, date ranges, and key joins before involving SSAS.
-4. Keep the Database Engine connection open so you can cross-check source numbers later.
-5. Open a second connection in the same SSMS session using **Connect > Analysis Services**.
-6. Expand **Databases** on the Analysis Services connection and refresh the tree if the expected SSAS database is not visible the first time.
-7. Confirm the deployed database name matches the training project and that the target cube is present.
-8. Expand the SSAS database and inspect the cube, dimensions, and other objects so you know the metadata you are about to query.
-9. If you need to process objects, remember the project must already be deployed and the account must have SSAS admin rights plus read access to the relational source through the data source impersonation settings.
-10. Right-click the cube or database and choose **Process** only after you know which object you are affecting.
-11. In the processing dialog, review the list of affected objects carefully because processing can cascade from a high-level object to lower-level objects.
-12. Wait for processing to finish and read warnings, not just the final success line.
-13. Open the cube browser from SSMS if available, or open an MDX query window using **New Query > MDX**.
-14. Start with the simplest possible MDX pattern: one measure on columns and one hierarchy on rows.
-15. Add a slicer only after the base query works.
-16. Compare at least one SSAS result against the SQL baseline from the Database Engine connection.
-17. Save important queries with meaningful names so you can reuse them during assessments.
-18. Capture evidence for every exercise: the input, the output, and one sentence explaining what the result means for Assmang.
-19. If the numbers look wrong, troubleshoot in this order: SQL source data, deployment state, processing state, dimension relationships, then MDX syntax.
-20. Before submission, write down what you tested, what result you obtained, and why the result matters to the business.
+### Build and Deploy in Visual Studio (SSDT)
+1. **Build:** Build → Build Solution → wait for "Build succeeded" (0 errors)
+2. **Deploy:** Right-click project → Deploy → wait for "Deployment completed successfully"
+3. **Process:** SSMS → Analysis Services connection → right-click database → Process → Run → wait for all Success rows
 
-### SSMS Menu Path Quick Reference
+### Key Menu Paths
+- New SQL query: SSMS toolbar → **New Query**
+- Connect to SSAS: SSMS Object Explorer → **Connect → Analysis Services**
+- Open MDX query: SSAS connection → right-click database → **New Query → MDX**
+- Cube browser: Visual Studio → Cube Designer → **Browser** tab
 
-- Connect to SQL Engine: `File > Connect Object Explorer > Database Engine`
-- Connect to SSAS: `Object Explorer > Connect > Analysis Services`
-- Open SQL query: `Toolbar > New Query`
-- Open MDX query: `Analysis Services connection > New Query > MDX`
-- Browse cube: `SSAS Database > Cubes > [Cube Name] > Browse`
-- Process object (if permissions allow): `Right-click Cube/Dimension > Process`
-
-## Detailed Visual Studio (SSDT) Workflow (Step-by-Step)
-
-Use this path when you are building and validating directly in Visual Studio with SSDT:
-
-1. Open Visual Studio and load the SSAS solution for the topic.
-2. In Solution Explorer, confirm the expected SSAS folders exist and are not already showing warning icons.
-3. Open **Project Properties > Deployment** before changing design objects so you know which SSAS server and database you are targeting.
-4. Open the data source and click **Test Connection**.
-5. Confirm the data source points to the SQL Database Engine instance, not the SSAS instance.
-6. Review impersonation settings because successful deployment alone is not enough; processing also needs relational read access.
-7. Open the Data Source View and verify the required tables and joins for the topic are present.
-8. Rearrange the DSV if it is unreadable so you can actually inspect it during the exercise.
-9. Open each required dimension and review `KeyColumns`, `NameColumn`, visible attributes, and user hierarchies.
-10. If the topic involves cube work, open the cube designer and inspect structure, measure groups, calculations, and the **Dimension Usage** tab.
-11. Check aggregation behaviour for business measures instead of accepting every wizard default.
-12. Save changes before building.
-13. Run **Build > Build Solution** and read the Error List carefully.
-14. Fix build errors before deployment and do not ignore relationship or key warnings unless you can explain them.
-15. Deploy the project using **Right-click Project > Deploy**.
-16. Remember what Microsoft’s SSDT deployment guidance says: deployment builds the project, validates the destination server, and then creates or updates the SSAS database objects.
-17. After deployment, process the affected objects if prompted, or right-click the cube or database and choose **Process** manually.
-18. Review the processing dialog before clicking Run because high-level processing choices can affect multiple lower-level objects.
-19. Wait for processing to complete and read warnings, not just the success banner.
-20. Open the Browser tab and test at least one real business slice for the topic.
-21. Open SSMS against Analysis Services and run one or two MDX checks against the same cube output.
-22. Compare SSDT browser results, MDX results, and SQL baseline values.
-23. If results differ, troubleshoot in this order: source data, DSV relationships, dimension design, dimension usage, aggregation logic, then processing freshness.
-24. Save evidence for the exercise: build result, deployment result, process result, browser or MDX output, and one sentence explaining the business meaning.
-
-### Visual Studio Menu Path Quick Reference
-
-- Open solution: File > Open > Project/Solution
-- Build: Build > Build Solution
-- Deploy: Solution Explorer > Right-click SSAS Project > Deploy
-- Project deployment settings: Right-click SSAS Project > Properties > Deployment
-- Process object: Right-click Cube/Dimension > Process
-- Cube browser: Open Cube Designer > Browser tab
-
-### Evidence Standard (What Good Submission Looks Like)
-
-- Include **input + output + explanation** for each major task.
-- Explanations should answer: **what changed, what you observed, and why it matters**.
-- Prefer short and precise evidence over long screenshots with no commentary.
+### Evidence Standard
+- Include **input + output + explanation** for each major task
+- Explanations should answer: what changed, what you observed, and why it matters for Assmang
+- Prefer short and precise evidence over long screenshots with no commentary

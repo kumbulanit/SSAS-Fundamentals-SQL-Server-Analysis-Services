@@ -29,41 +29,48 @@ Apply the theory from **Performance Tuning and Optimization** by completing a gu
 
 ### Step 1: Inspect storage mode and justify the default choice for this model
 
-**Start with the design setting that affects almost everything else:**
-1. Open the cube designer.
-2. Review the storage mode of the cube and measure groups.
-3. Note whether the training model is using MOLAP and why.
-4. Write a short explanation of why MOLAP fits a training model with stable, batch-loaded data.
-5. Contrast it briefly with ROLAP or HOLAP so you can explain the trade-off.
+**Find the storage mode setting — it controls how SSAS stores cube data:**
+1. In Visual Studio (SSDT), open the cube designer by double-clicking the cube in Solution Explorer.
+2. In the Cube Designer, click the **Partition Manager** tab, or right-click the **Production** measure group in Cube Structure → **Properties**.
+3. In the Properties panel, look for the `StorageMode` property. It should show **MOLAP**.
 
-**What to look for:** You are not memorising acronyms. You are deciding how fast queries, freshness, and complexity should be balanced.
+> ℹ️ **You can also check at the measure group level:** In Cube Structure tab, right-click the **Production** measure group → **Properties Window** (press F4 if it is not visible). The `StorageMode` property appears there.
 
-**Expected result:** You can explain why preprocessed multidimensional storage is usually a sensible default in this course.
+4. Note that the three options are:
+   - **MOLAP** — Data is pre-aggregated and stored in SSAS's own format. Fastest for queries. Requires processing to reflect source changes.
+   - **ROLAP** — SSAS queries SQL directly at query time. No processing delay but slowest for large queries.
+   - **HOLAP** — Aggregates in SSAS, detail data stays in SQL. Compromise option.
+
+5. For Assmang daily reporting (stable, batch-loaded data loaded nightly), **MOLAP is correct**. Write one sentence explaining why: managers query yesterday's data, not real-time, so pre-aggregated storage is a good fit.
+
+**Expected result:** You can find the `StorageMode = MOLAP` property in SSDT and explain why it suits a nightly-refresh reporting pattern.
 
 **If something goes wrong:**
-- If you cannot find the storage setting, inspect measure-group and partition properties.
-- If someone changed the default, document that and explain the implication rather than forcing it back blindly.
-- If you do not understand the mode, compare how each mode answers queries and refreshes data.
+- If you cannot find the storage setting, check both the cube-level Properties and the measure group-level Properties panel (F4).
+- If the property shows ROLAP, check whether the cube was deployed that way intentionally before changing it.
 
 ---
 
 ### Step 2: Review aggregation design for common production queries
 
-**Use the design tools with a business question in mind:**
-1. Focus on the production measure group first.
-2. Open the aggregation design tooling or relevant measure-group settings.
-3. Review which attributes are likely to help common Assmang queries, especially mine and time slices.
-4. Note which aggregations the tool suggests and why they matter.
-5. Save your observations before making changes.
+**Open the Aggregation Design Wizard in SSDT:**
+1. In Cube Structure tab, right-click the **Production** measure group → **Design Aggregations...**
+2. The Aggregation Design Wizard opens. On the first page, leave the defaults and click **Next**.
+3. On the **Specify Query Criteria** page, choose **Performance-Based** if you have query logs, or **Count-Based** for a new cube. For this lab, choose **Count-Based** and set the performance goal slider to **50%** of potential performance gain.
+4. Click **Start** — the wizard analyses the attribute combinations and proposes aggregations.
+5. When it finishes, click **Next** to review the proposed aggregations. You will see entries like:
+   - `Mine.Mine Name × Date.Calendar Year` — fast for yearly totals by mine
+   - `Mine.Mine Type × Date.Calendar Year` — fast for commodity summaries
+6. Click **Finish** to save the design. This design is stored but **does not change query results** until the measure group is reprocessed.
+7. In the Output window, after reprocessing: look for a line like `Aggregations: 14 aggregation(s) created`.
 
-**What you are really testing:** Whether the cube is prepared for the kinds of grouped queries managers ask most often.
+**What you are really testing:** Whether the cube is prepared for the kinds of grouped queries managers ask most often — mine × year, commodity × quarter, department × month.
 
-**Expected result:** You can explain how aggregations reduce repeated computation for predictable query patterns.
+**Expected result:** The wizard creates 10–20 aggregations for the Production measure group. You can explain that aggregations pre-compute subtotals so SSAS can skip scanning all rows for every grouped query.
 
 **If something goes wrong:**
-- If the designer is unavailable, document the intended design even if you cannot implement every optimisation interactively.
-- If the suggestions seem random, tie them back to your main browse and MDX query patterns.
-- If you add changes, remember that reprocessing may be required afterward.
+- If the **Design Aggregations** option is greyed out, make sure you right-clicked a measure group (not the cube itself).
+- If the wizard runs but shows 0 aggregations, confirm the measure group has at least one dimension with a non-trivial hierarchy.
 
 ---
 
@@ -88,21 +95,34 @@ Apply the theory from **Performance Tuning and Optimization** by completing a gu
 
 ---
 
-### Step 4: Propose a practical partitioning design for production facts
+### Step 4: Create a year-based partition for FactProduction
 
-**Think like a BI engineer planning for growth:**
-1. Review the grain of `FactProduction`.
-2. Decide whether yearly or monthly partitions make more sense for the data volume and refresh pattern.
-3. Explain how new periods could be processed more often than historical periods.
-4. Note which partition boundaries you would use.
-5. Explain how that design helps both maintenance and query responsiveness.
+**Partitioning splits a measure group into smaller physical pieces so SSAS can skip irrelevant data:**
+1. In Visual Studio (SSDT), click the **Partitions** tab in the Cube Designer.
+2. You will see a single default partition for the Production measure group (usually named after the measure group with no date suffix).
+3. Click **New Partition** button in the toolbar.
+4. In the Partition Wizard:
+   - **Name:** `Production_2024`
+   - **Source type:** Table (keep the default)
+   - **Fact table:** `FactProduction`
+5. On the **Specify Processing and Storage Locations** page, accept defaults.
+6. On the **Slice** page — this is the critical step for performance:
+   - Select the **Date** dimension
+   - Select the **Calendar Year** hierarchy
+   - Click the `2024` member to set the slice
+   - The slice expression shown will be: `[Date].[Calendar Year].&[2024]`
+   - This tells SSAS: "this partition only contains 2024 data — skip it for any other year."
+7. Click **Finish**.
+8. Repeat to create `Production_2023` with the same steps but slice `[Date].[Calendar Year].&[2023]`.
+9. Delete or rename the original default partition to `Production_Historical` and restrict it to years before 2023.
 
-**Expected result:** You can propose a partitioning approach that matches business time periods and operational refresh behaviour.
+**Why this matters:** When a manager runs a 2024-only report, SSAS skips the 2023 partition entirely. The more rows in FactProduction, the bigger the saving.
+
+**Expected result:** The Partitions tab shows 2–3 partitions for the Production measure group. After reprocessing, queries filtered by Calendar Year 2024 only scan the `Production_2024` partition.
 
 **If something goes wrong:**
-- If the dataset is too small to prove partition value empirically, explain the design logically using future growth assumptions.
-- If you are unsure between month and year partitions, compare maintenance overhead against query benefit.
-- If your proposal ignores refresh frequency, revisit the business scenario.
+- If the **Slice** page does not appear, you may be missing the Date dimension on the Production measure group — check Dimension Usage first.
+- If you create a partition without a slice, SSAS will not know which partition to skip and will scan all of them — always set the slice.
 
 ---
 
@@ -128,12 +148,13 @@ Apply the theory from **Performance Tuning and Optimization** by completing a gu
 
 Before marking this lab as complete, confirm:
 
-- [ ] The relevant SQL dataset was loaded and verified
-- [ ] The SSAS project was opened without errors
-- [ ] All objects created in this lab are visible in Solution Explorer
-- [ ] Processing completed successfully (check Output window)
-- [ ] The cube browser or SSMS query returns expected results
-- [ ] You can explain what each object does in business terms
+- [ ] v3 dataset loaded — `FactEquipmentEfficiency` and `FactSafetyKPI` both show > 0 rows
+- [ ] `StorageMode = MOLAP` found in the Production measure group Properties panel in SSDT
+- [ ] Aggregation Design Wizard ran and created 10+ aggregations for the Production measure group
+- [ ] Partitions tab shows at least 2 partitions — `Production_2024` and `Production_2023` — each with a Calendar Year slice set
+- [ ] MDX Query A (mine × month cross-join) returns ≥ 48 rows (4 mines × 12 months)
+- [ ] MDX Query B (mine-only slice) returns 4 rows and you can explain why it should run faster than Query A
+- [ ] You can name one benefit of MOLAP over ROLAP for Assmang's daily production reporting
 
 ---
 
@@ -243,80 +264,26 @@ WHERE ( [Date].[Calendar Year].&[2024] );
 
 ---
 
-## 🧰 Detailed SSMS Workflow (Use This If You Are Not Using Visual Studio)
+## 🧰 Quick Reference
 
-Use this exact sequence when completing the lab or exercise primarily in SSMS:
+### Open an MDX Query Window in SSMS
+1. Connect to **Analysis Services** in Object Explorer
+2. Right-click **AssmangMiningAnalytics** → **New Query → MDX**
+3. Select **`AssmangMiningAnalytics`** from the toolbar dropdown **before** typing any MDX
+4. Press **F5** to run
 
-1. Open SSMS and connect to the **Database Engine** that hosts `AssmangMining`.
-2. Open the topic dataset script only if the lab requires a fresh load, then execute it and wait for a clean completion message in the Messages pane.
-3. Run the SQL validation queries in the file immediately after the load so you confirm counts, date ranges, and key joins before involving SSAS.
-4. Keep the Database Engine connection open so you can cross-check source numbers later.
-5. Open a second connection in the same SSMS session using **Connect > Analysis Services**.
-6. Expand **Databases** on the Analysis Services connection and refresh the tree if the expected SSAS database is not visible the first time.
-7. Confirm the deployed database name matches the training project and that the target cube is present.
-8. Expand the SSAS database and inspect the cube, dimensions, and other objects so you know the metadata you are about to query.
-9. If you need to process objects, remember the project must already be deployed and the account must have SSAS admin rights plus read access to the relational source through the data source impersonation settings.
-10. Right-click the cube or database and choose **Process** only after you know which object you are affecting.
-11. In the processing dialog, review the list of affected objects carefully because processing can cascade from a high-level object to lower-level objects.
-12. Wait for processing to finish and read warnings, not just the final success line.
-13. Open the cube browser from SSMS if available, or open an MDX query window using **New Query > MDX**.
-14. Start with the simplest possible MDX pattern: one measure on columns and one hierarchy on rows.
-15. Add a slicer only after the base query works.
-16. Compare at least one SSAS result against the SQL baseline from the Database Engine connection.
-17. Save important queries with meaningful names so you can reuse them during assessments.
-18. Capture evidence for every exercise: the input, the output, and one sentence explaining what the result means for Assmang.
-19. If the numbers look wrong, troubleshoot in this order: SQL source data, deployment state, processing state, dimension relationships, then MDX syntax.
-20. Before submission, write down what you tested, what result you obtained, and why the result matters to the business.
+### Build and Deploy in Visual Studio (SSDT)
+1. **Build:** Build → Build Solution → wait for "Build succeeded" (0 errors)
+2. **Deploy:** Right-click project → Deploy → wait for "Deployment completed successfully"
+3. **Process:** SSMS → Analysis Services connection → right-click database → Process → Run → wait for all Success rows
 
-### SSMS Menu Path Quick Reference
+### Key Menu Paths
+- New SQL query: SSMS toolbar → **New Query**
+- Connect to SSAS: SSMS Object Explorer → **Connect → Analysis Services**
+- Open MDX query: SSAS connection → right-click database → **New Query → MDX**
+- Cube browser: Visual Studio → Cube Designer → **Browser** tab
 
-- Connect to SQL Engine: `File > Connect Object Explorer > Database Engine`
-- Connect to SSAS: `Object Explorer > Connect > Analysis Services`
-- Open SQL query: `Toolbar > New Query`
-- Open MDX query: `Analysis Services connection > New Query > MDX`
-- Browse cube: `SSAS Database > Cubes > [Cube Name] > Browse`
-- Process object (if permissions allow): `Right-click Cube/Dimension > Process`
-
-## Detailed Visual Studio (SSDT) Workflow (Step-by-Step)
-
-Use this path when you are building and validating directly in Visual Studio with SSDT:
-
-1. Open Visual Studio and load the SSAS solution for the topic.
-2. In Solution Explorer, confirm the expected SSAS folders exist and are not already showing warning icons.
-3. Open **Project Properties > Deployment** before changing design objects so you know which SSAS server and database you are targeting.
-4. Open the data source and click **Test Connection**.
-5. Confirm the data source points to the SQL Database Engine instance, not the SSAS instance.
-6. Review impersonation settings because successful deployment alone is not enough; processing also needs relational read access.
-7. Open the Data Source View and verify the required tables and joins for the topic are present.
-8. Rearrange the DSV if it is unreadable so you can actually inspect it during the exercise.
-9. Open each required dimension and review `KeyColumns`, `NameColumn`, visible attributes, and user hierarchies.
-10. If the topic involves cube work, open the cube designer and inspect structure, measure groups, calculations, and the **Dimension Usage** tab.
-11. Check aggregation behaviour for business measures instead of accepting every wizard default.
-12. Save changes before building.
-13. Run **Build > Build Solution** and read the Error List carefully.
-14. Fix build errors before deployment and do not ignore relationship or key warnings unless you can explain them.
-15. Deploy the project using **Right-click Project > Deploy**.
-16. Remember what Microsoft’s SSDT deployment guidance says: deployment builds the project, validates the destination server, and then creates or updates the SSAS database objects.
-17. After deployment, process the affected objects if prompted, or right-click the cube or database and choose **Process** manually.
-18. Review the processing dialog before clicking Run because high-level processing choices can affect multiple lower-level objects.
-19. Wait for processing to complete and read warnings, not just the success banner.
-20. Open the Browser tab and test at least one real business slice for the topic.
-21. Open SSMS against Analysis Services and run one or two MDX checks against the same cube output.
-22. Compare SSDT browser results, MDX results, and SQL baseline values.
-23. If results differ, troubleshoot in this order: source data, DSV relationships, dimension design, dimension usage, aggregation logic, then processing freshness.
-24. Save evidence for the exercise: build result, deployment result, process result, browser or MDX output, and one sentence explaining the business meaning.
-
-### Visual Studio Menu Path Quick Reference
-
-- Open solution: File > Open > Project/Solution
-- Build: Build > Build Solution
-- Deploy: Solution Explorer > Right-click SSAS Project > Deploy
-- Project deployment settings: Right-click SSAS Project > Properties > Deployment
-- Process object: Right-click Cube/Dimension > Process
-- Cube browser: Open Cube Designer > Browser tab
-
-### Evidence Standard (What Good Submission Looks Like)
-
-- Include **input + output + explanation** for each major task.
-- Explanations should answer: **what changed, what you observed, and why it matters**.
-- Prefer short and precise evidence over long screenshots with no commentary.
+### Evidence Standard
+- Include **input + output + explanation** for each major task
+- Explanations should answer: what changed, what you observed, and why it matters for Assmang
+- Prefer short and precise evidence over long screenshots with no commentary

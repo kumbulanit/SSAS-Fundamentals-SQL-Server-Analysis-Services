@@ -68,6 +68,48 @@ Create a mini solution blueprint for an executive dashboard sourced from the Ass
 - Ensure each query uses explicit dimensions and slicers.
 - Confirm each query can be validated against SQL baseline totals.
 
+> ✅ **COPY AND PASTE — Page 1: Operations query (TonnesProduced by Mine and Month for 2024):**
+
+```mdx
+SELECT
+    { [Measures].[TonnesProduced] } ON COLUMNS,
+    CROSSJOIN(
+        [Mine].[Mine Name].[Mine Name].MEMBERS,
+        [Date].[Calendar].[Month].MEMBERS
+    ) ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE ( [Date].[Calendar Year].&[2024] );
+```
+
+> 📸 **Expected result:** 48 rows (4 mines × 12 months). This is the data behind Page 1 of the executive dashboard.
+
+> ✅ **COPY AND PASTE — Page 2: Finance query (Cost Per Tonne by Mine and Quarter for 2024):**
+
+```mdx
+SELECT
+    { [Measures].[Cost Per Tonne ZAR], [Measures].[TotalOperatingCost] } ON COLUMNS,
+    CROSSJOIN(
+        [Mine].[Mine Name].[Mine Name].MEMBERS,
+        [Date].[Calendar].[Calendar Quarter].MEMBERS
+    ) ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE ( [Date].[Calendar Year].&[2024] );
+```
+
+> 📸 **Expected result:** 16 rows (4 mines × 4 quarters). Cost Per Tonne should be in the R 350–R 500 range for iron ore mines.
+
+> ✅ **COPY AND PASTE — Page 3: Safety query (ComplianceScore by Mine for 2024):**
+
+```mdx
+SELECT
+    { [Measures].[ComplianceScore] } ON COLUMNS,
+    [Mine].[Mine Name].[Mine Name].MEMBERS ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE ( [Date].[Calendar Year].&[2024] );
+```
+
+> 📸 **Expected result:** 4 rows (one per mine). ComplianceScore should be between 0 and 100. Any mine below 80 should show red KPI status on the dashboard.
+
 **Step 4: Define role-based access**
 - Define at least two roles:
   - Executive role: all mines visible

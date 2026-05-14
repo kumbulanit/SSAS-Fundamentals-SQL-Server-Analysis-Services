@@ -69,6 +69,23 @@ Recommend the best storage mode for Assmang's near-real-time production reportin
 - State expected behavior for each mode under this query.
 - Identify which mode best balances speed and freshness for this use case.
 
+> ✅ **COPY AND PASTE this query into SSMS (Analysis Services MDX window) to measure baseline response time:**
+
+```mdx
+-- Baseline query: TonnesProduced by Mine and Quarter for 2024
+-- Note the execution time shown in the SSMS status bar
+SELECT
+    { [Measures].[TonnesProduced] } ON COLUMNS,
+    CROSSJOIN(
+        [Mine].[Mine Name].[Mine Name].MEMBERS,
+        [Date].[Calendar].[Calendar Quarter].MEMBERS
+    ) ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE ( [Date].[Calendar Year].&[2024] );
+```
+
+> 📸 **Expected result:** 16 rows (4 mines × 4 quarters). Note the execution time. After changing storage mode and reprocessing, run again to compare.
+
 **Step 4: Recommend implementation approach**
 - Choose one mode as primary recommendation.
 - Add one fallback option if Assmang priorities shift (speed first vs freshness first).
@@ -115,6 +132,23 @@ Design a year-based partition strategy for FactProduction that improves processi
 - Show why queries scoped to 2024 avoid scanning older partitions.
 - Estimate expected speed improvement for common manager queries.
 
+> ✅ **COPY AND PASTE to test partition elimination — run both queries and compare execution times:**
+
+```mdx
+-- Query A: All years (no partition elimination — scans all partitions)
+SELECT { [Measures].[TonnesProduced] } ON COLUMNS,
+       [Date].[Calendar].[Calendar Year].MEMBERS ON ROWS
+FROM [Assmang Mining Analytics];
+
+-- Query B: 2024 only (partition elimination — skips 2023 partition)
+SELECT { [Measures].[TonnesProduced] } ON COLUMNS,
+       [Date].[Calendar].[Calendar Year].MEMBERS ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE ( [Date].[Calendar Year].&[2024] );
+```
+
+> 📸 **Expected:** Query B should return faster. With the training dataset the difference is small, but at Assmang production scale (millions of rows), skipping the 2023 partition saves significant I/O.
+
 **Step 5: Document operational controls**
 - Add a monthly partition health review step.
 - Add a rollback plan if partition processing fails.
@@ -143,6 +177,22 @@ Design targeted aggregations based on real Assmang reporting patterns and justif
   - Production manager: Tonnes by Mine, Department, Month
   - CFO: Cost and production by Mine and Quarter
 - Mark which queries are most latency-sensitive.
+
+> ✅ **COPY AND PASTE the "supervisor query" pattern to establish a baseline before aggregation design:**
+
+```mdx
+-- Supervisor query: Tonnes by Mine and Month
+-- Run this BEFORE and AFTER running the Aggregation Design Wizard to compare response time
+SELECT { [Measures].[TonnesProduced] } ON COLUMNS,
+    CROSSJOIN(
+        [Mine].[Mine Name].[Mine Name].MEMBERS,
+        [Date].[Calendar].[Month].MEMBERS
+    ) ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE ( [Date].[Calendar Year].&[2024] );
+```
+
+> 📸 **Expected:** 48 rows (4 mines × 12 months). Record the query duration shown in the SSMS status bar (e.g., "00:00:01"). After designing and deploying aggregations, run again to measure improvement.
 
 **Step 2: Propose aggregation candidates**
 - For each pattern, define one aggregation grain.
