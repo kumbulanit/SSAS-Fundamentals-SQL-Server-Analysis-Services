@@ -20,32 +20,29 @@ By the end of this topic, participants will be able to:
 **Difficulty:** Beginner (no prior SSAS experience required)  
 **Estimated reading time:** 20-30 minutes
 
-### What is this topic about?
+### What this topic covers
 
-This topic teaches you about **MDX Query Fundamentals**. If you have never worked with SQL Server Analysis Services before, don't worry — we will explain everything from scratch using plain language and real examples from Assmang's mining operations.
+The cube is built and deployed. Now you need to **query it**. MDX (Multidimensional Expressions) is the query language of SSAS — it tells the cube exactly what to show and how to arrange the results.
 
-### Why does this matter to you?
+If you know SQL, MDX will feel familiar but think differently. Both use `SELECT`, `FROM`, and `WHERE` — but in MDX, `WHERE` does not filter rows. It narrows the entire query to a **slice of the cube**.
 
-As someone working at or with Assmang, you deal with data every day — production figures, costs, safety records, employee information. Right now, getting answers from that data probably involves:
+### MDX vs SQL — The mental shift you need to make
 
-- Asking someone in IT to write a report
-- Waiting for Excel spreadsheets to be updated
-- Running the same SQL queries over and over
-- Not being sure if the numbers are up to date
+| SQL thinking | MDX thinking |
+|-------------|-------------|
+| "Give me the rows where Mine = Khumani" | "Navigate to the Khumani coordinate of the cube" |
+| WHERE filters rows | WHERE slices the whole result |
+| Columns = table fields | Axes = what goes on rows and columns of the result |
+| One result set, flat | Multi-dimensional grid with row/column/slicer axes |
 
-SSAS solves these problems by creating a **pre-built analytical model** (called a "cube") that lets anyone with Excel or Power BI get instant answers without writing code.
+### What MDX can do that SQL cannot easily do
 
-### The Assmang training context
-
-All examples in this course use data from Assmang's actual operations:
-
-| Mine | What it produces | Where it is |
-|------|-----------------|-------------|
-| Beeshoek Mine | Iron Ore | Postmasburg, Northern Cape |
-| Khumani Mine | Iron Ore | Kathu, Northern Cape |
-| Black Rock Mine | Manganese | Hotazel, Northern Cape |
-| Dwarsrivier Chrome Mine | Chrome | Burgersfort, Limpopo |
-| Machadodorp Works | Chrome (processing) | Machadodorp, Mpumalanga |
+| Business question | Why SQL struggles | What MDX gives you |
+|------------------|------------------|--------------------|
+| Tonnes by mine AND by month in one grid | Requires JOIN + GROUP BY + PIVOT | Two axes: mines on ROWS, months on COLUMNS |
+| This year vs last year side by side | Self-join or subquery | PARALLELPERIOD() on one axis |
+| Only mines above average production | Subquery or CTE | FILTER() function on a set |
+| Percentage of total | Window function or subquery | MEMBER with division by All member |
 
 ---
 
@@ -55,7 +52,7 @@ All examples in this course use data from Assmang's actual operations:
 
 Imagine MDX is like talking to a very organised assistant. Instead of saying 'find me some data', you say exactly: 'Show me REVENUE (what I want to see) for EACH MINE (rows) for the YEAR 2024 (filter).' The assistant already knows where everything is because the cube was pre-built, so the answer comes back instantly.
 
-> **Key insight:** SSAS takes complex data and makes it simple to explore. You don't need to be a programmer to use the results — you just need to know what question you want to answer.
+> **Key insight for this topic:** In MDX, the `WHERE` clause is a **slicer** — it does not filter rows the way SQL does. It narrows the entire result to a slice of the cube. Think of it as zooming in on a region of the data, not removing rows from a table.
 
 ---
 

@@ -20,32 +20,30 @@ By the end of this topic, participants will be able to:
 **Difficulty:** Beginner (no prior SSAS experience required)  
 **Estimated reading time:** 20-30 minutes
 
-### What is this topic about?
+### What this topic covers
 
-This topic teaches you about **Building and Deploying SSAS Cubes**. If you have never worked with SQL Server Analysis Services before, don't worry — we will explain everything from scratch using plain language and real examples from Assmang's mining operations.
+You already know what SSAS is. This topic is about **actually building one** — going from an empty Visual Studio project to a live, queryable cube on the SSAS server.
 
-### Why does this matter to you?
+The dataset for this topic adds a second fact table (`FactOperatingCosts`) alongside `FactProduction`, giving your cube **two measure groups**: production metrics and cost metrics, both connected through the same Mine, Date, and Department dimensions.
 
-As someone working at or with Assmang, you deal with data every day — production figures, costs, safety records, employee information. Right now, getting answers from that data probably involves:
+### What you need going into this topic
 
-- Asking someone in IT to write a report
-- Waiting for Excel spreadsheets to be updated
-- Running the same SQL queries over and over
-- Not being sure if the numbers are up to date
+- You have completed the Introduction topic (you understand what a cube, dimension, and measure are)
+- SQL Server and Analysis Services are both running on your machine
+- Visual Studio with SSDT is installed
+- The `v2_assmang_mining_extended.sql` dataset is loaded into SQL Server
 
-SSAS solves these problems by creating a **pre-built analytical model** (called a "cube") that lets anyone with Excel or Power BI get instant answers without writing code.
+### The build sequence at a glance
 
-### The Assmang training context
-
-All examples in this course use data from Assmang's actual operations:
-
-| Mine | What it produces | Where it is |
-|------|-----------------|-------------|
-| Beeshoek Mine | Iron Ore | Postmasburg, Northern Cape |
-| Khumani Mine | Iron Ore | Kathu, Northern Cape |
-| Black Rock Mine | Manganese | Hotazel, Northern Cape |
-| Dwarsrivier Chrome Mine | Chrome | Burgersfort, Limpopo |
-| Machadodorp Works | Chrome (processing) | Machadodorp, Mpumalanga |
+| Stage | What you do | What you get |
+|-------|-------------|--------------|
+| 1. Data Source | Connect Visual Studio to SQL Server | Confirmed connection |
+| 2. Data Source View | Select the tables to include | Diagram showing tables and joins |
+| 3. Dimensions | Create Mine, Date, Department, Employee objects | Drill-down navigation for users |
+| 4. Measure Groups | Add Production + Operating Costs | The numbers users will query |
+| 5. Build | Compile the project | Zero errors = ready to deploy |
+| 6. Deploy | Push to SSAS server | Cube structure created on server |
+| 7. Process | Load data into the structure | Cube is live and queryable |
 
 ---
 
@@ -55,7 +53,7 @@ All examples in this course use data from Assmang's actual operations:
 
 Building a cube is like setting up a new shop. First you design the layout (data source view), then you stock the shelves (dimensions and measures), then you open the doors (deploy), and finally you turn on the lights so customers can see the products (process). The shop only becomes useful to customers after ALL these steps are complete.
 
-> **Key insight:** SSAS takes complex data and makes it simple to explore. You don't need to be a programmer to use the results — you just need to know what question you want to answer.
+> **Key insight for this topic:** Deploying and processing are two separate steps. Deploy sends the cube **structure** to SSAS. Process loads the **actual data**. A deployed-but-unprocessed cube returns empty results. You need both before anyone can query it.
 
 ---
 

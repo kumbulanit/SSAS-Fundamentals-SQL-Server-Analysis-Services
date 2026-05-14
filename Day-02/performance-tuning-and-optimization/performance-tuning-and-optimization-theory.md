@@ -20,32 +20,34 @@ By the end of this topic, participants will be able to:
 **Difficulty:** Beginner (no prior SSAS experience required)  
 **Estimated reading time:** 20-30 minutes
 
-### What is this topic about?
+### What this topic covers
 
-This topic teaches you about **Performance Tuning and Optimization**. If you have never worked with SQL Server Analysis Services before, don't worry — we will explain everything from scratch using plain language and real examples from Assmang's mining operations.
+A correctly built cube that is configured poorly will frustrate users — slow queries, long processing windows, data that is hours out of date when the shift starts. This topic gives you three levers to control cube performance:
 
-### Why does this matter to you?
+1. **Storage mode** — where SSAS physically stores data (in its own compressed files, in SQL, or a mix)
+2. **Aggregations** — pre-calculated summaries that make common queries return in milliseconds instead of seconds
+3. **Partitions** — splitting a large measure group into smaller chunks so processing and queries only touch the data they need
 
-As someone working at or with Assmang, you deal with data every day — production figures, costs, safety records, employee information. Right now, getting answers from that data probably involves:
+### The Assmang performance constraint that drives every decision
 
-- Asking someone in IT to write a report
-- Waiting for Excel spreadsheets to be updated
-- Running the same SQL queries over and over
-- Not being sure if the numbers are up to date
+Assmang's daily timeline is non-negotiable:
 
-SSAS solves these problems by creating a **pre-built analytical model** (called a "cube") that lets anyone with Excel or Power BI get instant answers without writing code.
+| Time | Event | What it requires |
+|------|-------|------------------|
+| 06:00 | Nightly processing window opens | Processing must complete in under 45 minutes |
+| 07:00 | Shift supervisors open dashboards | Queries must return in under 2 seconds |
+| 08:00 | Executive morning briefing | Complex multi-mine comparisons must still be fast |
+| All day | Ad-hoc analyst queries | No slowdowns under normal query load |
 
-### The Assmang training context
+Every performance decision in this topic is measured against that timeline. A choice that speeds up queries but extends processing past 06:45 is not acceptable for Assmang.
 
-All examples in this course use data from Assmang's actual operations:
+### The three-way trade-off
 
-| Mine | What it produces | Where it is |
-|------|-----------------|-------------|
-| Beeshoek Mine | Iron Ore | Postmasburg, Northern Cape |
-| Khumani Mine | Iron Ore | Kathu, Northern Cape |
-| Black Rock Mine | Manganese | Hotazel, Northern Cape |
-| Dwarsrivier Chrome Mine | Chrome | Burgersfort, Limpopo |
-| Machadodorp Works | Chrome (processing) | Machadodorp, Mpumalanga |
+| Choice | Query speed | Processing speed | Storage |
+|--------|------------|-----------------|--------|
+| More aggregations | Faster | Slower | More |
+| Fewer partitions | Faster for full scans | Slower for targeted refresh | Less |
+| MOLAP storage | Fastest | Slowest | Most |
 
 ---
 
@@ -55,7 +57,7 @@ All examples in this course use data from Assmang's actual operations:
 
 Performance tuning is about choosing the right tool for the job. A motorbike (MOLAP) is fastest for small, frequent deliveries. A truck (ROLAP) carries more but is slower. A van (HOLAP) is a middle ground. You choose based on what your business actually needs — fast dashboards, real-time data, or a balance of both.
 
-> **Key insight:** SSAS takes complex data and makes it simple to explore. You don't need to be a programmer to use the results — you just need to know what question you want to answer.
+> **Key insight for this topic:** Processing speed and query speed pull in opposite directions. More aggregations = faster queries but longer processing. Fewer partitions = simpler management but slower targeted refreshes. Every performance decision is a trade-off — tune for the constraint that matters most to Assmang's 07:00 reporting window.
 
 ---
 

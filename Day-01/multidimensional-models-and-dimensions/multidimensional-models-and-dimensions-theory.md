@@ -20,32 +20,26 @@ By the end of this topic, participants will be able to:
 **Difficulty:** Beginner (no prior SSAS experience required)  
 **Estimated reading time:** 20-30 minutes
 
-### What is this topic about?
+### What this topic covers
 
-This topic teaches you about **Multidimensional Models and Dimensions**. If you have never worked with SQL Server Analysis Services before, don't worry — we will explain everything from scratch using plain language and real examples from Assmang's mining operations.
+Every business question has a "what" and a "by what". The **measures** are the "what" (tonnes produced, revenue, cost). The **dimensions** are the "by what" — by mine, by month, by department, by shift.
 
-### Why does this matter to you?
+This topic focuses entirely on dimensions: how to design them, how to build hierarchies that let users drill down, and how to avoid the mistakes that create broken or misleading reports.
 
-As someone working at or with Assmang, you deal with data every day — production figures, costs, safety records, employee information. Right now, getting answers from that data probably involves:
+### Why dimension design matters more than you might think
 
-- Asking someone in IT to write a report
-- Waiting for Excel spreadsheets to be updated
-- Running the same SQL queries over and over
-- Not being sure if the numbers are up to date
+A cube with badly designed dimensions will still build and deploy without errors. The problems only appear later:
 
-SSAS solves these problems by creating a **pre-built analytical model** (called a "cube") that lets anyone with Excel or Power BI get instant answers without writing code.
+- Users see ID numbers instead of names (`Mine ID 3` instead of `Khumani`)
+- Drill-down stops halfway through the hierarchy
+- Months sort alphabetically instead of chronologically (April, August, February...)
+- Reports show duplicate rows because the key attribute is wrong
 
-### The Assmang training context
+This topic teaches you to catch and fix these issues during design — before users encounter them.
 
-All examples in this course use data from Assmang's actual operations:
+### What you are working with in this topic
 
-| Mine | What it produces | Where it is |
-|------|-----------------|-------------|
-| Beeshoek Mine | Iron Ore | Postmasburg, Northern Cape |
-| Khumani Mine | Iron Ore | Kathu, Northern Cape |
-| Black Rock Mine | Manganese | Hotazel, Northern Cape |
-| Dwarsrivier Chrome Mine | Chrome | Burgersfort, Limpopo |
-| Machadodorp Works | Chrome (processing) | Machadodorp, Mpumalanga |
+**Dataset:** `v1_assmang_mining_base.sql` — the foundational dataset. Four dimension tables (`Dim_Mine`, `Dim_Date`, `Dim_Department`, `Dim_Employee`) supporting one fact table `FactProduction`. The dimension skills you build here carry forward to v2 and v3 in later topics.
 
 ---
 
@@ -55,7 +49,7 @@ All examples in this course use data from Assmang's actual operations:
 
 Think of dimensions like the labels on a filing cabinet. One drawer is labelled 'By Mine', another 'By Month', another 'By Department'. When you want to find production data for Beeshoek in March, you open the 'Mine' drawer, find 'Beeshoek', then look in the 'Month' section for 'March'. Dimensions are those category labels that help you navigate to exactly the data you need.
 
-> **Key insight:** SSAS takes complex data and makes it simple to explore. You don't need to be a programmer to use the results — you just need to know what question you want to answer.
+> **Key insight for this topic:** The quality of your dimensions determines how useful the cube is for end users. A well-built Mine dimension lets a manager drill from Province → Mine Type → Mine Name in three clicks. A poorly built one shows ID numbers and dead ends.
 
 ---
 

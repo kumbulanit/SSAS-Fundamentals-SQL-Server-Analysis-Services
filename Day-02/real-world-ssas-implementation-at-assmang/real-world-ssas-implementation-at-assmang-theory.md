@@ -20,32 +20,26 @@ By the end of this topic, participants will be able to:
 **Difficulty:** Beginner (no prior SSAS experience required)  
 **Estimated reading time:** 20-30 minutes
 
-### What is this topic about?
+### What this topic covers
 
-This topic teaches you about **Real-World SSAS Implementation at Assmang**. If you have never worked with SQL Server Analysis Services before, don't worry — we will explain everything from scratch using plain language and real examples from Assmang's mining operations.
+This is the final topic. Everything from the previous seven sessions — SSAS concepts, dimensions, measures, MDX queries, calculations, KPIs, and performance — comes together into a **complete, working analytical solution** for Assmang.
 
-### Why does this matter to you?
+You will see what a production-grade SSAS implementation looks like end to end: four fact tables, all four dimensions, calculated measures, KPIs with colour-coded status, nightly processing, and role-based security.
 
-As someone working at or with Assmang, you deal with data every day — production figures, costs, safety records, employee information. Right now, getting answers from that data probably involves:
+### The full v3 Assmang solution at a glance
 
-- Asking someone in IT to write a report
-- Waiting for Excel spreadsheets to be updated
-- Running the same SQL queries over and over
-- Not being sure if the numbers are up to date
+| Layer | Contents | Business purpose |
+|-------|----------|------------------|
+| **Fact tables** | FactProduction, FactOperatingCosts, FactSafetyKPI, FactEmployeeMetrics | Production, finance, safety, and HR in one cube |
+| **Dimensions** | Mine, Date, Department, Employee | Slice every metric by location, time, team, and person |
+| **Calculated measures** | Cost Per Tonne, Revenue Per Employee, Equipment Utilisation | Derived KPIs no single table can provide |
+| **KPIs** | Production vs Target, Safety Compliance, Cost Variance | Green/amber/red for executive dashboards |
+| **Processing** | Nightly MOLAP refresh at 06:00 | Data is fresh before the 07:00 shift briefing |
+| **Security** | Role-based — mine managers see their mine; CFO sees all | Data governance enforced at the cube level |
 
-SSAS solves these problems by creating a **pre-built analytical model** (called a "cube") that lets anyone with Excel or Power BI get instant answers without writing code.
+### How this topic differs from the others
 
-### The Assmang training context
-
-All examples in this course use data from Assmang's actual operations:
-
-| Mine | What it produces | Where it is |
-|------|-----------------|-------------|
-| Beeshoek Mine | Iron Ore | Postmasburg, Northern Cape |
-| Khumani Mine | Iron Ore | Kathu, Northern Cape |
-| Black Rock Mine | Manganese | Hotazel, Northern Cape |
-| Dwarsrivier Chrome Mine | Chrome | Burgersfort, Limpopo |
-| Machadodorp Works | Chrome (processing) | Machadodorp, Mpumalanga |
+All previous topics taught individual skills in isolation. This topic shows you how those skills interact in a real project — where a dimension design decision in Week 1 affects KPI accuracy in Week 6, and where a processing schedule choice determines whether executives trust the numbers at 07:00 or not.
 
 ---
 
@@ -55,7 +49,7 @@ All examples in this course use data from Assmang's actual operations:
 
 This topic is like designing the entire control room for a mine. You decide what screens to display (dimensions and measures), what alarms to set (KPIs), how often to refresh the data (processing schedule), who can see what (security), and how to handle maintenance. It brings together everything you have learned into one complete, working solution.
 
-> **Key insight:** SSAS takes complex data and makes it simple to explore. You don't need to be a programmer to use the results — you just need to know what question you want to answer.
+> **Key insight for this topic:** A real-world SSAS solution is not just the cube file — it is the deployment process, the nightly processing schedule, the role-based security model, and the communication plan that keeps 50 users trusting the same numbers every morning. The technology is only half the job.
 
 ---
 

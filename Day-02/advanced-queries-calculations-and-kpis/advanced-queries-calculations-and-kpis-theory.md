@@ -20,32 +20,31 @@ By the end of this topic, participants will be able to:
 **Difficulty:** Beginner (no prior SSAS experience required)  
 **Estimated reading time:** 20-30 minutes
 
-### What is this topic about?
+### What this topic covers
 
-This topic teaches you about **Advanced Queries, Calculations, and KPIs**. If you have never worked with SQL Server Analysis Services before, don't worry — we will explain everything from scratch using plain language and real examples from Assmang's mining operations.
+Your cube already has measures, dimensions, and MDX query skills from the previous topics. But raw measures only answer **"how much?"**. This topic adds the intelligence layer — the formulas, groupings, and status indicators that answer the questions executives actually care about:
 
-### Why does this matter to you?
+- **"How efficient are we?"** → Calculated measure: Cost Per Tonne
+- **"Which mines are underperforming?"** → Named set filtered by below-average production
+- **"Do we have a problem, or is this normal?"** → KPI with green/amber/red status
 
-As someone working at or with Assmang, you deal with data every day — production figures, costs, safety records, employee information. Right now, getting answers from that data probably involves:
+### What you build in this topic
 
-- Asking someone in IT to write a report
-- Waiting for Excel spreadsheets to be updated
-- Running the same SQL queries over and over
-- Not being sure if the numbers are up to date
+| Component | What it is | Assmang example |
+|-----------|-----------|----------------|
+| Calculated measure | A formula derived from existing measures | Cost Per Tonne = Total Cost ÷ Tonnes Produced |
+| Named set | A reusable group of dimension members | Iron Ore Mines = {Beeshoek, Khumani} |
+| KPI | A measure with a target and colour-coded status | Production Efficiency: green if ≥ 95%, amber if 80–94%, red if < 80% |
+| Time calculation | A formula that compares this period to last | Year-on-Year cost variance |
 
-SSAS solves these problems by creating a **pre-built analytical model** (called a "cube") that lets anyone with Excel or Power BI get instant answers without writing code.
+### What changes at this stage
 
-### The Assmang training context
-
-All examples in this course use data from Assmang's actual operations:
-
-| Mine | What it produces | Where it is |
-|------|-----------------|-------------|
-| Beeshoek Mine | Iron Ore | Postmasburg, Northern Cape |
-| Khumani Mine | Iron Ore | Kathu, Northern Cape |
-| Black Rock Mine | Manganese | Hotazel, Northern Cape |
-| Dwarsrivier Chrome Mine | Chrome | Burgersfort, Limpopo |
-| Machadodorp Works | Chrome (processing) | Machadodorp, Mpumalanga |
+| Before this topic | After this topic |
+|-------------------|------------------|
+| Tonnes = 45,200 | Cost Per Tonne = R 375 — is that good? |
+| Revenue = R 28.5M | Revenue variance vs last year = +12% |
+| All mines always shown | Named set: Iron Ore mines only |
+| Numbers with no context | KPI: Khumani is **amber** — needs attention |
 
 ---
 
@@ -55,7 +54,7 @@ All examples in this course use data from Assmang's actual operations:
 
 Basic measures tell you speed and fuel level. But KPIs are like adding warning lights — green means everything is fine, amber means pay attention, red means there is a problem. A KPI takes a measure (like production tonnes), compares it to a target, and shows a colour-coded status so executives can instantly see which mines are on track and which need attention.
 
-> **Key insight:** SSAS takes complex data and makes it simple to explore. You don't need to be a programmer to use the results — you just need to know what question you want to answer.
+> **Key insight for this topic:** A calculated measure is not stored in the database — SSAS computes it at query time for whatever level the user is viewing. This means Cost Per Tonne is always calculated correctly, whether you are looking at one mine for one day or all mines for one full year.
 
 ---
 
