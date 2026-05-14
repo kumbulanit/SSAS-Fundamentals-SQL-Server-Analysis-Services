@@ -3,287 +3,347 @@
 
 ---
 
-## 🎯 Learning Objectives
+## 🎯 What You Will Be Able to Do After This Topic
 
-By the end of this topic, participants will be able to:
-
-1. Understand the relationship between fact tables, measure groups, and cube measures.
-2. Choose correct aggregation behavior for common mining metrics.
-3. Recognise additive, semi-additive, and non-additive business values.
-4. Understand the purpose of aggregations in performance optimisation.
-
----
-
-## 📋 Topic Overview
-
-**Dataset:** `v2_assmang_mining_extended.sql`  
-**Difficulty:** Beginner (no prior SSAS experience required)  
-**Estimated reading time:** 20-30 minutes
-
-### What is this topic about?
-
-This topic teaches you about **Measures, Measure Groups, and Aggregations**. If you have never worked with SQL Server Analysis Services before, don't worry — we will explain everything from scratch using plain language and real examples from Assmang's mining operations.
-
-### Why does this matter to you?
-
-As someone working at or with Assmang, you deal with data every day — production figures, costs, safety records, employee information. Right now, getting answers from that data probably involves:
-
-- Asking someone in IT to write a report
-- Waiting for Excel spreadsheets to be updated
-- Running the same SQL queries over and over
-- Not being sure if the numbers are up to date
-
-SSAS solves these problems by creating a **pre-built analytical model** (called a "cube") that lets anyone with Excel or Power BI get instant answers without writing code.
-
-### The Assmang training context
-
-All examples in this course use data from Assmang's actual operations:
-
-| Mine | What it produces | Where it is |
-|------|-----------------|-------------|
-| Beeshoek Mine | Iron Ore | Postmasburg, Northern Cape |
-| Khumani Mine | Iron Ore | Kathu, Northern Cape |
-| Black Rock Mine | Manganese | Hotazel, Northern Cape |
-| Dwarsrivier Chrome Mine | Chrome | Burgersfort, Limpopo |
-| Machadodorp Works | Chrome (processing) | Machadodorp, Mpumalanga |
+| # | You will be able to... |
+|---|----------------------|
+| 1 | Explain what a measure is and give 3 examples from Assmang |
+| 2 | Explain what a measure group is and which fact table it comes from |
+| 3 | Correctly classify a measure as additive, semi-additive, or non-additive |
+| 4 | Explain why wrong aggregation gives wrong business answers |
 
 ---
 
-## 🧠 Real-World Analogy (Plain English)
+## 📋 Quick Facts
 
-**Think of this topic like the numbers on a sports scoreboard.**
+| Item | Detail |
+|------|--------|
+| Dataset | `v2_assmang_mining_extended.sql` |
+| Difficulty | Beginner |
+| Reading time | 20 minutes |
+| Tools needed | SSMS + Visual Studio (SSDT) |
 
-Think of measures like the numbers on a sports scoreboard — points scored, time remaining, fouls committed. These are the actual VALUES you care about. The scoreboard itself organises them by team (one dimension) and by quarter (another dimension). In SSAS, measures are the numbers (tonnes, revenue, cost) and measure groups are the scoreboards that organise related numbers together.
+---
 
-> **Key insight:** SSAS takes complex data and makes it simple to explore. You don't need to be a programmer to use the results — you just need to know what question you want to answer.
+## 🧠 The Big Picture — Before Any Technical Detail
+
+**Imagine you are a production manager at Khumani Iron Ore Mine.**
+
+Every morning at 07:00 your boss asks: *"How many tonnes did we produce yesterday, and what did it cost per tonne?"*
+
+Right now, someone in IT writes a SQL query, exports to Excel, and emails it to you. It takes 2 hours. The data is from yesterday. You cannot drill into it.
+
+**With SSAS, this is what changes:**
+
+1. The raw numbers (tonnes, costs) live in SQL Server
+2. SSAS reads them and builds an **analytical cube** overnight
+3. You open Excel, connect to the cube, and your answer appears in **under 2 seconds**
+4. You can click to see by mine → by department → by day → by shift, without calling IT
+
+**Measures are the numbers you care about. Measure groups organise those numbers. Aggregations make them load fast.**
+
+---
+
+## Part 1 — What Is a Measure?
+
+**A measure is any number you want to analyse.**
+
+At Assmang, measures are things like:
+
+| Measure Name | What it means | Example value |
+|-------------|--------------|---------------|
+| TonnesProduced | How much ore was dug out | 45,200 tonnes in January |
+| RevenueZAR | Money received from selling ore | R 28,500,000 in January |
+| LaborCostZAR | Money paid to workers | R 4,200,000 in January |
+| MaintenanceCostZAR | Money spent on equipment repairs | R 1,800,000 in January |
+| Grade | Percentage of actual mineral in the ore | 64.5% iron content |
+| CostPerTonneZAR | How much it costs to produce one tonne | R 375 per tonne |
+
+> **Rule of thumb:** If it is a number and someone at Assmang wants to add it up, average it, or compare it — it is a measure.
+
+---
+
+## Part 2 — What Is a Measure Group?
+
+**A measure group is a collection of related measures that come from the same fact table.**
+
+Think of it like a drawer in a filing cabinet:
+- Drawer 1 = "Production" — contains tonnes, grade, revenue
+- Drawer 2 = "Operating Costs" — contains labour, maintenance, equipment costs
+
+In SSAS, each fact table in SQL Server becomes one measure group in the cube:
+
+```
+SQL Server                          SSAS Cube
+─────────────────────────────────────────────────────
+FactProduction              →       Measure Group: Production
+  - TonnesProduced                    - Tonnes Produced
+  - RevenueZAR                        - Revenue ZAR
+  - Grade                             - Grade
+
+FactOperatingCosts          →       Measure Group: Operating Costs
+  - LaborCostZAR                      - Labor Cost ZAR
+  - MaintenanceCostZAR                - Maintenance Cost ZAR
+  - EquipmentCostZAR                  - Equipment Cost ZAR
+```
+
+Both measure groups live in the **same cube**. A user can build one report that shows production and cost side by side.
+
+---
+
+## Part 3 — What Is Aggregation?
+
+**Aggregation means: how does this number roll up when you zoom out?**
+
+### Example with real numbers
+
+Suppose you have this raw data (one row per shift per mine):
+
+| Mine | Date | Shift | TonnesProduced |
+|------|------|-------|----------------|
+| Khumani | 1 Jan | Day | 1,500 |
+| Khumani | 1 Jan | Night | 1,200 |
+| Khumani | 2 Jan | Day | 1,600 |
+| Khumani | 2 Jan | Night | 1,100 |
+
+When a manager asks "Total tonnes for Khumani in January?", the answer is **1,500 + 1,200 + 1,600 + 1,100 = 5,400 tonnes**.
+
+That is aggregation — SSAS adds up the detail rows to give a summary.
+
+**But not every number can simply be added. This is where it gets important.**
+
+---
+
+## Part 4 — The Three Types of Aggregation (This Is Critical)
+
+### Type 1: Additive — Safe to SUM across everything
+
+These measures can be added across any dimension (time, mine, department) and the answer is still correct.
+
+| Measure | Why it's additive |
+|---------|------------------|
+| TonnesProduced | Khumani 5,400t + Beeshoek 3,200t = 8,600t total. Correct. |
+| RevenueZAR | Mine A revenue + Mine B revenue = Total company revenue. Correct. |
+| LaborCostZAR | Dept A cost + Dept B cost = Total labor cost. Correct. |
+
+> **In SSAS:** Set AggregationFunction = **Sum**
+
+---
+
+### Type 2: Semi-Additive — Only safe to SUM across SOME dimensions
+
+These can be added across some dimensions but NOT others.
+
+**Real example — EmployeesAssigned:**
+
+| Mine | Day Shift | Night Shift |
+|------|-----------|-------------|
+| Khumani | 120 employees | 95 employees |
+
+- Can you add across mines? **YES** → Khumani (120) + Beeshoek (80) = 200 employees total on Day Shift. ✅
+- Can you add Day + Night? **NO** → 120 + 95 = 215 employees is WRONG. These same people could work across shifts. The real answer is the peak headcount (120), not the sum.
+
+> **In SSAS:** Set AggregationFunction = **Max** or **LastNonEmpty**, not Sum.
+
+---
+
+### Type 3: Non-Additive — Never safe to SUM
+
+These are ratios or percentages. Summing them always gives a nonsense answer.
+
+**Real example — Grade (% iron content in ore):**
+
+| Mine | Shift | Tonnes | Grade |
+|------|-------|--------|-------|
+| Khumani | Day | 1,500t | 64% |
+| Khumani | Night | 1,200t | 62% |
+
+What is the combined grade? **NOT** 64 + 62 = 126% (impossible).
+
+Correct answer: weighted average = ((1,500 × 64) + (1,200 × 62)) / (1,500 + 1,200) = **63.1%**
+
+> **In SSAS:** Use a **calculated measure** with the correct formula, not a simple Sum.
+
+---
+
+### Quick Reference Table
+
+| Type | Example Measures | SSAS Setting | Can Sum across time? | Can Sum across mines? |
+|------|-----------------|--------------|---------------------|----------------------|
+| Additive | Tonnes, Revenue, Labor Cost | Sum | ✅ Yes | ✅ Yes |
+| Semi-Additive | Employee Count, Balance | Max / LastNonEmpty | ❌ No | ✅ Yes |
+| Non-Additive | Grade%, Uptime%, CostPerTonne | Calculated measure | ❌ No | ❌ No |
+
+---
+
+## Part 5 — Why Wrong Aggregation Destroys Business Trust
+
+**Real consequence at Assmang — the grade problem:**
+
+If someone sets Grade to SUM instead of AVERAGE:
+
+- Khumani January grade = 64%
+- Beeshoek January grade = 58%
+- "Total company grade" = **122%** ← SSAS shows this
+
+A report goes to the COO showing **122% iron grade**. Iron ore cannot be 122% pure. The COO loses trust in the entire reporting system — not just that one number.
+
+**This is why choosing the right aggregation function is not a technical detail. It is a business trust issue.**
+
+---
+
+## Part 6 — How SSAS Pre-Computes Aggregations for Speed
+
+When you **process** the cube, SSAS does not wait for users to run queries. It pre-calculates common totals and stores them:
+
+```
+Pre-computed at processing time:
+  Total tonnes for 2024               → stored
+  Total tonnes per mine for 2024      → stored
+  Total tonnes per mine per quarter   → stored
+  Total tonnes per mine per month     → stored
+
+When user queries:
+  "Khumani tonnes in Q1 2024?"  →  Reads pre-computed value  →  < 1 second
+  "All mines Q1 2024?"          →  Reads pre-computed value  →  < 1 second
+```
+
+Without pre-computation, every query would scan millions of rows. With it, answers come back instantly.
+
+> **The trade-off:** Processing takes time (usually runs overnight). Queries are then near-instant. This is a good trade for most mining analytics.
+
+---
+
+## 📊 How It All Fits Together
+
+```
+SQL Server                 SSAS Build & Process           Business Users
+─────────────────          ────────────────────           ─────────────────
+FactProduction      ──►    Measure Group: Production  ──► Excel Pivot Table
+  (raw shift rows)           TonnesProduced (SUM)          Power BI Dashboard
+                             RevenueZAR (SUM)              SSMS MDX Query
+                             Grade (AVG formula)
+
+FactOperatingCosts  ──►    Measure Group: Costs       ──► Same cube, same slice
+  (raw cost rows)            LaborCostZAR (SUM)
+                             MaintenanceCost (SUM)
+                             CostPerTonne (formula)
+```
 
 ---
 
 ## 1. Fact tables and measure groups
 
-### 💬 In plain English
+A **fact table** stores one row for each business event — one row per shift's production, one row per day's cost, one row per safety incident. Each row has numbers (the facts) and foreign keys linking to dimensions (who, when, where).
 
-Let's break down **fact tables and measure groups** in the simplest possible terms:
+In SSAS, each fact table becomes one **measure group**:
 
-**→** A fact table stores measurable business events at a defined grain.
+| SQL Server fact table | SSAS Measure Group | Business meaning |
+|----------------------|--------------------|-----------------|
+| `FactProduction` | Production | How much ore was produced, and what was earned |
+| `FactOperatingCosts` | Operating Costs | How much was spent running the mine |
 
-**→** In SSAS, fact tables surface as measure groups.
-
-**→** `FactProduction` becomes a production measure group; `FactOperatingCosts` becomes a cost measure group.
-
-### 📚 Detailed explanation
-
-This concept is important because it directly affects how well the cube works for business users. Here is a deeper look:
-
-
-**Point 1: A fact table stores measurable business events at a defined grain.**
-
-What this means in practice: When you apply this at Assmang, it means that a fact table stores measurable business events at a defined grain. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-**Point 2: In SSAS, fact tables surface as measure groups.**
-
-What this means in practice: When you apply this at Assmang, it means that in ssas, fact tables surface as measure groups. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-**Point 3: `FactProduction` becomes a production measure group; `FactOperatingCosts` becomes a cost measure group.**
-
-What this means in practice: When you apply this at Assmang, it means that `factproduction` becomes a production measure group; `factoperatingcosts` becomes a cost measure group. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-
-### 🏭 Assmang scenario
-
-**Situation:** A production manager at Khumani Mine asks: "Can I see this month's iron ore output compared to last month, broken down by shift?"
-
-**How fact tables and measure groups helps:** Because the cube already has the right structure (dimensions for time and mine, measures for production), this question can be answered in seconds using Excel or Power BI — no SQL coding needed, no waiting for IT.
-
-
-### ❓ Frequently Asked Questions
-
-**Q: Do I need to be a programmer to understand fact tables and measure groups?**  
-A: No. This concept is about business logic and design thinking. The tools (SSDT) provide visual interfaces for most of the work.
-
-**Q: What happens if we get fact tables and measure groups wrong?**  
-A: The cube will still work technically, but users may get confusing results, slow performance, or missing data. That's why we follow best practices from the start.
-
-**Q: How long does it take to set up fact tables and measure groups for a real project?**  
-A: For a project the size of Assmang's training cube, this typically takes a few hours of design work plus a few hours of implementation and testing.
+Both groups live inside the same cube. A single Excel report can show production and cost side by side, sliced by the same mine and date dimensions.
 
 ---
 
 ## 2. Choosing measures
 
-### 💬 In plain English
+Not every column in a fact table should become a measure. Use this filter:
 
-Let's break down **choosing measures** in the simplest possible terms:
+**Include as a measure if:**
+- It is a number a manager would want to sum, average, or compare
+- It changes per row (per shift, per day, per mine)
+- It answers a business question on its own
 
-**→** Production metrics include tonnes produced, grade, revenue, and cost per tonne.
+**Exclude or handle differently if:**
+- It is a key column (MineID, DateID) — these are dimension links, not measures
+- It is already a ratio or percentage — treat as non-additive (see Part 4)
+- It is a flag or category — this belongs in a dimension, not a measure group
 
-**→** Cost metrics include labour, equipment, maintenance, safety, utilities, and other costs.
+**Assmang example — what to include from `FactProduction`:**
 
-**→** Measures should reflect the grain of the underlying fact and have meaningful aggregation rules.
-
-### 📚 Detailed explanation
-
-This concept is important because it directly affects how well the cube works for business users. Here is a deeper look:
-
-
-**Point 1: Production metrics include tonnes produced, grade, revenue, and cost per tonne.**
-
-What this means in practice: When you apply this at Assmang, it means that production metrics include tonnes produced, grade, revenue, and cost per tonne. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-**Point 2: Cost metrics include labour, equipment, maintenance, safety, utilities, and other costs.**
-
-What this means in practice: When you apply this at Assmang, it means that cost metrics include labour, equipment, maintenance, safety, utilities, and other costs. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-**Point 3: Measures should reflect the grain of the underlying fact and have meaningful aggregation rules.**
-
-What this means in practice: When you apply this at Assmang, it means that measures should reflect the grain of the underlying fact and have meaningful aggregation rules. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-
-### 🏭 Assmang scenario
-
-**Situation:** A production manager at Khumani Mine asks: "Can I see this month's iron ore output compared to last month, broken down by shift?"
-
-**How choosing measures helps:** Because the cube already has the right structure (dimensions for time and mine, measures for production), this question can be answered in seconds using Excel or Power BI — no SQL coding needed, no waiting for IT.
-
-
-### ❓ Frequently Asked Questions
-
-**Q: Do I need to be a programmer to understand choosing measures?**  
-A: No. This concept is about business logic and design thinking. The tools (SSDT) provide visual interfaces for most of the work.
-
-**Q: What happens if we get choosing measures wrong?**  
-A: The cube will still work technically, but users may get confusing results, slow performance, or missing data. That's why we follow best practices from the start.
-
-**Q: How long does it take to set up choosing measures for a real project?**  
-A: For a project the size of Assmang's training cube, this typically takes a few hours of design work plus a few hours of implementation and testing.
+| Column | Include as measure? | Why |
+|--------|--------------------|----|
+| ProductionID | ❌ No | Primary key, not a business number |
+| MineID | ❌ No | Foreign key to Mine dimension |
+| DateID | ❌ No | Foreign key to Date dimension |
+| TonnesProduced | ✅ Yes | Core production metric, sums correctly |
+| RevenueZAR | ✅ Yes | Financial result, sums correctly |
+| Grade | ✅ Yes (as AVG formula) | Quality metric, needs correct aggregation |
+| CostPerTonneZAR | ✅ Yes (as calculated) | Ratio, must be computed not summed |
 
 ---
 
 ## 3. Aggregation behaviour
 
-### 💬 In plain English
+**Aggregation is the rule that tells SSAS how to combine detail rows into summaries.**
 
-Let's break down **aggregation behaviour** in the simplest possible terms:
+The three types are explained in detail in Part 4 above. Here is the decision guide:
 
-**→** Additive measures such as revenue and labour cost usually sum well across most dimensions.
+```
+Ask yourself: "What does it mean to ADD this number across rows?"
 
-**→** Average-style measures such as grade or uptime should not be blindly summed.
+  TonnesProduced for Shift 1 + TonnesProduced for Shift 2
+  = Total tonnes for the day?  → YES → ADDITIVE → use SUM
 
-**→** Design choices here directly affect business trust in the cube.
+  Grade for Shift 1 + Grade for Shift 2
+  = Combined grade?  → NO → NON-ADDITIVE → use formula (weighted average)
 
-### 📚 Detailed explanation
+  Employees on Day shift + Employees on Night shift
+  = Total headcount?  → MAYBE (same people could overlap) → SEMI-ADDITIVE → use MAX
+```
 
-This concept is important because it directly affects how well the cube works for business users. Here is a deeper look:
+**The consequence of choosing wrong:**
 
-
-**Point 1: Additive measures such as revenue and labour cost usually sum well across most dimensions.**
-
-What this means in practice: When you apply this at Assmang, it means that additive measures such as revenue and labour cost usually sum well across most dimensions. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-**Point 2: Average-style measures such as grade or uptime should not be blindly summed.**
-
-What this means in practice: When you apply this at Assmang, it means that average-style measures such as grade or uptime should not be blindly summed. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-**Point 3: Design choices here directly affect business trust in the cube.**
-
-What this means in practice: When you apply this at Assmang, it means that design choices here directly affect business trust in the cube. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-
-### 🏭 Assmang scenario
-
-**Situation:** A production manager at Khumani Mine asks: "Can I see this month's iron ore output compared to last month, broken down by shift?"
-
-**How aggregation behaviour helps:** Because the cube already has the right structure (dimensions for time and mine, measures for production), this question can be answered in seconds using Excel or Power BI — no SQL coding needed, no waiting for IT.
-
-
-### ❓ Frequently Asked Questions
-
-**Q: Do I need to be a programmer to understand aggregation behaviour?**  
-A: No. This concept is about business logic and design thinking. The tools (SSDT) provide visual interfaces for most of the work.
-
-**Q: What happens if we get aggregation behaviour wrong?**  
-A: The cube will still work technically, but users may get confusing results, slow performance, or missing data. That's why we follow best practices from the start.
-
-**Q: How long does it take to set up aggregation behaviour for a real project?**  
-A: For a project the size of Assmang's training cube, this typically takes a few hours of design work plus a few hours of implementation and testing.
+| Wrong choice | What SSAS shows | Real answer |
+|-------------|----------------|-------------|
+| Grade = SUM | 126% iron content | 63.1% (impossible without formula) |
+| Employees = SUM | 215 headcount | 120 peak headcount |
+| CostPerTonne = SUM | R 900/tonne | R 440/tonne (off by 100%) |
 
 ---
 
 ## 4. Why aggregations matter
 
-### 💬 In plain English
+**Aggregations are pre-calculated summaries that SSAS builds during processing.**
 
-Let's break down **why aggregations matter** in the simplest possible terms:
+Without them, every query scans millions of raw rows. With them, common results are already computed and stored. This is why cube queries feel instant even on large datasets.
 
-**→** SSAS pre-computes useful summaries so queries do not always scan the full fact table.
+**At Assmang, this matters because:**
 
-**→** This makes repeated management queries much faster.
+- The COO opens a dashboard at 08:00 every morning
+- The dashboard loads 5 charts showing production, cost, and safety across all 5 mines for the past 12 months
+- Without aggregations: each chart takes 15–30 seconds → total wait: 2+ minutes → COO closes dashboard, asks IT for a spreadsheet
+- With aggregations: each chart loads in under 1 second → total wait: under 5 seconds → COO uses the dashboard daily
 
-**→** Aggregation design is one of the reasons cube workloads feel responsive.
+**How aggregations are built:**
 
-### 📚 Detailed explanation
+1. You run **Process Cube** in SSDT or SSMS
+2. SSAS reads all the raw rows from SQL Server
+3. It calculates totals at different levels (by day, by month, by quarter, by mine, by combination)
+4. It stores those pre-calculated values inside the cube
+5. Next time a user asks "total Q1 tonnes for Khumani?", SSAS reads the pre-stored value — no scanning needed
 
-This concept is important because it directly affects how well the cube works for business users. Here is a deeper look:
-
-
-**Point 1: SSAS pre-computes useful summaries so queries do not always scan the full fact table.**
-
-What this means in practice: When you apply this at Assmang, it means that ssas pre-computes useful summaries so queries do not always scan the full fact table. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-**Point 2: This makes repeated management queries much faster.**
-
-What this means in practice: When you apply this at Assmang, it means that this makes repeated management queries much faster. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-**Point 3: Aggregation design is one of the reasons cube workloads feel responsive.**
-
-What this means in practice: When you apply this at Assmang, it means that aggregation design is one of the reasons cube workloads feel responsive. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-
-### 🏭 Assmang scenario
-
-**Situation:** A production manager at Khumani Mine asks: "Can I see this month's iron ore output compared to last month, broken down by shift?"
-
-**How why aggregations matter helps:** Because the cube already has the right structure (dimensions for time and mine, measures for production), this question can be answered in seconds using Excel or Power BI — no SQL coding needed, no waiting for IT.
-
-
-### ❓ Frequently Asked Questions
-
-**Q: Do I need to be a programmer to understand why aggregations matter?**  
-A: No. This concept is about business logic and design thinking. The tools (SSDT) provide visual interfaces for most of the work.
-
-**Q: What happens if we get why aggregations matter wrong?**  
-A: The cube will still work technically, but users may get confusing results, slow performance, or missing data. That's why we follow best practices from the start.
-
-**Q: How long does it take to set up why aggregations matter for a real project?**  
-A: For a project the size of Assmang's training cube, this typically takes a few hours of design work plus a few hours of implementation and testing.
+> **Note:** Aggregations need to be rebuilt whenever new data is loaded. That is why SSAS is typically processed on a schedule (e.g., every night at 02:00).
 
 ---
 
 ## 📊 Architecture / Concept Diagram
 
-The following diagram shows how this topic fits into the bigger picture:
-
 ```mermaid
 flowchart LR
-    A[FactProduction] --> B[Measure Group: Production]
-    A --> C[TonnesProduced SUM]
-    A --> D[RevenueZAR SUM]
-    A --> E[Grade AVERAGE]
-    F[FactOperatingCosts] --> G[Measure Group: Operating Costs]
-    B --> H[Processed Cube]
-    G --> H
-    H --> I[Fast Analysis in Excel, Power BI, and SSMS]
+    A[FactProduction\nraw shift rows] --> B[Measure Group: Production\nTonnesProduced SUM\nRevenueZAR SUM\nGrade AVG formula]
+    C[FactOperatingCosts\nraw cost rows] --> D[Measure Group: Operating Costs\nLaborCostZAR SUM\nMaintenanceCost SUM\nCostPerTonne formula]
+    B --> E[Processed Cube\nAssmang Mining Analytics]
+    D --> E
+    E --> F[Excel\nPower BI\nSSMS MDX]
 ```
 
-### How to read this diagram
-
-- **Left side:** Where your raw data lives (SQL Server database tables containing production, cost, safety, and employee data).
-- **Middle:** Where SSAS transforms that raw data into an analytical structure (the cube with its dimensions, hierarchies, and measures).
-- **Right side:** Where business users access the results (Excel pivot tables, Power BI dashboards, or MDX query results in SSMS).
-
-### Why this matters
-
-Without SSAS (the middle layer), every time a manager wants an answer, someone has to write SQL code against the raw database. With SSAS, the analytical structure is pre-built, so users can explore data independently using familiar tools like Excel.
+**How to read this diagram:**
+- Left: Raw SQL Server tables (millions of rows, slow to query directly)
+- Middle: SSAS processes them into a cube (pre-calculated, fast)
+- Right: Business users get answers in seconds without writing SQL
 
 ---
 
@@ -317,62 +377,24 @@ Here are the most important terms for this topic. Don't worry about memorising t
 
 ## 🧭 Additional Diagrams
 
-### Diagram 1: Measure Group Composition
-
-```mermaid
-graph LR
-    A[FactProduction] --> B[Production Measure Group]
-    C[FactOperatingCosts] --> D[Cost Measure Group]
-    B --> E[Cube Measures]
-    D --> E
-```
-
-### Diagram 2: Aggregation Behavior
+### Aggregation Decision Flow
 
 ```mermaid
 flowchart TD
-    A[Raw Rows] --> B{Measure Type}
-    B -->|Additive| C[SUM]
-    B -->|Semi-additive| D[LastNonEmpty/Custom]
-    B -->|Non-additive| E[AVG or Formula]
+    A[New measure column] --> B{Can you add it\nacross all dimensions?}
+    B -->|Yes| C[ADDITIVE\nSet to SUM]
+    B -->|No| D{Is it a ratio\nor percentage?}
+    D -->|Yes| E[NON-ADDITIVE\nWrite MDX formula]
+    D -->|No| F[SEMI-ADDITIVE\nUse MAX or LastNonEmpty]
 ```
 
-### Diagram 3: Query Performance Effect
+### Processing and Query Flow
 
 ```mermaid
 flowchart LR
-    A[User Query] --> B[Check Aggregation Cache]
-    B -->|Hit| C[Fast Result]
-    B -->|Miss| D[Scan Detail Data]
-    D --> E[Slower Result]
-```
-
-## 📌 Topic-Specific Summary
-
-This topic is about numerical correctness and speed. If a measure is modeled badly, reports can look polished but still be wrong. If aggregations are weak, reports can be correct but painfully slow.
-
-This is the chapter where learners move from "data is visible" to "data is trustworthy and scalable".
-
-## Deep Dive in Layman Terms
-
-A measure is the number you care about. A measure group is the business context for that number. Aggregations are pre-calculated shortcuts that prevent the system from adding thousands of rows every time someone opens a dashboard.
-
-Simple rule for beginners:
-
-- Totals like tonnes and revenue usually SUM.
-- Ratios like grade usually AVG or formula.
-- Opening/closing style balances often need special logic, not SUM.
-
-### Assmang-style example
-
-If grade percentage is summed across shifts, you can get impossible values above 100 percent. That is not a user mistake. It is a modeling mistake. Correct aggregation design prevents this.
-
-### Clarity diagram: Correctness before speed
-
-```mermaid
-flowchart LR
-    A[Define Measure Meaning] --> B[Choose Correct Aggregation Rule]
-    B --> C[Validate Business Math]
-    C --> D[Add Aggregation Optimizations]
-    D --> E[Fast and Reliable Reports]
+    A[Nightly SQL data load] --> B[Process Cube in SSAS]
+    B --> C[Pre-calculated aggregations stored]
+    C --> D[User opens Excel at 08:00]
+    D --> E[Query hits pre-stored value]
+    E --> F[Answer in under 1 second]
 ```

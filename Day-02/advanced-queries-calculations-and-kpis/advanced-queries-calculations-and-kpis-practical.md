@@ -27,102 +27,359 @@ Apply the theory from **Advanced Queries, Calculations, and KPIs** by completing
 
 ## 📝 Guided Steps
 
-### Step 1: Build a calculated measure for `Cost Per Tonne`
+---
 
-**Create the calculation from validated source logic:**
-1. Review the SQL baseline query in this lab so you understand the source numbers.
-2. Open the cube designer or an MDX query window, depending on how your trainer wants calculations demonstrated.
-3. Create a helper expression for total operating cost if one does not already exist.
-4. Define `Cost Per Tonne` as total cost divided by tonnes produced.
-5. Protect the expression against divide-by-zero cases.
-6. Save the calculation and keep the formula readable.
+### Step 1: Validate the SQL source data before opening Visual Studio
 
-**What you should be thinking about:** A calculated measure is often safer than summing a unit-rate field because it preserves business meaning at aggregated levels.
+**What you are doing:** Checking the v3 dataset is loaded and the key numbers look right. Always do this before building any calculation.
 
-**Expected result:** The cube can return a meaningful cost-per-tonne figure rather than an invalid raw sum.
+**1.1** Open SSMS → connect to **Database Engine**
 
-**If something goes wrong:**
-- If you get nulls everywhere, make sure the source measures being divided are populated.
-- If the number is unrealistically large, confirm you are not summing a rate and then dividing incorrectly.
-- If syntax errors appear, simplify the formula and test the helper measure first.
+**1.2** Click **New Query** → in the database dropdown, select **`AssmangMining`**
+
+**1.3** Copy and paste this SQL, then press **F5**:
+
+> ✅ **COPY THIS ENTIRE SQL BLOCK:**
+
+```sql
+USE AssmangMining;
+GO
+
+WITH MonthlyProduction AS (
+    SELECT
+        fp.MineID,
+        fp.DateID,
+        SUM(fp.TonnesProduced) AS TonnesProduced,
+        SUM(fp.RevenueZAR) AS RevenueZAR
+    FROM dbo.FactProduction fp
+    GROUP BY fp.MineID, fp.DateID
+),
+MonthlyCosts AS (
+    SELECT
+        oc.MineID,
+        oc.DateID,
+        SUM(oc.LaborCostZAR + oc.EquipmentCostZAR + oc.MaintenanceCostZAR
+            + oc.SafetyCostZAR + oc.UtilitiesCostZAR + oc.OtherCostZAR) AS TotalCostZAR
+    FROM dbo.FactOperatingCosts oc
+    GROUP BY oc.MineID, oc.DateID
+)
+SELECT
+    m.MineName,
+    p.DateID,
+    p.TonnesProduced,
+    c.TotalCostZAR,
+    CASE WHEN p.TonnesProduced = 0 THEN NULL
+         ELSE c.TotalCostZAR / p.TonnesProduced
+    END AS CostPerTonneZAR
+FROM MonthlyProduction p
+JOIN MonthlyCosts c ON p.MineID = c.MineID AND p.DateID = c.DateID
+JOIN dbo.Dim_Mine m ON p.MineID = m.MineID
+ORDER BY p.DateID, m.MineName;
+```
+
+**1.4** Write down **Khumani Mine's CostPerTonneZAR** for one month — you will compare this to the cube result later
+
+> 📸 **Screenshot Checkpoint 1 — SQL baseline result:**
+> You should see a grid with columns: MineName, DateID, TonnesProduced, TotalCostZAR, CostPerTonneZAR
+> Example rows:
+> ```
+> MineName         DateID    TonnesProduced    TotalCostZAR    CostPerTonneZAR
+> Beeshoek Mine    20240101  2,700             1,080,000       400.00
+> Khumani Mine     20240101  3,800             1,330,000       350.00
+> ```
+> If this query returns 0 rows — the v3 dataset was not loaded. Load `datasets/v3_assmang_mining_complete.sql` first.
 
 ---
 
-### Step 2: Create a named set for mines with above-average production
+### Step 2: Open the cube and go to the Calculations tab
 
-**Turn a business rule into reusable MDX logic:**
-1. Start with the set of all mine members.
-2. Use `AVG` over the mine set to calculate the comparison benchmark.
-3. Wrap the logic in a `FILTER` expression.
-4. Name the set clearly so it can be reused in later queries.
-5. Run a test query that places the set on rows with `TonnesProduced` and your calculated measure on columns.
+**What you are doing:** Opening Visual Studio and navigating to the place where calculated measures are defined.
 
-**Why this matters:** Named sets allow you to encode reusable groups such as top mines, chrome operations, or underperforming sites without retyping the logic.
+**2.1** Open Visual Studio
 
-**Expected result:** Only mines whose production exceeds the average mine production remain in the result.
+**2.2** Open your SSAS project (File → Open → Project → select `.sln` file)
 
-**If something goes wrong:**
-- If every mine appears, the comparison logic is too broad or the set context is wrong.
-- If no mine appears, test the average calculation by itself first.
-- If values vary unexpectedly by time, note that the current query context affects the average.
+**2.3** In Solution Explorer, expand **Cubes** → double-click the cube file (`.cube` extension)
 
----
+**2.4** The Cube Designer opens. Click the **Calculations** tab
 
-### Step 3: Define a KPI for production target attainment
-
-**Model the KPI like a business scorecard, not just a formula:**
-1. Decide on an assumed monthly target value.
-2. Use the actual production measure as the KPI value.
-3. Use the target value as the KPI goal.
-4. Define a status rule so results can be interpreted as under target, near target, or on target.
-5. If your environment supports it, add a trend expression as well.
-6. Save and process the affected objects if necessary.
-
-**What a learner should be able to explain:** A KPI is not only a number. It is a business judgment layer that compares actual performance against a goal.
-
-**Expected result:** The model can now show production performance in a way an executive can read quickly.
-
-**If something goes wrong:**
-- If the KPI does not appear in the browser, process the cube again.
-- If the goal is hard-coded incorrectly, your status colors or results will be misleading.
-- If the KPI seems mathematically correct but business-wise wrong, revisit the target assumption.
+> 📸 **Screenshot Checkpoint 2 — Calculations tab in Cube Designer:**
+> The Calculations tab shows:
+> - Left panel: "Script Organizer" — lists any existing calculated members/named sets
+> - Right panel: empty formula editor (or shows the selected item's expression)
+> - Toolbar: buttons for "New Calculated Member", "New Named Set", "New Script Command"
+> If you see no toolbar buttons, the Calculations tab may not be fully loaded — click somewhere else and click back.
 
 ---
 
-### Step 4: Browse or query the calculation and KPI outputs
+### Step 3: Create a calculated measure for Total Operating Cost
 
-**Validate the logic instead of trusting it blindly:**
-1. Open the Browser tab or an SSMS MDX query window.
-2. Place mines on rows.
-3. Add `TonnesProduced`, `Cost Per Tonne`, target values, and KPI outputs to columns.
-4. Optionally slice by year or month so you can see context-sensitive behaviour.
-5. Compare at least one result back to the SQL baseline logic from this lab.
-6. Record whether the KPI interpretation matches the raw numbers.
+**What you are doing:** Building a helper measure that adds up all 6 cost columns into one number. You need this before you can calculate Cost Per Tonne.
 
-**Expected result:** The calculation and KPI behave consistently when sliced by mine or time.
+**3.1** In the Calculations tab toolbar, click **New Calculated Member** (formula icon)
 
-**If something goes wrong:**
-- If the KPI disappears at some levels, verify calculation scope and processing state.
-- If the cost-per-tonne figure changes wildly by slice, check whether all contributing cost measures are aligned to the same grain.
-- If the browser is slow or blank, reconnect and make sure the cube is fully processed.
+**3.2** In the **Name** field, type: `Total Operating Cost ZAR`
+
+**3.3** In the **Expression** box, copy and paste:
+
+> ✅ **COPY THIS FORMULA — paste into the Expression box:**
+
+```
+[Measures].[Labor Cost (ZAR)] +
+[Measures].[Equipment Cost (ZAR)] +
+[Measures].[Maintenance Cost (ZAR)] +
+[Measures].[Safety Cost (ZAR)] +
+[Measures].[Utilities Cost (ZAR)] +
+[Measures].[Other Cost (ZAR)]
+```
+
+> ⚠️ **The measure names in `[ ]` must match exactly how they appear in the Measures panel.** If your measures were renamed differently (e.g., `[LaborCostZAR]` instead of `[Labor Cost (ZAR)]`), update the formula to match.
+
+**3.4** Press **Ctrl+S** to save
 
 ---
 
-### Step 5: Document the business meaning of every calculation you created
+### Step 4: Create the Cost Per Tonne calculated measure
 
-**Finish by translating technical work into business language:**
-1. Write one sentence explaining what `Cost Per Tonne` tells a mine manager.
-2. Write one sentence explaining what the above-average mines set identifies.
-3. Write one sentence explaining what the KPI target-attainment result means for operations review.
-4. Note any assumptions, especially hard-coded targets or simplified logic.
-5. Save the formulas and the explanation together so another learner can understand both the maths and the business meaning.
+**What you are doing:** Dividing total cost by tonnes produced to get cost efficiency. Protected against divide-by-zero so it shows NULL instead of an error.
 
-**Expected result:** You can defend not only how the calculation works, but why it exists and how a business user should read it.
+**4.1** In the Calculations tab toolbar, click **New Calculated Member** again
 
-**If something goes wrong:**
-- If your explanation sounds purely technical, rewrite it from a manager's point of view.
-- If the explanation and the formula do not match, fix the formula or the wording before submission.
-- If assumptions are hidden, surface them clearly so the KPI is not misinterpreted later.
+**4.2** In the **Name** field, type: `Cost Per Tonne ZAR`
+
+**4.3** In the **Expression** box, copy and paste:
+
+> ✅ **COPY THIS FORMULA — paste into the Expression box:**
+
+```
+IIF(
+    [Measures].[Tonnes Produced] = 0,
+    NULL,
+    [Measures].[Total Operating Cost ZAR] / [Measures].[Tonnes Produced]
+)
+```
+
+> ℹ️ **What each part does:**
+> - `IIF(condition, value_if_true, value_if_false)` — MDX version of IF/ELSE
+> - `[Measures].[Tonnes Produced] = 0, NULL` — if no tonnes were produced, show blank (not ÷0 error)
+> - `[Measures].[Total Operating Cost ZAR] / [Measures].[Tonnes Produced]` — the actual calculation
+
+**4.4** In the **Format String** dropdown, select **`Currency`** (or type `"R #,##0"` for South African Rand)
+
+**4.5** Press **Ctrl+S** to save
+
+> 📸 **Screenshot Checkpoint 3 — Calculations tab with both measures:**
+> The Script Organizer (left panel) now shows:
+> ```
+> ▼ Calculated Members
+>     [Total Operating Cost ZAR]
+>     [Cost Per Tonne ZAR]
+> ```
+> Both entries should appear without any red error icons.
+
+---
+
+### Step 5: Create a named set for above-average production mines
+
+**What you are doing:** Building a reusable filter that shows only mines where production exceeds the average across all mines.
+
+**5.1** In the Calculations tab toolbar, click **New Named Set** button (different from Calculated Member)
+
+**5.2** In the **Name** field, type: `Above Average Production Mines`
+
+**5.3** In the **Expression** box, copy and paste:
+
+> ✅ **COPY THIS FORMULA — paste into the Expression box:**
+
+```
+FILTER(
+    [Mine].[Mine Name].[Mine Name].MEMBERS,
+    [Measures].[Tonnes Produced] >
+        AVG(
+            [Mine].[Mine Name].[Mine Name].MEMBERS,
+            [Measures].[Tonnes Produced]
+        )
+)
+```
+
+> ℹ️ **What each part does:**
+> - `FILTER(set, condition)` — keeps only members where the condition is true
+> - `[Mine].[Mine Name].[Mine Name].MEMBERS` — start with all mines
+> - `AVG(same set, measure)` — calculate the average tonnes across all mines
+> - Result: only mines whose production exceeds that average
+
+**5.4** Press **Ctrl+S** to save
+
+---
+
+### Step 6: Define a KPI for production target attainment
+
+**What you are doing:** Creating a KPI in the SSDT KPI designer. A KPI adds green/amber/red status logic on top of a calculated value.
+
+**6.1** Click the **KPIs** tab in the Cube Designer
+
+**6.2** Click **New KPI** in the toolbar
+
+**6.3** Fill in the KPI properties:
+
+| Field | Value to enter |
+|-------|---------------|
+| **Name** | `Production Target Attainment` |
+| **Associated measure group** | Select your Production measure group |
+| **Value expression** | `[Measures].[Tonnes Produced]` |
+| **Goal expression** | `300000` (assumed monthly target of 300,000 tonnes) |
+| **Status expression** | Copy from below |
+| **Trend expression** | Leave blank for now |
+
+**6.4** In the **Status expression** box, copy and paste:
+
+> ✅ **COPY THIS STATUS FORMULA:**
+
+```
+CASE
+    WHEN [Measures].[Tonnes Produced] / 300000 >= 0.95 THEN  1
+    WHEN [Measures].[Tonnes Produced] / 300000 >= 0.80 THEN  0
+    ELSE                                                     -1
+END
+```
+
+> ℹ️ **What the numbers mean:**
+> - `1` = Green (on target, ≥95% of goal)
+> - `0` = Amber (near target, 80–94%)
+> - `-1` = Red (below target, <80%)
+
+**6.5** Press **Ctrl+S** to save
+
+> 📸 **Screenshot Checkpoint 4 — KPIs tab:**
+> The KPIs tab shows your new KPI listed on the left. On the right, the KPI fields are filled in. The Status Indicator dropdown shows a traffic light or gauge icon — you can change the visual style here (select "Shapes" or "Traffic Light" from the dropdown).
+
+---
+
+### Step 7: Build and deploy
+
+**7.1** Click **Build → Build Solution**
+
+**7.2** Wait for: `Build succeeded` in the Output window (0 errors)
+
+**7.3** In Solution Explorer, right-click the project → **Deploy**
+
+**7.4** Wait for: `Deployment completed successfully` in the Output window
+
+> 📸 **Screenshot Checkpoint 5 — Successful deployment output:**
+> The Output panel at the bottom shows:
+> ```
+> ------ Build started ------
+> Build succeeded.
+> ------ Deploy started ------
+> Deploying database...
+> Deploying dimensions...
+> Deploying cubes...
+> Deployment completed successfully.
+> ```
+
+---
+
+### Step 8: Process the cube and validate in SSMS
+
+**What you are doing:** Loading the data into the cube (processing), then querying in SSMS to verify the calculated measures return the right numbers.
+
+**8.1** In SSMS, connect to **Analysis Services** (if not already connected)
+
+**8.2** Expand **Databases** → right-click **`AssmangMiningAnalytics`** → **Process**
+
+**8.3** Click **Run** → wait for all items to show **Success** → click **Close**
+
+**8.4** Open a new **MDX query window** (right-click the SSAS database → New Query → MDX)
+
+**8.5 CRITICAL:** In the toolbar dropdown, select **`AssmangMiningAnalytics`** before typing any MDX
+
+**8.6** Copy and paste this query:
+
+> ✅ **COPY THIS ENTIRE MDX BLOCK:**
+
+```mdx
+WITH
+MEMBER [Measures].[Total Operating Cost ZAR] AS
+    [Measures].[Labor Cost (ZAR)] +
+    [Measures].[Equipment Cost (ZAR)] +
+    [Measures].[Maintenance Cost (ZAR)] +
+    [Measures].[Safety Cost (ZAR)] +
+    [Measures].[Utilities Cost (ZAR)] +
+    [Measures].[Other Cost (ZAR)]
+MEMBER [Measures].[Cost Per Tonne] AS
+    IIF(
+        [Measures].[Tonnes Produced] = 0,
+        NULL,
+        [Measures].[Total Operating Cost ZAR] / [Measures].[Tonnes Produced]
+    ),
+    FORMAT_STRING = "R #,##0"
+SET [Above Avg Production Mines] AS
+    FILTER(
+        [Mine].[Mine Name].[Mine Name].MEMBERS,
+        [Measures].[Tonnes Produced] >
+            AVG(
+                [Mine].[Mine Name].[Mine Name].MEMBERS,
+                [Measures].[Tonnes Produced]
+            )
+    )
+SELECT
+    { [Measures].[Tonnes Produced], [Measures].[Cost Per Tonne] } ON COLUMNS,
+    [Above Avg Production Mines] ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE ( [Date].[Calendar Year].&[2024] );
+```
+
+**8.7** Press **F5**
+
+> 📸 **Screenshot Checkpoint 6 — Expected MDX result:**
+> The result grid shows only the mines with above-average production (typically 2–3 mines):
+> ```
+> Mine Name          Tonnes Produced    Cost Per Tonne
+> Khumani Mine       45,200             R 350
+> Beeshoek Mine      32,500             R 400
+> ```
+> Compare Cost Per Tonne to your SQL result from Step 1. The numbers should be very close (small differences are due to rounding at different grains).
+
+---
+
+### Step 9: Validate the KPI in the Browser
+
+**9.1** In Visual Studio, in the Cube Designer, click the **Browser** tab
+
+**9.2** Click **Reconnect** if prompted
+
+**9.3** In the KPIs section of the metadata tree, drag **Production Target Attainment** into the data area
+
+**9.4** Drag **Mine Name** to rows
+
+**9.5** Look for the traffic light / shape icons next to each mine
+
+> 📸 **Screenshot Checkpoint 7 — KPI in Browser:**
+> The Browser shows a grid with mine names in rows and KPI columns (Value, Goal, Status, Trend). The Status column shows green circles (1), yellow triangles (0), or red crosses (-1) depending on each mine's attainment.
+> Example:
+> ```
+> Mine Name          Value     Goal      Status
+> Khumani Mine       45,200    300,000   🔴 (-1)   ← below 80% of 300,000
+> ```
+> (Note: 300,000 is an assumed monthly target — adjust this to match real Assmang targets when in production.)
+
+---
+
+### Step 10: Document the business meaning
+
+Before finishing this lab, write down:
+
+**10.1** Cost Per Tonne in one sentence — *what does this tell a mine manager?*
+> Example: "Cost Per Tonne tells the mine manager how much it costs Assmang to produce one tonne of ore — a lower number means the mine is more efficient."
+
+**10.2** Above Average Mines in one sentence — *what decision does this enable?*
+> Example: "This named set quickly identifies which mines are producing more than average, so the operations team can study what those mines are doing right."
+
+**10.3** KPI Target Attainment in one sentence — *what does a red KPI mean to an executive?*
+> Example: "A red KPI means the mine produced less than 80% of its monthly target — this triggers a management review."
+
+**10.4** Note any assumptions:
+> "The monthly production target of 300,000 tonnes is hard-coded in this training lab. In the real Assmang cube, this would come from a budget table."
 
 ---
 
@@ -196,39 +453,74 @@ ORDER BY p.DateID, m.MineName;
 
 ## MDX Validation Queries (Run in SSMS against SSAS)
 
+> ⚠️ **Before running MDX in SSMS:** Open an MDX query window (Analysis Services connection → right-click database → New Query → MDX), then select `AssmangMiningAnalytics` from the toolbar dropdown.
+
+> ℹ️ **About the `-- labels` in these queries:** Lines starting with `--` are comments. They explain what the query does but **do not affect the result**. You can include them or delete them — SSAS ignores them.
+
+---
+
+**Query 1 — Cost Per Tonne with above-average mines filter:**
+
+> ✅ COPY THIS ENTIRE BLOCK — from WITH to the semicolon:
+
 ```mdx
-/* Step 1 and 2: calculated measure + above-average mines set */
+-- Calculated measures + named set: Steps 3-5
 WITH
 MEMBER [Measures].[Total Operating Cost ZAR] AS
-	[Measures].[LaborCostZAR] + [Measures].[EquipmentCostZAR] +
-	[Measures].[MaintenanceCostZAR] + [Measures].[SafetyCostZAR] +
-	[Measures].[UtilitiesCostZAR] + [Measures].[OtherCostZAR]
+    [Measures].[Labor Cost (ZAR)] +
+    [Measures].[Equipment Cost (ZAR)] +
+    [Measures].[Maintenance Cost (ZAR)] +
+    [Measures].[Safety Cost (ZAR)] +
+    [Measures].[Utilities Cost (ZAR)] +
+    [Measures].[Other Cost (ZAR)]
 MEMBER [Measures].[Cost Per Tonne] AS
-	IIF([Measures].[TonnesProduced] = 0, NULL,
-		[Measures].[Total Operating Cost ZAR] / [Measures].[TonnesProduced])
+    IIF(
+        [Measures].[Tonnes Produced] = 0,
+        NULL,
+        [Measures].[Total Operating Cost ZAR] / [Measures].[Tonnes Produced]
+    ),
+    FORMAT_STRING = "R #,##0"
 SET [Above Avg Production Mines] AS
-	FILTER(
-		[Mine].[Mine Name].[Mine Name].MEMBERS,
-		[Measures].[TonnesProduced] > AVG([Mine].[Mine Name].[Mine Name].MEMBERS, [Measures].[TonnesProduced])
-	)
+    FILTER(
+        [Mine].[Mine Name].[Mine Name].MEMBERS,
+        [Measures].[Tonnes Produced] >
+            AVG(
+                [Mine].[Mine Name].[Mine Name].MEMBERS,
+                [Measures].[Tonnes Produced]
+            )
+    )
 SELECT
-	{[Measures].[TonnesProduced], [Measures].[Cost Per Tonne]} ON COLUMNS,
-	[Above Avg Production Mines] ON ROWS
+    { [Measures].[Tonnes Produced], [Measures].[Cost Per Tonne] } ON COLUMNS,
+    [Above Avg Production Mines] ON ROWS
 FROM [Assmang Mining Analytics];
 ```
 
+---
+
+**Query 2 — KPI target attainment view:**
+
+> ✅ COPY THIS ENTIRE BLOCK:
+
 ```mdx
-/* Step 3 and 4: KPI-style target attainment view */
+-- KPI-style target attainment: Steps 6-7
 WITH
 MEMBER [Measures].[Monthly Target Tonnes] AS 300000
 MEMBER [Measures].[Target Attainment %] AS
-	IIF([Measures].[Monthly Target Tonnes] = 0, NULL,
-		[Measures].[TonnesProduced] / [Measures].[Monthly Target Tonnes])
+    IIF(
+        [Measures].[Monthly Target Tonnes] = 0,
+        NULL,
+        [Measures].[Tonnes Produced] / [Measures].[Monthly Target Tonnes]
+    ),
+    FORMAT_STRING = "0.00%"
 SELECT
-	{[Measures].[TonnesProduced], [Measures].[Monthly Target Tonnes], [Measures].[Target Attainment %]} ON COLUMNS,
-	[Mine].[Mine Name].[Mine Name].MEMBERS ON ROWS
+    {
+        [Measures].[Tonnes Produced],
+        [Measures].[Monthly Target Tonnes],
+        [Measures].[Target Attainment %]
+    } ON COLUMNS,
+    [Mine].[Mine Name].[Mine Name].MEMBERS ON ROWS
 FROM [Assmang Mining Analytics]
-WHERE ([Date].[Calendar Year].&[2024]);
+WHERE ( [Date].[Calendar Year].&[2024] );
 ```
 
 ---

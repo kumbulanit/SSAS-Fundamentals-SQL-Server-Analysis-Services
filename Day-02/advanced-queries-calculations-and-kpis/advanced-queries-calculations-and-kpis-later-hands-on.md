@@ -5,7 +5,7 @@
 
 ## 🎯 Purpose
 
-These exercises are designed for **independent practice** after the guided lab. They are slightly more challenging and require you to apply what you've learned without step-by-step guidance.
+These exercises are designed for **independent practice** after the guided lab. They are slightly more challenging and are presented with clear step-by-step procedures so you can execute each task confidently.
 
 ## 📋 Before You Begin
 
@@ -111,8 +111,6 @@ Design a Safety Compliance KPI for Assmang that translates raw compliance scores
 
 ## Exercise 2
 
-### Exercise 2: Maintenance Cost Percentage Calculated Measure
-
 ### Objective
 
 Create a calculated measure that expresses maintenance costs as a percentage of total operating costs, enabling trend analysis and budget variance detection.
@@ -165,8 +163,6 @@ Create a calculated measure that expresses maintenance costs as a percentage of 
 - **Output:** Calculated measure formula + 1–2 paragraph explanation
 - **Evidence:** Screenshot of SSDT Calculations tab showing formula; screenshot of browser query result (MaintenanceCostPercent by Mine); manual verification calculation
 - **Assmang Context:** Example: \"Assmang tracks MaintenanceCostPct to monitor equipment health and budget efficiency. Sishen at 18% suggests aging equipment or intensive maintenance schedule. CFO uses this metric to justify capital allocation: 'Sishen needs new loaders to reduce maintenance from 18% to 12%.'"
-
-@@## Exercise 3
 
 ---
 

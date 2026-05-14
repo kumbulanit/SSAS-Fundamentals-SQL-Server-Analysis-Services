@@ -5,7 +5,7 @@
 
 ## 🎯 Purpose
 
-These exercises are designed for **independent practice** after the guided lab. They are slightly more challenging and require you to apply what you've learned without step-by-step guidance.
+These exercises are designed for **independent practice** after the guided lab. They are slightly more challenging and are presented with clear step-by-step procedures so you can execute each task confidently.
 
 ## 📋 Before You Begin
 
@@ -94,13 +94,20 @@ Write and validate an MDX query that isolates production for chrome-specific min
 	WHERE ([CromeMines], [Date].[2024])
 	```
 
-**Step 5: Test and Validate**
-- In SSMS Analysis Services query window, paste query and execute
+**Step 5: Prepare SSMS for Query Execution**
+- Open SSMS and connect to **Analysis Services** (not Database Engine)
+- Right-click **Assmang Mining Analytics** database and select **New Query > MDX**
+- In the query toolbar, confirm the database dropdown shows **`AssmangMiningAnalytics`**
+- If dropdown is blank, select the database from the dropdown menu
+- This sets the `CurrentCatalog` property required by the MDX parser
+
+**Step 6: Test and Validate**
+- In the MDX query window, paste your query and execute
 - Result should show: Single number (total chrome tonnes in 2024)
 - Cross-check: Run SQL baseline query (SUM(TonnesProduced) FROM FactProduction WHERE MineID IN (Sishen, Khumani) AND DateID >= 2024-01-01)
 - Verify: MDX result = SQL result (exact match required)
 
-**Step 6: Document Query and Interpretation**
+**Step 7: Document Query and Interpretation**
 - Write 1–2 paragraphs explaining:
 	- What the query does (filters to chrome mines and 2024)
 	- Why this structure (WHERE clause for slicing, one measure on columns)
@@ -161,14 +168,20 @@ Write an MDX query that displays revenue by quarter for a single Assmang mine, s
 	WHERE [Mine].[Sishen]
 	```
 
-**Step 5: Test and Validate**
-- Paste query into SSMS Analysis Services query window
+**Step 5: Prepare SSMS Query Window**
+- Open SSMS and connect to **Analysis Services** (not Database Engine)
+- Right-click **Assmang Mining Analytics** and select **New Query > MDX**
+- In the toolbar, select **`AssmangMiningAnalytics`** from the database dropdown
+- This sets the `CurrentCatalog` required by the MDX parser
+
+**Step 6: Test and Validate**
+- Paste your query into the SSMS MDX query window
 - Execute and inspect results
 - Verify: Four quarters (Q1, Q2, Q3, Q4) with one revenue value each
 - Cross-check: Run SQL baseline (SUM(Revenue) FROM FactProduction WHERE MineID=Sishen AND Quarter=Q1 2024, etc.)
 - Confirm: MDX quarterly totals = SQL sum for each quarter
 
-**Step 6: Document Query**
+**Step 7: Document Query**
 - Write 1–2 paragraphs explaining:
 	- Query structure (measure on COLUMNS, quarter on ROWS, mine in WHERE)
 	- Why this layout (readable for managers; quarters down column, one revenue value)
@@ -180,8 +193,6 @@ Write an MDX query that displays revenue by quarter for a single Assmang mine, s
 - **Output:** Working MDX query + 1–2 paragraph explanation
 - **Evidence:** Screenshot of query and result (4 rows of quarterly revenue); SQL baseline validation; explanation of why ROWS/COLUMNS structure was chosen
 - **Assmang Context:** Example: \"Sishen mine leadership tracks quarterly revenue for budget planning and production scheduling. The query 'SELECT RevenueMln ON COLUMNS, Date.Quarter.Members ON ROWS WHERE Sishen, 2024' gives them the exact trend: Q2 peak (52.3M), Q3 dip (48.1M). They use this to adjust Q4 strategy and staffing plans.\"
-
-@@## Exercise 3
 
 ---
 
@@ -290,8 +301,9 @@ Use this exact sequence when completing the lab or exercise primarily in SSMS:
 11. In the processing dialog, review the list of affected objects carefully because processing can cascade from a high-level object to lower-level objects.
 12. Wait for processing to finish and read warnings, not just the final success line.
 13. Open the cube browser from SSMS if available, or open an MDX query window using **New Query > MDX**.
-14. Start with the simplest possible MDX pattern: one measure on columns and one hierarchy on rows.
-15. Add a slicer only after the base query works.
+14. **IMPORTANT:** In the MDX query toolbar, select the cube database from the dropdown menu. This sets the `CurrentCatalog` property required by the MDX parser. If the dropdown is blank or shows the wrong database, click it and select **`AssmangMiningAnalytics`**.
+15. Start with the simplest possible MDX pattern: one measure on columns and one hierarchy on rows.
+16. Add a slicer only after the base query works.
 16. Compare at least one SSAS result against the SQL baseline from the Database Engine connection.
 17. Save important queries with meaningful names so you can reuse them during assessments.
 18. Capture evidence for every exercise: the input, the output, and one sentence explaining what the result means for Assmang.

@@ -59,95 +59,328 @@ This topic is like designing the entire control room for a mine. You decide what
 
 ---
 
-## 1. Business requirements to cube design
+## 1. Business requirements → cube design (Complete example)
 
-### 💬 In plain English
+### Step 1: Collect business requirements (What does Assmang need?)
 
-Let's break down **business requirements to cube design** in the simplest possible terms:
+| Business Area | Question Users Ask | Data Needed | Cube Impact |
+|---------------|-------------------|-----------|------------|
+| **Production** | "How many tonnes per mine per month?" | FactProduction + Dim_Mine + Dim_Date | Measure Group: Production (TonnesProduced, Grade) |
+| **Finance** | "What's our cost per tonne by mine?" | FactOperatingCosts + Dim_Department | Measure Group: Costs (LaborCost, MaintenanceCost); Calculated: CostPerTonne |
+| **Safety** | "Which mine had most incidents?" | FactSafetyKPI + Dim_Mine | Measure Group: Safety (IncidentCount); KPI: ComplianceScore with status |
+| **HR** | "Headcount by department?" | FactEmployeeMetrics + Dim_Department | Measure Group: Employee (HeadCount, TenureMonths) |
 
-**→** Production leaders need output and grade metrics by mine and time.
+### Step 2: Design dimensions for each requirement
 
-**→** Finance needs cost analytics by department and operation.
+| Business Area | Dimension | Hierarchy |
+|---------------|-----------|-----------|
+| **Production & Safety** | Mine | All > Province > MineName |
+| **All areas** | Date | All > Year > Quarter > Month > Day |
+| **Finance & HR** | Department | All > DepartmentName |
+| **HR** | Employee | All > Employee |
 
-**→** Safety leadership needs incident and compliance monitoring.
+### Step 3: Design measure groups for each fact table
 
-**→** HR and management need employee metrics in context.
+| Fact Table | Measure Group | Measures | Aggregation |
+|-----------|--------------|----------|------------|
+| **FactProduction** | Production | TonnesProduced (Sum), Grade (Avg), Revenue (Sum) | Sum for volume; Avg for grade |
+| **FactOperatingCosts** | OperatingCosts | LaborCost (Sum), MaintenanceCost (Sum), EquipmentCost (Sum), SafetyCost (Sum) | All Sum (additive costs) |
+| **FactSafetyKPI** | Safety | IncidentCount (Sum), ComplianceScore (Avg), NearMisses (Sum) | Sum for counts; Avg for percentage |
+| **FactEmployeeMetrics** | Employee | HeadCount (LastNonEmpty), AverageTenure (Avg) | LastNonEmpty (point-in-time), Avg for tenure |
 
-### 📚 Detailed explanation
+### Step 4: Add calculated measures for derived insights
 
-This concept is important because it directly affects how well the cube works for business users. Here is a deeper look:
-
-
-**Point 1: Production leaders need output and grade metrics by mine and time.**
-
-What this means in practice: When you apply this at Assmang, it means that production leaders need output and grade metrics by mine and time. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-**Point 2: Finance needs cost analytics by department and operation.**
-
-What this means in practice: When you apply this at Assmang, it means that finance needs cost analytics by department and operation. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-**Point 3: Safety leadership needs incident and compliance monitoring.**
-
-What this means in practice: When you apply this at Assmang, it means that safety leadership needs incident and compliance monitoring. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-**Point 4: HR and management need employee metrics in context.**
-
-What this means in practice: When you apply this at Assmang, it means that hr and management need employee metrics in context. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-
-### 🏭 Assmang scenario
-
-**Situation:** A production manager at Khumani Mine asks: "Can I see this month's iron ore output compared to last month, broken down by shift?"
-
-**How business requirements to cube design helps:** Because the cube already has the right structure (dimensions for time and mine, measures for production), this question can be answered in seconds using Excel or Power BI — no SQL coding needed, no waiting for IT.
-
-
-### ❓ Frequently Asked Questions
-
-**Q: Do I need to be a programmer to understand business requirements to cube design?**  
-A: No. This concept is about business logic and design thinking. The tools (SSDT) provide visual interfaces for most of the work.
-
-**Q: What happens if we get business requirements to cube design wrong?**  
-A: The cube will still work technically, but users may get confusing results, slow performance, or missing data. That's why we follow best practices from the start.
-
-**Q: How long does it take to set up business requirements to cube design for a real project?**  
-A: For a project the size of Assmang's training cube, this typically takes a few hours of design work plus a few hours of implementation and testing.
+| Calculated Measure | Formula | Business Use |
+|-------------------|---------|--------------|
+| **Cost Per Tonne** | [LaborCost] / [TonnesProduced] | Cost efficiency tracking |
+| **Revenue Per Employee** | [Revenue] / [HeadCount] | Workforce productivity |
+| **Equipment Utilization** | [UptimeHours] / [AvailableHours] × 100 | Equipment reliability |
+| **Safety Ratio** | [SafeIncidents] / [TotalIncidents] | Safety performance |
 
 ---
 
-## 2. Target cube design
+## 2. Target cube design — The complete Assmang solution
 
-### 💬 In plain English
+### Cube architecture (what gets built):
 
-Let's break down **target cube design** in the simplest possible terms:
+```
+Cube: Assmang Mining Analytics
+├── Dimensions (how to slice data)
+│   ├── Mine (5 members: Beeshoek, Khumani, Black Rock, Dwarsrivier, Machadodorp)
+│   │   └── Hierarchy: Geography (Province → MineName)
+│   ├── Date (365 members for 2024)
+│   │   └── Hierarchy: Calendar (Year → Quarter → Month → Day)
+│   ├── Department (5 members: Extraction, Processing, Maintenance, Safety, Admin)
+│   └── Employee (~350 members)
+│       └── Hierarchy: Organization (Department → EmployeeName)
+│
+├── Measure Groups (what to measure)
+│   ├── Production
+│   │   ├── TonnesProduced (Sum)
+│   │   ├── Grade (Average — not additive)
+│   │   └── RevenueZAR (Sum)
+│   ├── Operating Costs
+│   │   ├── LaborCostZAR (Sum)
+│   │   ├── MaintenanceCostZAR (Sum)
+│   │   ├── EquipmentCostZAR (Sum)
+│   │   ├── SafetyCostZAR (Sum)
+│   │   └── UtilitiesCostZAR (Sum)
+│   ├── Safety
+│   │   ├── IncidentCount (Sum)
+│   │   ├── ComplianceScore (Average)
+│   │   └── NearMisses (Sum)
+│   └── Employee
+│       ├── Headcount (LastNonEmpty — snapshot, not additive)
+│       └── AverageTenureMonths (Average)
+│
+├── Calculated Members (derived insights)
+│   ├── Cost Per Tonne ZAR = [Operating Costs] / [Tonnes Produced]
+│   ├── Revenue Per Employee = [Revenue ZAR] / [Headcount]
+│   ├── Equipment Uptime % = [Maintenance Hours] / [Available Hours] × 100
+│   └── Safety Ratio = [Safe Days] / [Total Days] × 100
+│
+├── KPIs (traffic lights for targets)
+│   ├── Production Target KPI (Green if ≥ 1,000 tonnes/day)
+│   ├── Cost Efficiency KPI (Green if ≤ R 400/tonne)
+│   ├── Safety Compliance KPI (Green if ≥ 95%)
+│   └── Equipment Uptime KPI (Green if ≥ 90%)
+│
+└── Named Sets (reusable member lists)
+    ├── Top Producing Mines (TopCount by tonnes)
+    ├── Iron Ore Operations (Khumani, Beeshoek)
+    └── Current Year (2024 — updates automatically)
+```
 
-**→** Dimensions: Mine, Date, Department, Employee, and any KPI-supporting dimensions.
+---
 
-**→** Measure groups: Production, Operating Costs, Equipment Efficiency, Safety KPI, Employee Metrics.
+## 3. Operational procedures — How to keep it running
 
-**→** Calculated layer: cost per tonne, target attainment, utilisation measures.
+### Daily processing schedule (nightly automation):
 
-### 📚 Detailed explanation
+```
+05:00 — SQL warehouse ETL completes (yesterday's data loaded)
+06:00 — SSAS processing starts (automated via SQL Agent job)
+        Step 1: Process all dimensions (5 sec)
+        Step 2: Process Production measure group (8 sec)
+        Step 3: Process Operating Costs measure group (6 sec)
+        Step 4: Process Safety measure group (3 sec)
+        Step 5: Process Employee measure group (2 sec)
+        Step 6: Build aggregations (8 sec)
+06:15 — Cube fully processed, ready for queries
+06:30 — Users connect to dashboards (Power BI, Excel)
+20:00 — Backup runs (cube backup to D:\Backups\AssmangCube_YYYYMMDD.bak)
+22:00 — Database maintenance (statistics update)
+```
 
-This concept is important because it directly affects how well the cube works for business users. Here is a deeper look:
+### SQL Agent job to automate processing:
 
+```sql
+-- Create a SQL Agent job to process nightly
+CREATE JOB [AssmangCubeProcessing]
+DESCRIPTION 'Process Assmang Mining Analytics cube nightly'
+SCHEDULE [Daily 06:00 AM]
 
-**Point 1: Dimensions: Mine, Date, Department, Employee, and any KPI-supporting dimensions.**
+-- Step 1: Process cube
+EXEC AsSystemExecution 'Process', '[Assmang Mining Analytics].[Assmang Mining Analytics]', 'Full'
 
-What this means in practice: When you apply this at Assmang, it means that dimensions: mine, date, department, employee, and any kpi-supporting dimensions. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
+-- If successful, send notification
+EXEC sp_send_email @recipients='it-admin@assmang.com', 
+                   @subject='Cube processing completed',
+                   @body='Cube processed successfully at ' + CAST(GETDATE() AS VARCHAR(20))
 
-**Point 2: Measure groups: Production, Operating Costs, Equipment Efficiency, Safety KPI, Employee Metrics.**
+-- If failed, alert IT
+ON_FAILURE: EXEC sp_send_email @recipients='it-admin@assmang.com',
+                                @subject='ALERT: Cube processing failed',
+                                @body='Investigation required. Check SSAS logs.'
+```
 
-What this means in practice: When you apply this at Assmang, it means that measure groups: production, operating costs, equipment efficiency, safety kpi, employee metrics. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
+---
 
-**Point 3: Calculated layer: cost per tonne, target attainment, utilisation measures.**
+## 4. Security and role-based access — Who sees what
 
-What this means in practice: When you apply this at Assmang, it means that calculated layer: cost per tonne, target attainment, utilisation measures. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
+**Real Assmang scenario:**
+```
+Khumani manager should see:  All metrics for Khumani only
+Beeshoek manager should see: All metrics for Beeshoek only
+Finance director should see: All metrics for all mines
+```
 
+### Security implementation via SSAS roles:
 
-### 🏭 Assmang scenario
+**Step 1: Create a role for each mine**
 
-**Situation:** A production manager at Khumani Mine asks: "Can I see this month's iron ore output compared to last month, broken down by shift?"
+In SSDT, create 5 roles:
+- Role: `KhumaniManager`
+- Role: `BeeshoekManager`
+- Role: `FinanceDirector`
+
+**Step 2: Set dimension security (restrict which mines are visible)**
+
+For `KhumaniManager` role:
+```
+Dimension: Mine
+Dimension Member: [Mine].[Khumani]
+Action: Allow (read)
+
+All other mines: Deny
+```
+
+Result: When KhumaniManager opens any report, the Mine dimension only shows Khumani. They cannot see Beeshoek data even if they try.
+
+**Step 3: Set cell-level security (restrict measures by role)**
+
+For `BeeshoekManager` role:
+```
+Measure Group: Operating Costs
+Measure: Labor Cost
+Cell: [Mine].[Beeshoek] × [Cost Type].[Labor]
+Action: Allow (read)
+
+All other mines: Deny
+```
+
+Result: Beeshoek manager can see their own labor costs only.
+
+**Step 4: Deploy and test**
+
+- Deploy cube with roles
+- Create Windows logins for each role (IT does this)
+- Map users to roles in SSDT
+- Users connect with their AD credentials
+- Cube automatically filters based on assigned role
+
+---
+
+## 5. Maintenance runbook (How to handle problems)
+
+### Scenario 1: Cube doesn't process on time (05:00 still processing at 06:15)
+
+**Diagnosis steps:**
+1. Open SSMS → Analysis Services
+2. Right-click cube → Properties → Performance
+3. Check: "Last Process Date/Time"
+4. If stuck: Check SSAS log (`C:\Program Files\Microsoft SQL Server\...\Analysis Services\Log.ldf`)
+5. If blocked: Kill long-running query: `EXEC kill_quaryx_query [query_id]`
+
+**Recovery:**
+```
+Option 1 (Quick): Cancel processing, reprocess just new data (incremental)
+Option 2 (Full): Kill all connections, full reprocess
+Option 3 (Defer): Post-process notification to users "latest data is 24h old"
+```
+
+### Scenario 2: User complains "cost per tonne is wrong"
+
+**Validation steps:**
+1. Run SQL baseline: `SELECT SUM(Cost)/SUM(Tonnes) FROM FactProduction WHERE Mine='Khumani' AND Month='2024-01'`
+2. Compare to Power BI result
+3. If different: Calculated measure has wrong formula
+
+**Fix:**
+1. Open SSDT → Cube Designer → Calculations
+2. Click calculated measure `Cost Per Tonne`
+3. Verify formula: `([Measures].[Total Cost] / [Measures].[Tonnes Produced])`
+4. If wrong: Correct formula
+5. Rebuild and redeploy
+6. Reprocess cube
+7. Users see corrected numbers
+
+### Scenario 3: Dashboard is slow (takes 5 seconds instead of <1 second)
+
+**Diagnosis:**
+1. Check aggregation coverage: Did the Aggregation Design Wizard show 80%+?
+2. Run MDX query: Measure performance in SSMS
+3. If >1 second: Missing aggregations OR wrong storage mode
+
+**Fix:**
+1. Re-run Aggregation Design Wizard
+2. Add missing aggregations (Mine × Month, Department × Quarter)
+3. Reprocess
+4. Test query again: Should be <100ms now
+
+---
+
+## 6. Implementation roadmap (3-month plan)
+
+| Phase | Timeline | Activity | Owner | Deliverable |
+|-------|----------|----------|-------|------------|
+| **Phase 1: Design** | Week 1-2 | Gather requirements, create data model diagram | BI Analyst | Cube design document |
+| **Phase 1: Design** | Week 2-3 | Build DSV, create dimensions, build measure groups | SSDT Developer | Working cube in dev server |
+| **Phase 2: Build** | Week 3-4 | Add calculated measures, KPIs, hierarchies | SSDT Developer | Enhanced cube with formulas |
+| **Phase 2: Build** | Week 4-5 | Design aggregations, set up nightly processing schedule | DBA | Processed cube, automation script |
+| **Phase 3: Test** | Week 5-6 | User acceptance testing (5 departments test cube) | Business Analysts | Sign-off from stakeholders |
+| **Phase 3: Test** | Week 6-7 | Load testing (simulate 50 concurrent users), performance tuning | DBA | Performance report (<1 sec queries) |
+| **Phase 4: Deploy** | Week 7-8 | Set up security roles, production deployment | DBA + SSDT | Prod cube ready, users trained |
+| **Phase 4: Deploy** | Week 8+ | User training, go-live, 24/7 monitoring for 1 month | IT Support | Successful go-live, SLA met (99.5% uptime) |
+
+---
+
+## 7. Post-go-live SLA (Service Level Agreement) for Assmang cube
+
+**Commitments to users:**
+
+| Metric | Target | How We Achieve It |
+|--------|--------|-------------------|
+| **Uptime** | 99.5% (max 3.6 hours down per month) | Redundant servers, hourly health checks |
+| **Query response time** | <1 second for 95% of queries | Aggregation design, MOLAP storage, performance monitoring |
+| **Data freshness** | Data ≤24 hours old | Nightly processing at 06:00 |
+| **Processing completion** | 15 minutes or less | Incremental processing, aggregation strategy |
+| **Issue resolution** | Critical issues <1 hour, normal <24 hours | On-call DBA, documented runbook |
+| **User support** | Response within 2 hours | Help desk ticket system, escalation path |
+
+**Monitoring dashboard (IT watches this daily):**
+```
+Processing Success Rate: 100% (green if all nightly processes succeed)
+Average Query Time: 250ms (green if <1000ms)
+Concurrent Users: 35 (green if <50 max capacity)
+Disk Space: 2.5GB free (green if >1GB free)
+Server CPU: 45% avg (green if <75%)
+```
+
+If ANY metric goes red, IT investigates and notifies users of potential impact.
+
+---
+
+## 8. End-to-end workflow summary (Your entire journey as an Assmang analyst)
+
+```
+STEP 1: User Requests Dashboard
+        "I need to see production by mine by month"
+        ↓
+STEP 2: Data Analyst Designs Cube
+        Data Source → Data Source View → Dimensions (Mine, Date) → Measure (Tonnes)
+        ↓
+STEP 3: Developer Builds Cube in SSDT
+        Create project → Add tables → Add dimensions → Add measure groups
+        ↓
+STEP 4: Developer Tests in Browser
+        Open cube Browser tab → Drag Tonnes to grid → Verify numbers match SQL
+        ↓
+STEP 5: DBA Deploys to Production
+        Right-click project → Deploy → Deployment successful
+        ↓
+STEP 6: DBA Processes Data
+        Run processing job → Cube loaded with data → Aggregates built
+        ↓
+STEP 7: User Connects from Excel
+        Data → Get External Data → From SQL Server → Select Assmang cube
+        ↓
+STEP 8: User Creates Pivot Table
+        Drag Mines to rows, Months to columns, Tonnes to values
+        ↓
+STEP 9: User Gets Instant Answer
+        Excel shows production grid in <1 second (pre-aggregated data)
+        ↓
+STEP 10: User Explores Further
+        Clicks on "Khumani" → Drills into weekly → Sees daily granularity
+        → All within <100ms (aggregations pre-calculated)
+        ↓
+STEP 11: Nightly Cube Auto-Updates
+        06:00 processing reads yesterday's production data
+        Next morning user sees latest numbers automatically
+```
+
+**Result:** Data democratization achieved. No SQL queries, no IT requests, instant answers to business questions.
 
 **How target cube design helps:** Because the cube already has the right structure (dimensions for time and mine, measures for production), this question can be answered in seconds using Excel or Power BI — no SQL coding needed, no waiting for IT.
 

@@ -48,6 +48,20 @@ Apply the theory from **Introduction to SQL Server Analysis Services** by comple
 - If tables already exist but contain unexpected values, rerun the script from the top so the database is rebuilt cleanly.
 - If you get permission errors, use a login that can create databases and read data.
 
+> 📸 **Screenshot Checkpoint 1 — Object Explorer after loading v1 dataset:**
+> The Object Explorer tree shows:
+> ```
+> ▼ localhost (SQL Server ...)
+>   ▼ Databases
+>       AssmangMining         ← New database created by the script
+>           ▼ Tables
+>               dbo.Dim_Date
+>               dbo.Dim_Department
+>               dbo.Dim_Employee
+>               dbo.Dim_Mine
+> ```
+> No `FactProduction` table yet — that comes in the v2 dataset in the next topic.
+
 ---
 
 ### Step 2: Create a new Analysis Services Multidimensional project in Visual Studio
@@ -68,6 +82,19 @@ Apply the theory from **Introduction to SQL Server Analysis Services** by comple
 - If the project template is missing, SSDT support for Analysis Services is not installed.
 - If Visual Studio opens a different BI template, close it and choose the multidimensional template explicitly.
 - If the solution opens with warning icons immediately, check whether extensions or project targeting are incomplete.
+
+> 📸 **Screenshot Checkpoint 2 — New SSAS project in Solution Explorer:**
+> After the project opens, Solution Explorer (right side panel) shows the project name with these folders:
+> ```
+> ▼ AssmangMiningCube (Project)
+>     Data Sources          ← Where you set up the SQL connection
+>     Data Source Views     ← Where you map the tables
+>     Cubes                 ← Where the cube lives
+>     Dimensions            ← Where dimensions are built
+>     Mining Structures     ← (Ignore — not used in this course)
+>     Roles                 ← (Security — covered later)
+> ```
+> If you see a "Tabular" project structure instead (with "Tables" instead of "Cubes"), you selected the wrong project type — delete it and create a new multidimensional project.
 
 ---
 
@@ -118,6 +145,20 @@ Apply the theory from **Introduction to SQL Server Analysis Services** by comple
 - If a relationship line is missing where you expected one, inspect the SQL table keys first.
 - If the DSV designer shows stale metadata, refresh it before continuing.
 
+> 📸 **Screenshot Checkpoint 3 — Data Source View with 4 dimension tables:**
+> The DSV canvas shows 4 table boxes connected by lines:
+> ```
+> [Dim_Employee]
+>     MineID ─────── [Dim_Mine]
+>                        MineID
+>     DepartmentID ── [Dim_Department]
+>                        DepartmentID
+>
+> [Dim_Date]
+>     (standalone — no direct link to other dims yet)
+> ```
+> Each box shows the column names of the table. Lines = foreign key relationships defined in SQL.
+
 ---
 
 ### Step 5: Deploy the project shell and confirm the SSAS server accepts it
@@ -140,6 +181,24 @@ Apply the theory from **Introduction to SQL Server Analysis Services** by comple
 - If deployment fails immediately, double-check the deployment server name in project properties.
 - If you get server-role or permission errors, you likely do not have rights on the SSAS instance.
 - If deployment succeeds but nothing appears in SSMS, refresh the SSAS Object Explorer tree and reconnect if necessary.
+
+> 📸 **Screenshot Checkpoint 4 — Output window after deployment + SSMS showing the deployed database:**
+> **In Visual Studio Output window:**
+> ```
+> ------ Build started ------
+> Build succeeded.
+> ------ Deploy started ------
+> Deploying database...
+> Deployment completed successfully.
+> ```
+> **In SSMS Object Explorer (Analysis Services connection):**
+> ```
+> ▼ SSAS Server (Analysis Services)
+>   ▼ Databases
+>       AssmangMiningAnalytics    ← Your deployed SSAS database appears here
+>           Cubes                  (empty at this stage — cube is created later)
+>           Dimensions             (empty at this stage)
+> ```
 
 ---
 
@@ -178,36 +237,48 @@ By the end of this lab, you should be able to demonstrate the core workflow for 
 
 Run these checks after loading `v1_assmang_mining_base.sql`:
 
+> ✅ **COPY AND PASTE into a new SSMS query window. Set database to `AssmangMining` first.**
+
+**Check 1 — Row counts for all 4 dimension tables:**
+
 ```sql
 USE AssmangMining;
 GO
 
 SELECT
-	(SELECT COUNT(*) FROM dbo.Dim_Mine) AS MineCount,
-	(SELECT COUNT(*) FROM dbo.Dim_Department) AS DepartmentCount,
-	(SELECT COUNT(*) FROM dbo.Dim_Employee) AS EmployeeCount,
-	(SELECT COUNT(*) FROM dbo.Dim_Date) AS DateCount;
+    (SELECT COUNT(*) FROM dbo.Dim_Mine)       AS MineCount,
+    (SELECT COUNT(*) FROM dbo.Dim_Department) AS DepartmentCount,
+    (SELECT COUNT(*) FROM dbo.Dim_Employee)   AS EmployeeCount,
+    (SELECT COUNT(*) FROM dbo.Dim_Date)       AS DateCount;
 ```
+
+> 📸 **Expected result:** A single row showing counts like: MineCount=5, DepartmentCount=8, EmployeeCount=120+, DateCount=730+. If any value is 0, the dataset did not load correctly.
+
+**Check 2 — Top 10 employees with their mine and department:**
 
 ```sql
 SELECT TOP (10)
-	e.EmployeeCode,
-	e.FirstName + ' ' + e.LastName AS EmployeeName,
-	m.MineName,
-	d.DepartmentName
+    e.EmployeeCode,
+    e.FirstName + ' ' + e.LastName AS EmployeeName,
+    m.MineName,
+    d.DepartmentName
 FROM dbo.Dim_Employee e
 LEFT JOIN dbo.Dim_Mine m ON e.MineID = m.MineID
 LEFT JOIN dbo.Dim_Department d ON e.DepartmentID = d.DepartmentID
 ORDER BY e.EmployeeID;
 ```
 
+**Check 3 — Date range covered by the dataset:**
+
 ```sql
 SELECT
-	MIN(FullDate) AS StartDate,
-	MAX(FullDate) AS EndDate,
-	COUNT(*) AS NumberOfDates
+    MIN(FullDate) AS StartDate,
+    MAX(FullDate) AS EndDate,
+    COUNT(*)      AS NumberOfDates
 FROM dbo.Dim_Date;
 ```
+
+> 📸 **Expected result:** StartDate = 2023-01-01, EndDate = 2024-12-31 (or similar). NumberOfDates should be ~730 (two full years of daily dates). If StartDate and EndDate are the same, the date dimension was not populated correctly.
 
 ---
 

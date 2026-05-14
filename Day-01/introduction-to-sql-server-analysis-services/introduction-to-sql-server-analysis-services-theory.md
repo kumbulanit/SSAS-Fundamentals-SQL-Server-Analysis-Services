@@ -59,94 +59,194 @@ Imagine you have a massive library with thousands of books (your data). Without 
 
 ---
 
-## 1. What SSAS does
+## 1. What SSAS does — In plain terms with examples
 
-### 💬 In plain English
+**SSAS = SQL Server Analysis Services = A pre-built analytical database that answers business questions in milliseconds instead of minutes.**
 
-Let's break down **what ssas does** in the simplest possible terms:
+### Without SSAS (the slow way at Assmang):
 
-**→** SQL Server Analysis Services is Microsoft's analytical engine for building semantic models over warehouse data.
+```
+09:00 am - Manager asks: "How many tonnes did Khumani produce in Q1 2024?"
+09:05 am - IT analyst writes SQL query
+09:10 am - SQL runs against warehouse, scans 50+ million fact rows
+09:15 am - Results come back: 42,150 tonnes
+```
 
-**→** It turns detailed transactional or warehouse tables into structures designed for fast slicing, drilling, and summarisation.
+**Problem:** 15 minutes for one question. Multiple questions = hours of IT time. Users can't self-serve.
 
-**→** In this course the focus is on multidimensional SSAS, where data is modelled using dimensions, measures, and cubes.
+### With SSAS (the fast way):
 
-### 📚 Detailed explanation
+```
+09:00 am - Manager opens Power BI
+09:02 am - Clicks: Khumani + Q1 + TonnesProduced
+09:02 am - Answer appears instantly: 42,150 tonnes ← Pre-calculated during nightly processing
+```
 
-This concept is important because it directly affects how well the cube works for business users. Here is a deeper look:
-
-
-**Point 1: SQL Server Analysis Services is Microsoft's analytical engine for building semantic models over warehouse data.**
-
-What this means in practice: When you apply this at Assmang, it means that sql server analysis services is microsoft's analytical engine for building semantic models over warehouse data. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-**Point 2: It turns detailed transactional or warehouse tables into structures designed for fast slicing, drilling, and summarisation.**
-
-What this means in practice: When you apply this at Assmang, it means that it turns detailed transactional or warehouse tables into structures designed for fast slicing, drilling, and summarisation. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-**Point 3: In this course the focus is on multidimensional SSAS, where data is modelled using dimensions, measures, and cubes.**
-
-What this means in practice: When you apply this at Assmang, it means that in this course the focus is on multidimensional ssas, where data is modelled using dimensions, measures, and cubes. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-
-### 🏭 Assmang scenario
-
-**Situation:** A production manager at Khumani Mine asks: "Can I see this month's iron ore output compared to last month, broken down by shift?"
-
-**How what ssas does helps:** Because the cube already has the right structure (dimensions for time and mine, measures for production), this question can be answered in seconds using Excel or Power BI — no SQL coding needed, no waiting for IT.
-
-
-### ❓ Frequently Asked Questions
-
-**Q: Do I need to be a programmer to understand what ssas does?**  
-A: No. This concept is about business logic and design thinking. The tools (SSDT) provide visual interfaces for most of the work.
-
-**Q: What happens if we get what ssas does wrong?**  
-A: The cube will still work technically, but users may get confusing results, slow performance, or missing data. That's why we follow best practices from the start.
-
-**Q: How long does it take to set up what ssas does for a real project?**  
-A: For a project the size of Assmang's training cube, this typically takes a few hours of design work plus a few hours of implementation and testing.
+**Benefit:** 2 minutes, no IT needed, managers can explore freely.
 
 ---
 
-## 2. Why Assmang would use it
+## 2. Why Assmang specifically needs SSAS
 
-### 💬 In plain English
+**The business problem at Assmang:**
 
-Let's break down **why assmang would use it** in the simplest possible terms:
+| Problem | Impact | How SSAS Solves It |
+|---------|--------|-------------------|
+| **5 mines, 4 commodities, 350+ daily data points** | Impossible to answer ad-hoc questions manually | Pre-built dimensions (Mine, Commodity, Date) let users slice instantly |
+| **Executives ask similar questions daily** | "Q1 revenue? Q1 cost? Q1 safety score?" = 3 separate SQL queries | Pre-calculated aggregates answer in <1 second |
+| **Need 95% uptime for dashboards** | Single SQL query failure blocks the dashboard | SSAS has built-in redundancy, no repeated database hits |
+| **Manual month-end reconciliation** | Finance spends 2 days matching SQL reports to Excel | SSAS single source of truth, consistent numbers everywhere |
+| **Cost analysis critical** | "Cost per tonne varies by mine/shift/month" — hard to spot patterns | KPIs auto-calculate and show green/amber/red status |
 
-**→** Production data spans mines, dates, departments, safety indicators, and cost centres.
+### Real-world Assmang example (why SSAS matters):
 
-**→** Executives want answers such as revenue by mine, cost per tonne by month, and trend analysis by commodity type.
+**Situation:** CFO asks on Friday afternoon: "Was Q1 profitable by mine?"
 
-**→** SSAS pre-builds the analytical model so these queries run quickly and consistently.
+**Without SSAS:**
+- IT analyst must write and validate 4 queries
+- Must join FactProduction + FactOperatingCosts + Dim_Mine + Dim_Date
+- Must hand-calculate profit = Revenue - Cost for each mine
+- Takes 2 hours
+- CFO has answer Monday morning (too late for Friday board meeting)
 
-### 📚 Detailed explanation
+**With SSAS:**
+- CFO opens Power BI dashboard
+- Drags Profit (calculated measure) by Mine by Quarter
+- Sees results instantly (Khumani: R 8.2M, Beeshoek: R 5.1M, etc.)
+- Makes decision within 5 minutes
+- Sends to board same day
 
-This concept is important because it directly affects how well the cube works for business users. Here is a deeper look:
+---
 
+## 3. SSAS terminology (explained with Assmang examples)
 
-**Point 1: Production data spans mines, dates, departments, safety indicators, and cost centres.**
+### Core terms you need to know:
 
-What this means in practice: When you apply this at Assmang, it means that production data spans mines, dates, departments, safety indicators, and cost centres. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
+| Term | Plain English | Assmang Example |
+|------|---------------|-----------------|
+| **Cube** | A pre-built analytical structure | "Assmang Mining Analytics" cube contains all mines' production and costs |
+| **Dimension** | A category for slicing data (like a filter) | Mine (Khumani, Beeshoek, etc.), Date (2024-01-15), Department (Extraction) |
+| **Hierarchy** | A drill-down path | Date: Year → Quarter → Month → Day (drill down from 2024 to January 15) |
+| **Measure** | A number you want to analyze | Tonnes Produced, Revenue in ZAR, Cost Per Tonne |
+| **Measure Group** | Related measures from one fact table | Production Measures (Tonnes, Revenue, Grade), Operating Cost Measures (Labor, Maintenance, Equipment) |
+| **Member** | One specific value in a dimension | "Khumani" is a member of the Mine dimension |
+| **Processing** | Loading data from warehouse into the cube | Nightly at 06:00, reads day's production, calculates aggregates |
+| **Aggregation** | Pre-calculated totals for speed | "Khumani's Q1 2024 total = 42,150 tonnes" stored, not calculated per query |
+| **MDX** | Query language for cubes (like SQL for databases) | `SELECT [Tonnes Produced] ON COLUMNS, [Mine].Members ON ROWS FROM [Cube]` |
+| **Storage Mode** | How data is stored (MOLAP, ROLAP, HOLAP) | MOLAP (fastest) used for Assmang — all data pre-calculated nightly |
 
-**Point 2: Executives want answers such as revenue by mine, cost per tonne by month, and trend analysis by commodity type.**
+---
 
-What this means in practice: When you apply this at Assmang, it means that executives want answers such as revenue by mine, cost per tonne by month, and trend analysis by commodity type. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
+## 4. Simple MDX example — Your first cube query
 
-**Point 3: SSAS pre-builds the analytical model so these queries run quickly and consistently.**
+Once a cube is built and processed, users query it with MDX. Here's a simple example:
 
-What this means in practice: When you apply this at Assmang, it means that ssas pre-builds the analytical model so these queries run quickly and consistently. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
+### Business question:
+"Show me tonnes produced for each mine in 2024"
 
+### MDX query:
+```mdx
+SELECT { [Measures].[Tonnes Produced] } ON COLUMNS,
+       [Mine].[Mine Name].Members ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE ([Date].[Calendar].[Year].&[2024])
+```
 
-### 🏭 Assmang scenario
+### Result (what the manager sees):
+```
+                    Tonnes Produced
+Beeshoek Mine       32,500
+Black Rock Mine     28,100
+Dwarsrivier Mine    15,600
+Khumani Mine        45,200
+Machadodorp Works   8,200
+TOTAL               129,600
+```
 
-**Situation:** A production manager at Khumani Mine asks: "Can I see this month's iron ore output compared to last month, broken down by shift?"
+### Why this is fast:
+- Without SSAS: SQL must scan millions of fact rows, calculate sum per mine
+- With SSAS: This total was PRE-CALCULATED when the cube processed, answer in <1ms
 
-**How why assmang would use it helps:** Because the cube already has the right structure (dimensions for time and mine, measures for production), this question can be answered in seconds using Excel or Power BI — no SQL coding needed, no waiting for IT.
+---
 
+## 5. Multidimensional SSAS vs. Tabular SSAS (Which does Assmang use?)
 
-### ❓ Frequently Asked Questions
+**This course uses Multidimensional SSAS because:**
+
+| Aspect | Multidimensional (This Course) | Tabular (Modern Alternative) |
+|--------|-------------------------------|------------------------------|
+| **Model design** | Explicit dimensions + measures (star schema thinking) | Implicit — more like Excel pivots |
+| **Build complexity** | More steps (DSV, dimensions, measure groups), but clear structure | Fewer steps, more forgiving |
+| **Performance** | Extremely fast for analytical queries (pre-aggregated) | Fast but not as optimized as MOLAP |
+| **Development tool** | Visual Studio with SSDT | Visual Studio Code or Power BI Desktop |
+| **Best for** | Complex analytical needs, time-based analysis, complex calculations | Simple dashboards, self-service BI |
+| **Assmang fit** | ✓ YES — Mines, dates, hierarchies, cost per tonne formulas — complex | ✗ Overkill for simple dashboards |
+
+**For Assmang's use case (5 mines, 4+ dimensions, complex cost analysis), Multidimensional is the right choice.**
+
+---
+
+## 6. The SSAS/SSDT/SSMS ecosystem
+
+**Three tools, three purposes:**
+
+| Tool | Purpose | When Assmang Uses It |
+|------|---------|---------------------|
+| **SSDT** (SQL Server Data Tools) | Build and design cubes in Visual Studio | Developers: Design dimensions, add measures, build hierarchies, create KPIs |
+| **SSMS** (Management Studio) | Administer, deploy, process, query | Admins: Deploy cubes, schedule processing; Analysts: Run MDX queries, test |
+| **Power BI / Excel** | Access cube for reports/dashboards | End users: Create production dashboards, sales reports, cost tracking |
+
+**Typical workflow:**
+1. **SSDT**: Developers build cube (Day 1)
+2. **SSDT**: Deploy cube to server
+3. **SSMS**: Admin processes cube (loads data) nightly at 06:00
+4. **Power BI**: Users connect and create dashboards
+5. **Excel**: Users create pivot tables from cube data
+
+---
+
+## 7. Processing — The critical step (overview)
+
+**Building the cube ≠ making it usable.**
+
+When you first deploy a cube, it's empty. Processing loads the data:
+
+```
+DEPLOY (transfers metadata)
+  ↓
+CUBE EXISTS BUT EMPTY (no data yet)
+  ↓
+PROCESS (reads warehouse data, calculates aggregates)
+  ↓
+CUBE READY FOR QUERIES (data pre-calculated for speed)
+```
+
+### Processing at Assmang (realistic timeline):
+
+```
+05:00 - SQL warehouse updated with day's production
+06:00 - SSAS processes cube (reads new FactProduction + FactOperatingCosts rows)
+06:15 - Cube fully processed, contains yesterday's data
+06:30 - Executives connect to dashboard, see latest numbers
+```
+
+**Why processing matters:** If the 06:00 process fails, users see stale data. So Assmang's IT monitors processing nightly to ensure it completes.
+
+---
+
+## 8. The journey ahead (What you'll learn)
+
+This course teaches you SSAS step by step:
+
+| Day | Topic | What You'll Build |
+|-----|-------|-------------------|
+| **Day 1 - Foundations** | SSAS concepts, dimensions, measures, deployment | Simple cube with 2 mines, 2 measures |
+| **Day 1 - Advanced** | Hierarchies, aggregations, building a complete cube | Full Assmang cube: all mines, 4 measure groups, date hierarchy |
+| **Day 2 - Querying** | MDX syntax, SELECT statements, WHERE filters | Run 10+ queries to validate cube accuracy |
+| **Day 2 - Analytics** | Calculated measures, KPIs, named sets | Add cost-per-tonne formula, safety KPI, top-producer set |
+| **Day 2 - Real-world** | Deployment, processing, security, maintenance | Schedule nightly processing, set up role-based views |
+
+**End result:** You'll have built and deployed a working Assmang cube that answers production, cost, and safety questions instantly.
 
 **Q: Do I need to be a programmer to understand why assmang would use it?**  
 A: No. This concept is about business logic and design thinking. The tools (SSDT) provide visual interfaces for most of the work.

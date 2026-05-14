@@ -157,55 +157,85 @@ By the end of this lab, you should be able to demonstrate the core workflow for 
 
 ## SQL Checks for Tuning Context (Run in SSMS Database Engine)
 
+> ✅ **COPY AND PASTE each SQL block into a new SSMS query window. Set database to `AssmangMining` first.**
+
+**Check 1 — Production row count by month (to see data volume):**
+
 ```sql
 USE AssmangMining;
 GO
 
 SELECT
-	d.[Year],
-	d.[Month],
-	COUNT(*) AS ProductionRows,
-	SUM(fp.TonnesProduced) AS TotalTonnes
+    d.[Year],
+    d.[Month],
+    COUNT(*) AS ProductionRows,
+    SUM(fp.TonnesProduced) AS TotalTonnes
 FROM dbo.FactProduction fp
 JOIN dbo.Dim_Date d ON fp.DateID = d.DateID
 GROUP BY d.[Year], d.[Month]
 ORDER BY d.[Year], d.[Month];
 ```
 
+**Check 2 — Equipment uptime and productivity by mine:**
+
 ```sql
 SELECT
-	m.MineName,
-	AVG(ee.UpTimePercentage) AS AvgUpTimePct,
-	AVG(ee.ProductivityTonnesPerHour) AS AvgProductivityTonnesPerHour
+    m.MineName,
+    AVG(ee.UpTimePercentage) AS AvgUpTimePct,
+    AVG(ee.ProductivityTonnesPerHour) AS AvgProductivityTonnesPerHour
 FROM dbo.FactEquipmentEfficiency ee
 JOIN dbo.Dim_Mine m ON ee.MineID = m.MineID
 GROUP BY m.MineName
 ORDER BY AvgUpTimePct DESC;
 ```
 
+---
+
 ## MDX Queries for Before/After Comparison (Run in SSMS against SSAS)
 
-```mdx
-/* Query A: broad scan by mine and month */
-SELECT
-	{[Measures].[TonnesProduced], [Measures].[RevenueZAR]} ON COLUMNS,
-	NON EMPTY
-	CROSSJOIN(
-		[Mine].[Mine Name].[Mine Name].MEMBERS,
-		[Date].[Month Name].[Month Name].MEMBERS
-	) ON ROWS
-FROM [Assmang Mining Analytics]
-WHERE ([Date].[Calendar Year].&[2024]);
-```
+> ⚠️ **Before running MDX:** Open an MDX query window (Analysis Services connection → right-click database → New Query → MDX), then select `AssmangMiningAnalytics` from the toolbar dropdown.
+
+> ℹ️ **About the `-- labels`:** Lines starting with `--` are comments (explanations only). They do NOT affect execution — you can include them or remove them.
+
+---
+
+**Query A — Broad cross-join scan (mine × month):**
+
+> ✅ COPY THIS ENTIRE BLOCK:
 
 ```mdx
-/* Query B: narrower slice for comparison */
+-- Query A: broad scan — all mines × all months
+-- Useful for seeing the maximum row count in a result
 SELECT
-	{[Measures].[TonnesProduced], [Measures].[RevenueZAR]} ON COLUMNS,
-	[Mine].[Mine Name].[Mine Name].MEMBERS ON ROWS
+    { [Measures].[TonnesProduced], [Measures].[RevenueZAR] } ON COLUMNS,
+    NON EMPTY
+        CROSSJOIN(
+            [Mine].[Mine Name].[Mine Name].MEMBERS,
+            [Date].[Month Name].[Month Name].MEMBERS
+        ) ON ROWS
 FROM [Assmang Mining Analytics]
-WHERE ([Date].[Calendar Year].&[2024]);
+WHERE ( [Date].[Calendar Year].&[2024] );
 ```
+
+> 📸 **Expected result:** A dense grid with one row per Mine-Month combination (up to ~48 rows for 4 mines × 12 months). Note how long this takes — this is your "before" benchmark.
+
+---
+
+**Query B — Narrow slice (mine only, no month breakdown):**
+
+> ✅ COPY THIS ENTIRE BLOCK:
+
+```mdx
+-- Query B: narrow slice — mines only, no month detail
+-- Compare this response time to Query A
+SELECT
+    { [Measures].[TonnesProduced], [Measures].[RevenueZAR] } ON COLUMNS,
+    [Mine].[Mine Name].[Mine Name].MEMBERS ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE ( [Date].[Calendar Year].&[2024] );
+```
+
+> 📸 **Expected result:** A short grid (4–5 rows). Compare the execution time to Query A. Query B should return faster because fewer cells are needed — this demonstrates why aggregations help.
 
 ---
 

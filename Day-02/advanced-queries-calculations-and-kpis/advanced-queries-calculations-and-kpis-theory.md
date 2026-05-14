@@ -59,97 +59,377 @@ Basic measures tell you speed and fuel level. But KPIs are like adding warning l
 
 ---
 
-## 1. Calculated measures
+## 1. Calculated measures — Real formulas with step-by-step guide
 
-### 💬 In plain English
+A calculated measure derives a new business insight by combining existing measures or applying logic.
 
-Let's break down **calculated measures** in the simplest possible terms:
+### Formula 1: Cost Per Tonne (Most useful at Assmang)
 
-**→** Calculated measures derive new business insight without changing the source fact table.
+**What it does:** Divides total operating cost by tonnes produced to show efficiency
 
-**→** Examples include cost per tonne, revenue variance, and tonnes per employee.
+**Formula:**
+```mdx
+([Measures].[Total Operating Cost] / [Measures].[Tonnes Produced])
+```
 
-**→** These measures should be clearly named and documented for users.
+**Where it's used at Assmang:**
+- Daily: "Was today's production cost-effective?"
+- Monthly: "Which mine ran most cheaply this month?"
+- Trend: "Is our cost per tonne going up or down?"
 
-### 📚 Detailed explanation
+**Worked example with real numbers:**
 
-This concept is important because it directly affects how well the cube works for business users. Here is a deeper look:
+| Scenario | Tonnes Produced | Total Operating Cost | Cost Per Tonne |
+|----------|-----------------|----------------------|-----------------|
+| Khumani week 1 | 5,500 tonnes | R 2,200,000 | R 400/tonne |
+| Khumani week 2 | 6,200 tonnes | R 2,325,000 | R 375/tonne |
+| Khumani week 3 | 5,800 tonnes | R 2,088,000 | R 360/tonne |
+| **Combined** | **17,500 tonnes** | **R 6,613,000** | **R 378/tonne** |
 
+**Why this matters:** If a manager sees "Week 3 cost R 360/tonne but Week 1 cost R 400," they can investigate what made Week 3 more efficient (better maintenance? fewer breakdowns?).
 
-**Point 1: Calculated measures derive new business insight without changing the source fact table.**
+**How to implement in SSDT:**
 
-What this means in practice: When you apply this at Assmang, it means that calculated measures derive new business insight without changing the source fact table. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
+**Step 1:** Open the Assmang project in Visual Studio
 
-**Point 2: Examples include cost per tonne, revenue variance, and tonnes per employee.**
+**Step 2:** Double-click the **Assmang Mining Analytics** cube to open Cube Designer
 
-What this means in practice: When you apply this at Assmang, it means that examples include cost per tonne, revenue variance, and tonnes per employee. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
+**Step 3:** Click the **Calculations** tab
 
-**Point 3: These measures should be clearly named and documented for users.**
+**Step 4:** Click **New Calculated Member** button
 
-What this means in practice: When you apply this at Assmang, it means that these measures should be clearly named and documented for users. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
+**Step 5:** In the **Name** field, type: `Cost Per Tonne (ZAR)`
 
+**Step 6:** In the **Parent hierarchy** dropdown, select: `[Measures]`
 
-### 🏭 Assmang scenario
+**Step 7:** In the **Expression** field, paste:
+```mdx
+([Measures].[Total Operating Cost] / [Measures].[Tonnes Produced])
+```
 
-**Situation:** A production manager at Khumani Mine asks: "Can I see this month's iron ore output compared to last month, broken down by shift?"
+**Step 8:** Click **OK**
 
-**How calculated measures helps:** Because the cube already has the right structure (dimensions for time and mine, measures for production), this question can be answered in seconds using Excel or Power BI — no SQL coding needed, no waiting for IT.
+**Step 9:** Click **Build Solution** (Ctrl+Shift+B)
 
+**Step 10:** Right-click the project and click **Deploy**
 
-### ❓ Frequently Asked Questions
+**Step 11:** Wait for deployment message "Deployment Successful"
 
-**Q: Do I need to be a programmer to understand calculated measures?**  
-A: No. This concept is about business logic and design thinking. The tools (SSDT) provide visual interfaces for most of the work.
+**Step 12:** In Cube Designer, click the **Browser** tab
 
-**Q: What happens if we get calculated measures wrong?**  
-A: The cube will still work technically, but users may get confusing results, slow performance, or missing data. That's why we follow best practices from the start.
+**Step 13:** Drag `[Measures].[Cost Per Tonne (ZAR)]` to the grid area
 
-**Q: How long does it take to set up calculated measures for a real project?**  
-A: For a project the size of Assmang's training cube, this typically takes a few hours of design work plus a few hours of implementation and testing.
+**Step 14:** Verify you see reasonable numbers (between 200-500 ZAR/tonne for Assmang)
 
 ---
 
-## 2. Named sets and reusable logic
+### Formula 2: Revenue per Employee
 
-### 💬 In plain English
+**What it does:** Shows how much revenue each employee generates (workforce productivity)
 
-Let's break down **named sets and reusable logic** in the simplest possible terms:
+**Formula:**
+```mdx
+([Measures].[Revenue (ZAR)] / [Measures].[Employee Count])
+```
 
-**→** Named sets define reusable groups of members, such as top-performing mines or active operations.
+**Where it's used at Assmang:**
+- HR planning: "Are we staffing efficiently?"
+- Quarterly review: "Did revenue-per-employee improve?"
+- Department comparison: "Which department is most productive?"
 
-**→** They simplify repeated report logic and improve consistency.
+**Real example:**
+```
+Khumani:   R 28,500,000 revenue / 450 employees = R 63,333 per employee
+Beeshoek: R 18,200,000 revenue / 280 employees = R 65,000 per employee
+```
 
-### 📚 Detailed explanation
+Beeshoek generates slightly more revenue per worker, suggesting better efficiency or higher-grade ore.
 
-This concept is important because it directly affects how well the cube works for business users. Here is a deeper look:
+**How to implement:** (Same 14 steps as above, but with this formula)
 
+---
 
-**Point 1: Named sets define reusable groups of members, such as top-performing mines or active operations.**
+### Formula 3: Equipment Uptime Percentage
 
-What this means in practice: When you apply this at Assmang, it means that named sets define reusable groups of members, such as top-performing mines or active operations. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
+**What it does:** Shows what percentage of available time equipment was running
 
-**Point 2: They simplify repeated report logic and improve consistency.**
+**Formula:**
+```mdx
+([Measures].[Equipment Hours Available] - [Measures].[Maintenance Hours]) 
+/ [Measures].[Equipment Hours Available] * 100
+```
 
-What this means in practice: When you apply this at Assmang, it means that they simplify repeated report logic and improve consistency. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
+**Where it's used at Assmang:**
+- Daily: "Was equipment reliable?"
+- Maintenance planning: "Which machines break down most?"
+- SLA tracking: "Are we meeting 95% uptime target?"
 
+---
 
-### 🏭 Assmang scenario
+### Formula 4: Grade Consistency (Weighted average across shifts)
 
-**Situation:** A production manager at Khumani Mine asks: "Can I see this month's iron ore output compared to last month, broken down by shift?"
+**Formula:**
+```mdx
+[Measures].[Total Ore Grade] / [Measures].[Tonnes Produced]
+```
 
-**How named sets and reusable logic helps:** Because the cube already has the right structure (dimensions for time and mine, measures for production), this question can be answered in seconds using Excel or Power BI — no SQL coding needed, no waiting for IT.
+**Where it's used:**
+- Ore quality monitoring
+- Buyer confidence (consistent grade = premium price)
+- Shift performance comparison
 
+---
 
-### ❓ Frequently Asked Questions
+## 2. Named sets and reusable logic — Practical examples
 
-**Q: Do I need to be a programmer to understand named sets and reusable logic?**  
-A: No. This concept is about business logic and design thinking. The tools (SSDT) provide visual interfaces for most of the work.
+A named set is a pre-built list of members you can reuse in any query, saving time and ensuring consistency.
 
-**Q: What happens if we get named sets and reusable logic wrong?**  
-A: The cube will still work technically, but users may get confusing results, slow performance, or missing data. That's why we follow best practices from the start.
+### Named Set 1: High-performing mines
 
-**Q: How long does it take to set up named sets and reusable logic for a real project?**  
-A: For a project the size of Assmang's training cube, this typically takes a few hours of design work plus a few hours of implementation and testing.
+**What it does:** Automatically groups mines by production (e.g., top 2 mines)
+
+**Formula:**
+```mdx
+TopCount([Mine].[Mine Name].Members, 2, [Measures].[Tonnes Produced])
+```
+
+**What this means:** Rank all mines by Tonnes Produced, return the top 2
+
+**Where it's used:**
+- Executive dashboards: "Show me the leading operations"
+- Bonus allocation: "Which mines qualify for performance bonus?"
+- Capacity planning: "Which operations should get equipment upgrades?"
+
+**Expected result:**
+```
+Rank 1: Khumani (45,200 tonnes)
+Rank 2: Beeshoek (32,500 tonnes)
+```
+
+**How to create in SSDT:**
+
+**Step 1:** Open Cube Designer
+
+**Step 2:** Click the **Calculations** tab
+
+**Step 3:** In the **Script Organizer** panel on the right, right-click **Named Sets**
+
+**Step 4:** Click **New Named Set**
+
+**Step 5:** In the **Name** field, type: `Top Producing Mines`
+
+**Step 6:** In the **Expression** field, paste:
+```mdx
+TopCount([Mine].[Mine Name].Members, 2, [Measures].[Tonnes Produced])
+```
+
+**Step 7:** Click **OK**
+
+**Step 8:** Rebuild and deploy
+
+**Step 9:** In a query, you can now use:
+```mdx
+SELECT { [Measures].[Tonnes Produced] } ON COLUMNS,
+       [Top Producing Mines] ON ROWS
+FROM [Assmang Mining Analytics]
+```
+
+---
+
+### Named Set 2: Iron Ore operations only
+
+**What it does:** Shows only mines that produce iron ore (excludes chromium/manganese)
+
+**Formula:**
+```mdx
+{ [Mine].[Khumani], [Mine].[Beeshoek] }
+```
+
+**Where it's used:**
+- Separate P&L by commodity
+- Commodity-specific safety meetings
+- Market analysis (iron ore prices move independently)
+
+---
+
+### Named Set 3: Current calendar year (dynamic)
+
+**What it does:** Always points to the current year, no manual updates needed
+
+**Formula:**
+```mdx
+[Date].[Calendar].[Year].&[2024]
+```
+
+**Where it's used:**
+- Year-end reporting ("Compare 2024 to 2023")
+- Rolling 12-month analysis
+- Consistency across reports (all queries use same year reference)
+
+---
+
+## 3. KPI design — Practical formulas and status logic
+
+A KPI is a metric that automatically shows a traffic light (Green/Amber/Red) based on whether a target is being met.
+
+### KPI 1: Production Target KPI
+
+**Business question:** "Is Khumani meeting its daily production target of 1,000 tonnes?"
+
+**Key Measure (what we're tracking):**
+```mdx
+[Measures].[Tonnes Produced]
+```
+
+**Target Formula (what we want):**
+```mdx
+1000  ← Fixed daily target
+```
+
+**Status Formula (green/amber/red logic):**
+```mdx
+IF [Measures].[Tonnes Produced] >= 1000 THEN 1 ELSE IF [Measures].[Tonnes Produced] >= 800 THEN 0 ELSE -1
+```
+
+**Status values:**
+- `1` = Green (success — 100% or more of target)
+- `0` = Amber (warning — 80-99% of target, something to watch)
+- `-1` = Red (critical — below 80% of target, needs action)
+
+**Real example:**
+```
+2024-01-15:  Khumani produced 1,050 tonnes  → 1,050 >= 1,000  → GREEN (exceeding target)
+2024-01-16:  Khumani produced 850 tonnes    → 850 >= 800     → AMBER (slightly below target)
+2024-01-17:  Khumani produced 650 tonnes    → 650 < 800      → RED (significantly below target—needs investigation)
+```
+
+**How to create in SSDT:**
+
+**Step 1:** Open Cube Designer → **Calculations** tab
+
+**Step 2:** Right-click **KPIs** in the Script Organizer
+
+**Step 3:** Click **New KPI**
+
+**Step 4:** In the **KPI Name** field, type: `Production Target KPI`
+
+**Step 5:** For **Associated measure group**, select: `Production`
+
+**Step 6:** In the **Key Performance Indicator** section:
+   - **Measure name:** `[Measures].[Tonnes Produced]`
+
+**Step 7:** In the **Target expression** box, enter:
+```mdx
+1000
+```
+
+**Step 8:** In the **Status expression** box, enter:
+```mdx
+CASE
+  WHEN [Measures].[Tonnes Produced] >= 1000 THEN 1
+  WHEN [Measures].[Tonnes Produced] >= 800 THEN 0
+  ELSE -1
+END
+```
+
+**Step 9:** Optionally set **Trend expression** to show if trending up or down:
+```mdx
+CASE
+  WHEN [Measures].[Tonnes Produced] > 1000 THEN 1
+  WHEN [Measures].[Tonnes Produced] = 1000 THEN 0
+  ELSE -1
+END
+```
+
+**Step 10:** Click **OK**
+
+**Step 11:** Rebuild and deploy
+
+**Step 12:** Test in Browser tab — select a date and mine, observe KPI status
+
+---
+
+### KPI 2: Cost Efficiency KPI
+
+**Business question:** "Is our cost per tonne within acceptable range?"
+
+**Key Measure:**
+```mdx
+[Measures].[Cost Per Tonne (ZAR)]
+```
+
+**Target (industry standard for Assmang):**
+```mdx
+400  ← Target is R 400 per tonne
+```
+
+**Status Formula:**
+```mdx
+CASE
+  WHEN [Measures].[Cost Per Tonne (ZAR)] <= 400 THEN 1   ← GREEN if <= target (cheaper is better)
+  WHEN [Measures].[Cost Per Tonne (ZAR)] <= 450 THEN 0   ← AMBER if within 50 above
+  ELSE -1                                                  ← RED if > 450 (too expensive)
+END
+```
+
+**Real example:**
+```
+Day 1: Cost R 380/tonne  → 380 <= 400  → GREEN (efficient)
+Day 2: Cost R 425/tonne  → 425 <= 450  → AMBER (acceptable but getting expensive)
+Day 3: Cost R 475/tonne  → 475 > 450   → RED (over budget, investigate waste)
+```
+
+---
+
+### KPI 3: Safety Compliance KPI
+
+**Business question:** "Is our safety compliance score meeting minimum requirements?"
+
+**Key Measure:**
+```mdx
+[Measures].[Safety Compliance Score]
+```
+
+**Target:**
+```mdx
+95  ← Target 95% compliance (industry standard)
+```
+
+**Status Formula:**
+```mdx
+CASE
+  WHEN [Measures].[Safety Compliance Score] >= 95 THEN 1    ← GREEN (excellent safety)
+  WHEN [Measures].[Safety Compliance Score] >= 80 THEN 0    ← AMBER (acceptable but needs monitoring)
+  ELSE -1                                                     ← RED (critical safety concerns)
+END
+```
+
+**How it plays out at Assmang:**
+- **GREEN (95%+):** No lost-time accidents, all protocols followed → bonus eligible
+- **AMBER (80-94%):** Minor incidents, training needed → watchlist
+- **RED (<80%):** Major incidents, operations review → immediate action
+
+---
+
+## Common errors and how to fix them
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| "Calculated measure shows no data" | Missing [Measures]. prefix | Always write `[Measures].[Name]`, not just `[Name]` |
+| "Named set returns empty" | Hierarchy spelled wrong | Check exact hierarchy name in Cube Designer (e.g., `[Mine].[Mine Name]`, not `[Mine].[MineName]`) |
+| "KPI shows no status color" | Status expression returns wrong values (must be -1, 0, or 1) | Verify formula returns exactly -1 (red), 0 (amber), or 1 (green) |
+| "Formula works in Calculations tab but not in queries" | Didn't rebuild and deploy | Always Ctrl+Shift+B then right-click project→Deploy |
+| "Can't see calculated measure in Browser" | Measure not in default measure set | Right-click measure in Cube Designer → Add to Default Measure Set |
+
+---
+
+## Where to use these formulas in practice
+
+| Formula Type | Used by | Frequency | Tools |
+|--------------|---------|-----------|-------|
+| **Calculated measures** (Cost Per Tonne, Revenue Per Employee) | Analysts, Managers | Daily reports | Excel, Power BI, SSMS |
+| **Named sets** (Top Mines, Iron Ore Only) | Dashboard developers, Executives | Standing dashboards | SSRS, Power BI |
+| **KPIs** (Production Target, Cost Efficiency, Safety) | Plant managers, Executives | Daily dashboards, alerts | Power BI, Excel, SSAS Browser |
 
 ---
 

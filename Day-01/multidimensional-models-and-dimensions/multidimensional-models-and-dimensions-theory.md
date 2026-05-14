@@ -59,95 +59,368 @@ Think of dimensions like the labels on a filing cabinet. One drawer is labelled 
 
 ---
 
-## 1. Dimensional thinking
+## 1. Dimensional thinking — With real examples
 
-### 💬 In plain English
+**In one sentence:** Separate "what you measure" (facts) from "how you slice it" (dimensions).
 
-Let's break down **dimensional thinking** in the simplest possible terms:
+### What this means at Assmang
 
-**→** A multidimensional model separates descriptive business context from measurable facts.
+**Fact: Tonnes Produced = 1,500 on a specific day at a specific mine**
 
-**→** Dimension tables answer 'by what' questions: by mine, by month, by department, by employee.
+Without dimensions, this is useless — you can't answer: "Was that good? Better than yesterday? Better than our target? How does it compare to other mines?"
 
-**→** A clean dimension model improves user navigation and aggregation behaviour.
+**With dimensions, you can answer all of those:**
+- By Mine: Was 1,500 tonnes from Khumani or Beeshoek?
+- By Date: Was it on a good day (Wednesday) or bad day (Monday)? Summer or winter?
+- By Shift: Was it day shift or night shift? First shift or second?
+- By Department: Was it from Extraction or Processing?
 
-### 📚 Detailed explanation
+### The separation principle
 
-This concept is important because it directly affects how well the cube works for business users. Here is a deeper look:
+| Fact Table (WHAT you measure) | Dimension Tables (HOW you slice it) |
+|-------------------------------|-------------------------------------|
+| TonnesProduced = 1,500 | Mine = Khumani |
+| RevenueProdZAR = R 850,000 | Date = 2024-01-15 (Monday, Q1, January) |
+| Grade = 64% | Department = Extraction |
+| MaintenanceCostZAR = R 12,000 | Shift = Day (06:00-14:00) |
 
-
-**Point 1: A multidimensional model separates descriptive business context from measurable facts.**
-
-What this means in practice: When you apply this at Assmang, it means that a multidimensional model separates descriptive business context from measurable facts. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-**Point 2: Dimension tables answer 'by what' questions: by mine, by month, by department, by employee.**
-
-What this means in practice: When you apply this at Assmang, it means that dimension tables answer 'by what' questions: by mine, by month, by department, by employee. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-**Point 3: A clean dimension model improves user navigation and aggregation behaviour.**
-
-What this means in practice: When you apply this at Assmang, it means that a clean dimension model improves user navigation and aggregation behaviour. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-
-### 🏭 Assmang scenario
-
-**Situation:** A production manager at Khumani Mine asks: "Can I see this month's iron ore output compared to last month, broken down by shift?"
-
-**How dimensional thinking helps:** Because the cube already has the right structure (dimensions for time and mine, measures for production), this question can be answered in seconds using Excel or Power BI — no SQL coding needed, no waiting for IT.
-
-
-### ❓ Frequently Asked Questions
-
-**Q: Do I need to be a programmer to understand dimensional thinking?**  
-A: No. This concept is about business logic and design thinking. The tools (SSDT) provide visual interfaces for most of the work.
-
-**Q: What happens if we get dimensional thinking wrong?**  
-A: The cube will still work technically, but users may get confusing results, slow performance, or missing data. That's why we follow best practices from the start.
-
-**Q: How long does it take to set up dimensional thinking for a real project?**  
-A: For a project the size of Assmang's training cube, this typically takes a few hours of design work plus a few hours of implementation and testing.
+**Benefit:** You can ask "production by mine" or "production by shift" or "production by month" without changing the database. The dimensions provide the filters.
 
 ---
 
-## 2. Assmang dimensions
+## 2. Assmang dimensions — With detailed examples
 
-### 💬 In plain English
+### Dimension 1: Mine Dimension (How to drill down by geographic location)
 
-Let's break down **assmang dimensions** in the simplest possible terms:
+**Table:** `Dim_Mine`
 
-**→** `Dim_Mine` supports analysis by mine, province, and commodity type.
+**Columns:**
+- `MineKey` (unique ID: 1, 2, 3, 4, 5)
+- `MineName` (Beeshoek, Khumani, Black Rock, Dwarsrivier, Machadodorp)
+- `MineProvince` (Northern Cape, Limpopo, Mpumalanga)
+- `Commodity` (Iron Ore, Manganese, Chrome)
+- `StartYear` (1995, 2001, 1987, 1998, 2005)
 
-**→** `Dim_Date` supports time intelligence through year, quarter, month, and day levels.
+**Sample data:**
 
-**→** `Dim_Department` supports cost and people analysis by function area.
+| MineKey | MineName | Province | Commodity | StartYear |
+|---------|----------|----------|-----------|-----------|
+| 1 | Beeshoek | Northern Cape | Iron Ore | 1995 |
+| 2 | Khumani | Northern Cape | Iron Ore | 2001 |
+| 3 | Black Rock | Northern Cape | Manganese | 1987 |
+| 4 | Dwarsrivier | Limpopo | Chrome | 1998 |
+| 5 | Machadodorp | Mpumalanga | Chrome Processing | 2005 |
 
-**→** `Dim_Employee` supports workforce-centric reporting and role-based views.
+**How it helps in business questions:**
+```
+"Production by mine?"            → Uses MineName level
+"Iron ore vs. other commodities?" → Uses Commodity level (not in mine—different fact!)
+"Which province is most productive?" → Uses Province level
+"Oldest vs. newest mines?"        → Uses StartYear level
+```
 
-### 📚 Detailed explanation
+**Hierarchy you'll build:** 
+```
+All
+  ├─ Northern Cape
+  │   ├─ Beeshoek Mine
+  │   ├─ Khumani Mine
+  │   └─ Black Rock Mine
+  ├─ Limpopo
+  │   └─ Dwarsrivier Mine
+  └─ Mpumalanga
+      └─ Machadodorp Works
+```
 
-This concept is important because it directly affects how well the cube works for business users. Here is a deeper look:
+---
 
+### Dimension 2: Date Dimension (Time intelligence for trend analysis)
 
-**Point 1: `Dim_Mine` supports analysis by mine, province, and commodity type.**
+**Table:** `Dim_Date`
 
-What this means in practice: When you apply this at Assmang, it means that `dim_mine` supports analysis by mine, province, and commodity type. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
+**Key columns:**
+- `DateKey` (20240101, 20240102, etc.)
+- `FullDate` (2024-01-15)
+- `Year` (2024)
+- `Quarter` (Q1, Q2, Q3, Q4)
+- `Month` (January, February, ..., December)
+- `Day` (1-31)
+- `DayOfWeek` (Monday, Tuesday, ..., Sunday)
+- `IsWeekend` (0 or 1)
 
-**Point 2: `Dim_Date` supports time intelligence through year, quarter, month, and day levels.**
+**Sample data (first few rows):**
 
-What this means in practice: When you apply this at Assmang, it means that `dim_date` supports time intelligence through year, quarter, month, and day levels. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
+| DateKey | FullDate | Year | Quarter | Month | DayOfWeek | IsWeekend |
+|---------|----------|------|---------|-------|-----------|-----------|
+| 20240101 | 2024-01-01 | 2024 | Q1 | January | Monday | 0 |
+| 20240102 | 2024-01-02 | 2024 | Q1 | January | Tuesday | 0 |
+| 20240103 | 2024-01-03 | 2024 | Q1 | January | Wednesday | 0 |
+| 20240115 | 2024-01-15 | 2024 | Q1 | January | Monday | 0 |
+| 20240131 | 2024-01-31 | 2024 | Q1 | January | Wednesday | 0 |
+| 20240201 | 2024-02-01 | 2024 | Q1 | February | Thursday | 0 |
 
-**Point 3: `Dim_Department` supports cost and people analysis by function area.**
+**How it helps in business questions:**
+```
+"Daily production trend?"          → Uses Day level
+"Monthly performance?"             → Uses Month level
+"Q1 vs. Q2 production?"           → Uses Quarter level
+"Year-over-year comparison?"      → Uses Year level
+"Why weekends lower?"             → Uses DayOfWeek + IsWeekend levels
+```
 
-What this means in practice: When you apply this at Assmang, it means that `dim_department` supports cost and people analysis by function area. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
+**Hierarchy you'll build:**
+```
+All
+  ├─ 2024
+  │   ├─ Q1
+  │   │   ├─ January (1-31)
+  │   │   ├─ February (1-29)
+  │   │   └─ March (1-31)
+  │   ├─ Q2
+  │   ├─ Q3
+  │   └─ Q4
+  └─ 2025
+      └─ ...
+```
 
-**Point 4: `Dim_Employee` supports workforce-centric reporting and role-based views.**
+---
 
-What this means in practice: When you apply this at Assmang, it means that `dim_employee` supports workforce-centric reporting and role-based views. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
+### Dimension 3: Department Dimension (Cost center analysis)
 
+**Table:** `Dim_Department`
 
-### 🏭 Assmang scenario
+**Columns:**
+- `DepartmentKey` (1, 2, 3, 4, 5)
+- `DepartmentName` (Extraction, Processing, Maintenance, Safety, Administration)
+- `Manager` (Person responsible)
+- `CostCenter` (Unique ID for finance)
 
-**Situation:** A production manager at Khumani Mine asks: "Can I see this month's iron ore output compared to last month, broken down by shift?"
+**Sample data:**
+
+| DepartmentKey | DepartmentName | Manager | CostCenter |
+|---------------|----------------|---------|------------|
+| 1 | Extraction | J. Kuma | CC-EXT-001 |
+| 2 | Processing | M. Nkosi | CC-PROC-001 |
+| 3 | Maintenance | P. Dlamini | CC-MAINT-001 |
+| 4 | Safety | K. Mokoena | CC-SAFE-001 |
+| 5 | Administration | T. Chen | CC-ADMIN-001 |
+
+**How it helps:**
+```
+"Cost by department?"             → Which department spends most?
+"Extraction vs. rest of mine?"   → Are we mining efficiently?
+"Manager accountability?"         → Each manager sees only their costs
+```
+
+---
+
+### Dimension 4: Employee Dimension (Workforce analytics)
+
+**Columns:**
+- `EmployeeKey`
+- `EmployeeName`
+- `EmployeeID`
+- `Department`
+- `JobTitle` (Miner, Foreman, Engineer, Operator)
+- `HireDate`
+
+**Enables questions like:**
+```
+"Revenue per employee?"           → How productive is each worker?
+"Headcount by department?"        → Are we overstaffed anywhere?
+"Retention analysis?"             → Who's been with us longest?
+"Job title distribution?"         → Do we have too many operators?
+```
+
+---
+
+## 3. Hierarchies explained with detailed steps
+
+### What is a hierarchy?
+
+A hierarchy is a drill-down path from general (ALL) to specific (individual values).
+
+**Example: Date hierarchy**
+```
+ALL TIME
+  └─ 2024 (year level)
+      └─ Q1 (quarter level)
+          └─ January (month level)
+              └─ 15 (day level)
+```
+
+**Why this matters:** A manager can ask:
+- "Total for all time" → Uses ALL
+- "How much in 2024?" → Uses Year level
+- "Q1 performance?" → Uses Quarter level
+- "January specific numbers?" → Uses Month level
+- "What happened January 15?" → Uses Day level
+
+### Example: Mine hierarchy with proper design
+
+```
+ALL MINES
+  └─ Northern Cape (province level)
+      ├─ Beeshoek Mine (iron ore mine)
+      ├─ Khumani Mine (iron ore mine)
+      └─ Black Rock Mine (manganese mine)
+  └─ Limpopo (province level)
+      └─ Dwarsrivier Mine (chrome mine)
+  └─ Mpumalanga (province level)
+      └─ Machadodorp Works (processing facility)
+```
+
+**How to build this in SSDT (step-by-step):**
+
+**PART A: Prepare the dimension table**
+
+**Step 1:** In Visual Studio, open the SSAS project
+
+**Step 2:** In **Solution Explorer**, expand **Data Sources**
+
+**Step 3:** Right-click **Data Sources** and select **New Data Source**
+
+**Step 4:** In the wizard, select your SQL Server database connection
+
+**Step 5:** If using existing Dim_Mine table (recommended), skip to PART B
+
+**Step 6:** If you need to create Dim_Mine, run this SQL in SQL Server first:
+```sql
+CREATE TABLE Dim_Mine (
+    MineKey INT PRIMARY KEY,
+    MineName NVARCHAR(100),
+    Province NVARCHAR(50),
+    Commodity NVARCHAR(50)
+);
+
+INSERT INTO Dim_Mine VALUES
+(1, 'Beeshoek', 'Northern Cape', 'Iron Ore'),
+(2, 'Khumani', 'Northern Cape', 'Iron Ore'),
+(3, 'Black Rock', 'Northern Cape', 'Manganese'),
+(4, 'Dwarsrivier', 'Limpopo', 'Chrome'),
+(5, 'Machadodorp', 'Mpumalanga', 'Chrome Processing');
+```
+
+**PART B: Add table to Data Source View**
+
+**Step 7:** In **Solution Explorer**, double-click **Data Source View**
+
+**Step 8:** Right-click in the DSV designer and select **Add/Remove Tables**
+
+**Step 9:** Select `Dim_Mine` (or other dimension table) from the list
+
+**Step 10:** Click **OK** — the table appears in DSV with a blue outline
+
+**PART C: Create the dimension**
+
+**Step 11:** In **Solution Explorer**, right-click **Dimensions**
+
+**Step 12:** Click **New Dimension**
+
+**Step 13:** In the wizard, select **Dim_Mine** as the source table
+
+**Step 14:** Click **Next**
+
+**Step 15:** In "Specify Dimension Type," select **Regular dimension** (not Time)
+
+**Step 16:** Click **Next**
+
+**Step 17:** In "Specify Dimension Tables," confirm `Dim_Mine` appears
+
+**Step 18:** Click **Next**
+
+**Step 19:** In "Select Attributes," checkboxes appear for each column:
+- ☑ MineKey (automatically marked)
+- ☑ MineName (check this)
+- ☑ Province (check this)
+- ☑ Commodity (check this)
+
+**Step 20:** Click **Next**
+
+**Step 21:** The wizard creates a new dimension file and opens **Dimension Designer**
+
+**PART D: Build the hierarchy**
+
+**Step 22:** In Dimension Designer, you see three panes:
+- **Left:** Attributes (MineKey, MineName, Province, Commodity)
+- **Right:** Hierarchies (empty — we'll add one)
+
+**Step 23:** In the **Hierarchies** pane, right-click and select **New Hierarchy**
+
+**Step 24:** A hierarchy appears named "Hierarchy 1"
+
+**Step 25:** Right-click the hierarchy name and select **Rename**
+
+**Step 26:** Type: `Geography`
+
+**Step 27:** Now drag attributes into the hierarchy in order (general → specific):
+1. **First:** Drag `Province` from Attributes pane into the `Geography` hierarchy
+2. **Second:** Drag `MineName` below `Province` in the same hierarchy
+3. **Result:** The hierarchy now reads:
+   ```
+   Geography
+     ├─ Province
+     └─ MineName
+   ```
+
+**Step 28:** To verify the hierarchy works, click **Browser** tab
+
+**Step 29:** You should see:
+```
+All
+  ├─ Limpopo
+  │   └─ Dwarsrivier Mine
+  ├─ Mpumalanga
+  │   └─ Machadodorp Works
+  └─ Northern Cape
+      ├─ Beeshoek Mine
+      ├─ Black Rock Mine
+      └─ Khumani Mine
+```
+
+**Step 30:** Right-click the dimension and select **Deploy**
+
+**Step 31:** Wait for "Deployment successful" message
+
+---
+
+## 4. Common dimension mistakes and how to fix them
+
+| Mistake | What Goes Wrong | Solution |
+|---------|-----------------|----------|
+| **Fact attribute in dimension** | You add SalesAmount as an attribute (it's a measure, not a dimension) | Measures go in FACT table only. Dimensions hold descriptive data (Mine, Month, Department). |
+| **Wrong hierarchy order** | You make MineName → Province instead of Province → MineName | Hierarchy = large to small (Geography → Company → Department). Test by asking "Does it make sense to drill down this way?" |
+| **Many-to-many relationships** | One mine ships to multiple customers (dimension relationship breaks) | Add a bridge table or change the join type in DSV to "many-to-many" (advanced) |
+| **Missing attributes** | Users can't filter by commodity or province (you only added MineName) | Add ALL descriptive columns as attributes, even if not all are used in hierarchies |
+| **Duplicate keys** | Two Khumani entries with different keys (confuses cube) | Ensure each MineName has ONE MineName value with ONE key |
+
+---
+
+## When hierarchies are used at Assmang
+
+| Hierarchy | Drill Path | Used For | Tools |
+|-----------|-----------|----------|-------|
+| **Date → Quarter → Month → Day** | 2024 → Q1 → January → 15 | Trend analysis, daily KPI tracking | Power BI, Excel, dashboards |
+| **Mine → Commodity** | All → Northern Cape → Khumani → Iron Ore | Commodity cost allocation, market analysis | SSRS reports, Executive dashboards |
+| **Department → Team → Employee** | Org hierarchy → Department accountability → Team bonus tracking | Workforce reports, cost center drill-down | HR dashboards, expense reports |
+
+---
+
+## Real-world example: Assmang's month-end close
+
+**Scenario:** Finance manager asks: "Which department exceeded their budget in January?"
+
+**Without proper hierarchies:** Would need to run 5+ separate SQL queries and manually compare results in Excel.
+
+**With proper hierarchies:**
+1. Opens Power BI dashboard
+2. Clicks: Dimensions → Department → Extraction
+3. Selects: Date → 2024 → Q1 → January
+4. Sees: Extraction spent R 2.4M (budget was R 2.1M)
+5. Drills into: Department → Team → Shift to find the overspend
+6. **Result:** Found that night shift ran extra equipment maintenance → legitimate overspend
+
+**Time saved:** 2 hours → 2 minutes
 
 **How assmang dimensions helps:** Because the cube already has the right structure (dimensions for time and mine, measures for production), this question can be answered in seconds using Excel or Power BI — no SQL coding needed, no waiting for IT.
 

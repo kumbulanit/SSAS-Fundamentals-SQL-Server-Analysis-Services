@@ -61,203 +61,364 @@ Imagine MDX is like talking to a very organised assistant. Instead of saying 'fi
 
 ## 1. How MDX differs from SQL
 
-### 💬 In plain English
+**SQL** asks: "Which rows from which tables meet this condition?"
+**MDX** asks: "Which value at which coordinate of this cube?"
 
-Let's break down **how mdx differs from sql** in the simplest possible terms:
+| Aspect | SQL | MDX |
+|--------|-----|-----|
+| **Unit of work** | Rows from tables | Cells from a cube (coordinates) |
+| **Main clauses** | SELECT (columns), FROM (tables), WHERE (rows) | SELECT (axes), FROM (cube), WHERE (slicer) |
+| **Thinking model** | "Get me data that meets criteria" | "Navigate to a specific intersection of dimensions" |
+| **Example** | Get all production rows where Mine='Khumani' | Show TonnesProduced at the intersection of [Mine].[Khumani] and [Date].[2024] |
 
-**→** SQL retrieves rows from tables; MDX navigates coordinates in a cube.
+**Real Assmang example:**
 
-**→** MDX focuses on axes, members, sets, and dimensional context.
+SQL way (slow - must scan millions of rows):
+```sql
+SELECT SUM(TonnesProduced) 
+FROM FactProduction 
+WHERE MineID = 2 AND YEAR(DateID) = 2024;
+```
 
-**→** The question is not only 'which rows?' but 'which slice of the cube?'.
+MDX way (fast - reads pre-calculated aggregate):
+```mdx
+SELECT [Measures].[Tonnes Produced] ON COLUMNS,
+       [Mine].[Khumani] ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE ([Date].[Calendar].[Year].&[2024])
+```
 
-### 📚 Detailed explanation
-
-This concept is important because it directly affects how well the cube works for business users. Here is a deeper look:
-
-
-**Point 1: SQL retrieves rows from tables; MDX navigates coordinates in a cube.**
-
-What this means in practice: When you apply this at Assmang, it means that sql retrieves rows from tables; mdx navigates coordinates in a cube. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-**Point 2: MDX focuses on axes, members, sets, and dimensional context.**
-
-What this means in practice: When you apply this at Assmang, it means that mdx focuses on axes, members, sets, and dimensional context. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-**Point 3: The question is not only 'which rows?' but 'which slice of the cube?'.**
-
-What this means in practice: When you apply this at Assmang, it means that the question is not only 'which rows?' but 'which slice of the cube?'. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-
-### 🏭 Assmang scenario
-
-**Situation:** A production manager at Khumani Mine asks: "Can I see this month's iron ore output compared to last month, broken down by shift?"
-
-**How how mdx differs from sql helps:** Because the cube already has the right structure (dimensions for time and mine, measures for production), this question can be answered in seconds using Excel or Power BI — no SQL coding needed, no waiting for IT.
-
-
-### ❓ Frequently Asked Questions
-
-**Q: Do I need to be a programmer to understand how mdx differs from sql?**  
-A: No. This concept is about business logic and design thinking. The tools (SSDT) provide visual interfaces for most of the work.
-
-**Q: What happens if we get how mdx differs from sql wrong?**  
-A: The cube will still work technically, but users may get confusing results, slow performance, or missing data. That's why we follow best practices from the start.
-
-**Q: How long does it take to set up how mdx differs from sql for a real project?**  
-A: For a project the size of Assmang's training cube, this typically takes a few hours of design work plus a few hours of implementation and testing.
+The MDX version runs in milliseconds because SSAS pre-calculated the intersection point during processing. No scanning needed.
 
 ---
 
-## 2. Basic SELECT structure
+## 2. Basic SELECT structure — With Real Examples
 
-### 💬 In plain English
+The basic MDX SELECT has four parts. Here they are with real Assmang queries:
 
-Let's break down **basic select structure** in the simplest possible terms:
+### Part 1: SELECT clause with COLUMNS axis
 
-**→** Measures often appear on columns and dimension members appear on rows.
+**What it does:** Specifies which measure(s) you want to see
 
-**→** The FROM clause names the cube, not a table.
+**Syntax:**
+```mdx
+SELECT { [Measures].[Measure Name] } ON COLUMNS
+```
 
-**→** The WHERE clause acts as a slicer over dimensional context.
+**Real Assmang examples:**
 
-### 📚 Detailed explanation
+```mdx
+-- Single measure: tonnes produced
+SELECT { [Measures].[Tonnes Produced] } ON COLUMNS
+```
 
-This concept is important because it directly affects how well the cube works for business users. Here is a deeper look:
+```mdx
+-- Multiple measures: tonnes AND revenue side-by-side
+SELECT { [Measures].[Tonnes Produced], [Measures].[Revenue (ZAR)] } ON COLUMNS
+```
 
-
-**Point 1: Measures often appear on columns and dimension members appear on rows.**
-
-What this means in practice: When you apply this at Assmang, it means that measures often appear on columns and dimension members appear on rows. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-**Point 2: The FROM clause names the cube, not a table.**
-
-What this means in practice: When you apply this at Assmang, it means that the from clause names the cube, not a table. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-**Point 3: The WHERE clause acts as a slicer over dimensional context.**
-
-What this means in practice: When you apply this at Assmang, it means that the where clause acts as a slicer over dimensional context. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-
-### 🏭 Assmang scenario
-
-**Situation:** A production manager at Khumani Mine asks: "Can I see this month's iron ore output compared to last month, broken down by shift?"
-
-**How basic select structure helps:** Because the cube already has the right structure (dimensions for time and mine, measures for production), this question can be answered in seconds using Excel or Power BI — no SQL coding needed, no waiting for IT.
-
-
-### ❓ Frequently Asked Questions
-
-**Q: Do I need to be a programmer to understand basic select structure?**  
-A: No. This concept is about business logic and design thinking. The tools (SSDT) provide visual interfaces for most of the work.
-
-**Q: What happens if we get basic select structure wrong?**  
-A: The cube will still work technically, but users may get confusing results, slow performance, or missing data. That's why we follow best practices from the start.
-
-**Q: How long does it take to set up basic select structure for a real project?**  
-A: For a project the size of Assmang's training cube, this typically takes a few hours of design work plus a few hours of implementation and testing.
+**When to use:**
+- Always start here — decide what number you want to see
+- Common Assmang measures: TonnesProduced, Revenue(ZAR), LaborCost(ZAR), MaintenanceCost(ZAR), Grade
 
 ---
 
-## 3. Core MDX building blocks
+### Part 2: ROWS axis with dimension members
 
-### 💬 In plain English
+**What it does:** Specifies which categories appear as rows
 
-Let's break down **core mdx building blocks** in the simplest possible terms:
+**Syntax:**
+```mdx
+SELECT {...} ON COLUMNS,
+       [Dimension].[Hierarchy].Members ON ROWS
+```
 
-**→** Member = one addressable point such as `[Mine].[Mine Name].&[Beeshoek Mine]`.
+**Real Assmang examples:**
 
-**→** Set = a collection of members.
+```mdx
+-- Show tonnes for each mine
+SELECT { [Measures].[Tonnes Produced] } ON COLUMNS,
+       [Mine].[Mine Name].Members ON ROWS
+FROM [Assmang Mining Analytics]
+```
 
-**→** Tuple = one combination across dimensions, such as Mine + Month.
+Result:
+```
+                  Tonnes Produced
+Beeshoek Mine     32,500
+Khumani Mine      45,200
+Black Rock Mine   28,100
+Dwarsrivier       15,600
+```
 
-### 📚 Detailed explanation
+```mdx
+-- Show tonnes for each month in 2024
+SELECT { [Measures].[Tonnes Produced] } ON COLUMNS,
+       [Date].[Calendar Year].&[2024].[Calendar Month].Members ON ROWS
+FROM [Assmang Mining Analytics]
+```
 
-This concept is important because it directly affects how well the cube works for business users. Here is a deeper look:
+Result:
+```
+January 2024      8,450
+February 2024     8,100
+March 2024        8,650
+... (continuing through December)
+```
 
+**When to use:**
+- ROWS shows your "by what" category — by mine, by month, by department
+- Always use `.Members` to get all values in that level
 
-**Point 1: Member = one addressable point such as `[Mine].[Mine Name].&[Beeshoek Mine]`.**
+---
 
-What this means in practice: When you apply this at Assmang, it means that member = one addressable point such as `[mine].[mine name].&[beeshoek mine]`. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
+### Part 3: FROM clause naming the cube
 
-**Point 2: Set = a collection of members.**
+**What it does:** Specifies which cube contains your data
 
-What this means in practice: When you apply this at Assmang, it means that set = a collection of members. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
+**Syntax:**
+```mdx
+FROM [Cube Name]
+```
 
-**Point 3: Tuple = one combination across dimensions, such as Mine + Month.**
+**Real Assmang example:**
 
-What this means in practice: When you apply this at Assmang, it means that tuple = one combination across dimensions, such as mine + month. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
+```mdx
+SELECT {...} ON COLUMNS,
+       {...} ON ROWS
+FROM [Assmang Mining Analytics]  ← This is the cube name, not a table
+```
 
-
-### 🏭 Assmang scenario
-
-**Situation:** A production manager at Khumani Mine asks: "Can I see this month's iron ore output compared to last month, broken down by shift?"
-
-**How core mdx building blocks helps:** Because the cube already has the right structure (dimensions for time and mine, measures for production), this question can be answered in seconds using Excel or Power BI — no SQL coding needed, no waiting for IT.
-
-
-### ❓ Frequently Asked Questions
-
-**Q: Do I need to be a programmer to understand core mdx building blocks?**  
-A: No. This concept is about business logic and design thinking. The tools (SSDT) provide visual interfaces for most of the work.
-
-**Q: What happens if we get core mdx building blocks wrong?**  
-A: The cube will still work technically, but users may get confusing results, slow performance, or missing data. That's why we follow best practices from the start.
-
-**Q: How long does it take to set up core mdx building blocks for a real project?**  
-A: For a project the size of Assmang's training cube, this typically takes a few hours of design work plus a few hours of implementation and testing.
+**When to use:**
+- Same cube for almost all Assmang queries: `[Assmang Mining Analytics]`
+- Only changes if you deploy multiple cubes (rare)
 
 ---
 
-## 4. Beginner query patterns
+### Part 4: WHERE clause as a slicer (filter)
 
-### 💬 In plain English
+**What it does:** Restricts the query to a specific context (like Excel autofilter)
 
-Let's break down **beginner query patterns** in the simplest possible terms:
+**Syntax:**
+```mdx
+WHERE ([Dimension].[Member])
+```
 
-**→** One measure by one dimension.
+**Real Assmang examples:**
 
-**→** One measure by a hierarchy level.
+```mdx
+-- Tonnes for each mine, but only 2024
+SELECT { [Measures].[Tonnes Produced] } ON COLUMNS,
+       [Mine].[Mine Name].Members ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE ([Date].[Calendar].[Year].&[2024])
+```
 
-**→** Filtered results using a slicer.
+```mdx
+-- Revenue by mine, but only Extraction department
+SELECT { [Measures].[Revenue (ZAR)] } ON COLUMNS,
+       [Mine].[Mine Name].Members ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE ([Department].[Extraction])
+```
 
-### 📚 Detailed explanation
+```mdx
+-- Combine multiple filters
+SELECT { [Measures].[Tonnes Produced] } ON COLUMNS,
+       [Date].[Calendar].[Month].Members ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE ([Mine].[Khumani], [Date].[Calendar].[Year].&[2024])
+```
 
-This concept is important because it directly affects how well the cube works for business users. Here is a deeper look:
-
-
-**Point 1: One measure by one dimension.**
-
-What this means in practice: When you apply this at Assmang, it means that one measure by one dimension. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-**Point 2: One measure by a hierarchy level.**
-
-What this means in practice: When you apply this at Assmang, it means that one measure by a hierarchy level. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-**Point 3: Filtered results using a slicer.**
-
-What this means in practice: When you apply this at Assmang, it means that filtered results using a slicer. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-
-### 🏭 Assmang scenario
-
-**Situation:** A production manager at Khumani Mine asks: "Can I see this month's iron ore output compared to last month, broken down by shift?"
-
-**How beginner query patterns helps:** Because the cube already has the right structure (dimensions for time and mine, measures for production), this question can be answered in seconds using Excel or Power BI — no SQL coding needed, no waiting for IT.
-
-
-### ❓ Frequently Asked Questions
-
-**Q: Do I need to be a programmer to understand beginner query patterns?**  
-A: No. This concept is about business logic and design thinking. The tools (SSDT) provide visual interfaces for most of the work.
-
-**Q: What happens if we get beginner query patterns wrong?**  
-A: The cube will still work technically, but users may get confusing results, slow performance, or missing data. That's why we follow best practices from the start.
-
-**Q: How long does it take to set up beginner query patterns for a real project?**  
-A: For a project the size of Assmang's training cube, this typically takes a few hours of design work plus a few hours of implementation and testing.
+**When to use:**
+- WHERE is optional — if omitted, shows ALL context
+- Use it to zoom into a specific subset
+- Multiple slicers separated by commas apply all at once
 
 ---
+
+## 3. Core MDX building blocks — With Examples
+
+### Member — One specific value
+
+**What it is:** A single point you can address
+
+**Assmang examples:**
+- `[Mine].[Mine Name].&[Khumani]` — the specific mine called Khumani
+- `[Date].[2024-01-15]` — a specific date
+- `[Department].[Extraction]` — the extraction department
+
+**How to use in a query:**
+```mdx
+SELECT { [Measures].[Tonnes Produced] } ON COLUMNS
+FROM [Assmang Mining Analytics]
+WHERE ([Mine].[Khumani])  ← This is a member: specifically Khumani, not all mines
+```
+
+---
+
+### Set — A collection of members
+
+**What it is:** Multiple members grouped together
+
+**Assmang examples:**
+- All mines: `[Mine].[Mine Name].Members`
+- Iron ore mines only: `{[Mine].[Khumani], [Mine].[Beeshoek]}`
+- All 2024 months: `[Date].[2024].Children`
+
+**How to use in a query:**
+```mdx
+SELECT { [Measures].[Tonnes Produced] } ON COLUMNS,
+       [Mine].[Mine Name].Members ON ROWS  ← This is a set: all mines
+FROM [Assmang Mining Analytics]
+```
+
+```mdx
+-- Define an iron ore set explicitly
+SELECT { [Measures].[Tonnes Produced] } ON COLUMNS,
+       { [Mine].[Khumani], [Mine].[Beeshoek] } ON ROWS  ← This is a set: just 2 mines
+FROM [Assmang Mining Analytics]
+```
+
+---
+
+### Tuple — A combination across dimensions
+
+**What it is:** One specific intersection (like a cell reference)
+
+**Assmang examples:**
+- Khumani mine + January 2024 = one tuple
+- Black Rock mine + Labor Cost + Q2 2024 = one tuple
+
+**How to use in a query:**
+```mdx
+SELECT { [Measures].[Tonnes Produced] } ON COLUMNS
+FROM [Assmang Mining Analytics]
+WHERE ([Mine].[Khumani], [Date].[2024-01])  ← This tuple specifies exactly one mine + one month
+```
+
+---
+
+## 4. Beginner query patterns — Step-by-step recipes
+
+### Pattern 1: One measure by one dimension (Most common)
+
+**Business question:** "How many tonnes did each mine produce in 2024?"
+
+**Step 1:** Identify the measure
+- Answer: Tonnes Produced
+
+**Step 2:** Identify the dimension to show as rows
+- Answer: Mine
+
+**Step 3:** Identify any filters
+- Answer: 2024 only
+
+**Step 4:** Write the query**
+
+```mdx
+SELECT { [Measures].[Tonnes Produced] } ON COLUMNS,
+       [Mine].[Mine Name].Members ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE ([Date].[Calendar].[Year].&[2024])
+```
+
+**Step 5:** Execute in SSMS and check the result
+
+---
+
+### Pattern 2: One measure across time hierarchy (Useful for trends)
+
+**Business question:** "What was our monthly production trend in 2024?"
+
+**Step 1:** Identify the measure
+- Answer: Tonnes Produced
+
+**Step 2:** Identify the time level
+- Answer: Month (not day, not year)
+
+**Step 3:** Identify the year filter
+- Answer: 2024
+
+**Step 4:** Write the query
+
+```mdx
+SELECT { [Measures].[Tonnes Produced] } ON COLUMNS,
+       [Date].[Calendar].[Year].&[2024].[Calendar Month].Children ON ROWS
+FROM [Assmang Mining Analytics]
+```
+
+**Step 5:** Execute and verify you see 12 months
+
+---
+
+### Pattern 3: Multiple measures with one dimension (Side-by-side comparison)
+
+**Business question:** "For each mine, show both tonnes produced AND revenue?"
+
+**Step 1:** Identify multiple measures
+- Answer: Tonnes Produced AND Revenue (ZAR)
+
+**Step 2:** Identify the row dimension
+- Answer: Mine
+
+**Step 3:** Write the query
+
+```mdx
+SELECT { [Measures].[Tonnes Produced], [Measures].[Revenue (ZAR)] } ON COLUMNS,
+       [Mine].[Mine Name].Members ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE ([Date].[Calendar].[Year].&[2024])
+```
+
+**Result:**
+```
+                Tonnes Produced    Revenue (ZAR)
+Beeshoek        32,500             R 18,200,000
+Khumani         45,200             R 28,500,000
+Black Rock      28,100             R 12,600,000
+Dwarsrivier     15,600             R 9,500,000
+```
+
+---
+
+### Pattern 4: Filtered by both dimension and time
+
+**Business question:** "Show Khumani's monthly cost breakdown for Q1 2024?"
+
+**Step 1:** Identify the measure
+- Answer: Total Operating Cost
+
+**Step 2:** Identify the row dimension
+- Answer: Cost Type (or department)
+
+**Step 3:** Identify filters
+- Answer: Khumani + Q1 2024
+
+**Step 4:** Write the query
+
+```mdx
+SELECT { [Measures].[Total Operating Cost] } ON COLUMNS,
+       [Cost Type].Members ON ROWS  ← Assuming a cost type dimension exists
+FROM [Assmang Mining Analytics]
+WHERE ([Mine].[Khumani], [Date].[Calendar].[Year].&[2024].[Calendar Quarter].&[Q1])
+```
+
+---
+
+## How to execute these queries in SSMS
+
+**Step 1:** Open SSMS and connect to **Analysis Services** (not Database Engine)
+
+**Step 2:** Click **New Query > MDX**
+
+**Step 3:** In the query toolbar, select **Assmang Mining Analytics** from the database dropdown (CRITICAL—without this the parser fails)
+
+**Step 4:** Type or paste your MDX query
+
+**Step 5:** Press **F5** or click **Execute**
+
+**Step 6:** Read results in the grid at the bottom — columns = measures, rows = dimension members
 
 ## 📊 Architecture / Concept Diagram
 

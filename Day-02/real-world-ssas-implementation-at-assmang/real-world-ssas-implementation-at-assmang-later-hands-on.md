@@ -5,12 +5,12 @@
 
 ## 🎯 Purpose
 
-These exercises are designed for **independent practice** after the guided lab. They are slightly more challenging and require you to apply what you've learned without step-by-step guidance.
+These exercises are designed for independent practice after the guided lab. Each exercise is procedural so you can execute it in ordered steps and produce verifiable evidence.
 
 ## 📋 Before You Begin
 
-- Ensure the guided lab for **Real-World SSAS Implementation at Assmang** is complete
-- Dataset **`v3_assmang_mining_complete.sql`** must be loaded
+- Ensure the guided lab for Real-World SSAS Implementation at Assmang is complete
+- Dataset `v3_assmang_mining_complete.sql` must be loaded
 - Your SSAS project should be in a working state
 - Allow 30-45 minutes for these exercises
 
@@ -18,79 +18,156 @@ These exercises are designed for **independent practice** after the guided lab. 
 
 ## How To Work Through These Exercises
 
-Use this repeatable method for every exercise instead of jumping straight to the answer:
+Use this method for each exercise:
 
-1. Read the task and rewrite it as a simple business question in your own words.
-2. Decide whether the answer should come from explanation only, SSDT inspection, SSMS browsing, SQL validation, or MDX output.
-3. If the task depends on model objects, first confirm the relevant cube, dimension, measure, hierarchy, or KPI exists before writing conclusions.
-4. If the task depends on numbers, get a baseline from SQL or existing browser output before writing the final answer.
-5. Start with the smallest possible test. For example, browse one measure for one mine before trying a more complex view.
-6. Expand gradually until you have enough evidence to answer the question confidently.
-7. Record what you checked, what result you saw, and what that result means in plain business language.
-8. If an exercise asks for a recommendation or explanation, support it with one concrete observation from the model or data.
+1. Translate the objective into a single business question.
+2. Identify which SSAS objects you must inspect.
+3. Capture one baseline query or browser view before recommendations.
+4. Build your answer from evidence, not assumptions.
+5. Tie your final recommendation to Assmang operations.
 
 ## Evidence Checklist For Each Exercise
 
-Before you mark an exercise complete, make sure you can show all of the following where relevant:
+Before marking complete, confirm you have:
 
-- The object you inspected, such as a dimension, hierarchy, measure group, KPI, or MDX query.
-- The output you observed, such as a browser grid, MDX result, build result, or processing result.
-- A short explanation of why that output answers the task.
-- At least one Assmang-specific business interpretation, not just a technical description.
+- The exact object inspected (cube page, KPI, role, process log, or query)
+- The resulting output (screenshot, query output, or design artifact)
+- A short explanation of why the result supports your answer
+- One Assmang business impact statement
 
 ## If You Get Stuck
 
-Use this recovery sequence:
+1. Return to the matching guided practical and repeat the nearest step.
+2. Validate deployment and processing status before diagnosing logic.
+3. Use SQL baseline first, then MDX confirmation.
+4. Reduce scope to one mine and one time slice, then expand.
 
-1. Return to the guided practical for the same topic and repeat the closest worked example.
-2. Check the theory page for the business meaning of the concept before changing the model.
-3. Validate source data in SQL if the cube result looks suspicious.
-4. Validate deployment and processing state if the SSAS object exists but numbers look incomplete.
+---
 
 ## Exercise 1
 
-Create a mini solution blueprint for an executive production dashboard sourced from the cube.
+### Objective
 
-### Hints
+Create a mini solution blueprint for an executive dashboard sourced from the Assmang cube.
 
-- Think about how this connects to a real business question at Assmang.
-- There may be multiple correct approaches — choose the one you can explain clearly.
+### Procedure
+
+**Step 1: Define executive decisions**
+- List three daily executive decisions the dashboard must support.
+- Example decisions: production variance response, budget overrun response, safety escalation.
+- Map each decision to one required metric.
+
+**Step 2: Define dashboard pages**
+- Page 1 (Operations): TonnesProduced by Mine and Month, drillable to Department.
+- Page 2 (Finance): OperatingCost and CostPerTonne by Mine and Quarter.
+- Page 3 (Safety): ComplianceScore KPI by Mine with red/amber/green status.
+- Record one business question each page answers.
+
+**Step 3: Define source queries**
+- Draft one MDX query per page.
+- Ensure each query uses explicit dimensions and slicers.
+- Confirm each query can be validated against SQL baseline totals.
+
+**Step 4: Define role-based access**
+- Define at least two roles:
+  - Executive role: all mines visible
+  - Regional role: only assigned mine or region visible
+- Record one security test per role.
+
+**Step 5: Define operational targets**
+- Query response target: under 2 seconds for executive views.
+- Refresh target: daily 06:00 completion.
+- Add one failure notification rule for missed refresh.
+
+**Step 6: Produce blueprint summary**
+- Write 1-2 paragraphs describing architecture, security, and operating model.
+- Include one risk and one mitigation.
+
 ### Deliverable
 
-- Be prepared to explain your reasoning to the trainer.
-Objective
+- **Input:** Assmang reporting requirements and cube model
+- **Output:** Dashboard blueprint with 3 pages, 3 query definitions, and role matrix
+- **Evidence:** Wireframe or layout sketch, query list, and role visibility matrix
+- **Assmang Context:** Example: "If Khumani production falls below target and safety KPI turns amber, executives can act in one view instead of waiting for separate reports."
 
-Procedure
-**Step 2:** Dashboard pages: (1) Operations = TonnesProduced by Mine/Month drillable to dept, (2) Finance = RevenueMln vs BudgetMln quarterly trends, (3) Safety = ComplianceScore KPI by mine  
-**Step 3:** MDX queries: Production by Mine/Dept/Date; Revenue by Mine/Quarter; Safety KPI slice
-**Step 5:** Architecture: SSAS cube → Power BI/Tableau; role-based security (COO all mines, regional director assigned only)
-**Step 6:** Performance: <2 sec query response SLA; audit logging; read-only access
-- **Evidence:** Wireframe, sample queries, role matrix
-- **Assmang Context:** "Executives drive staffing/budget/escalation daily. Dashboard: 'Khumani -8% → investigate; Sishen safety red → audit.' Facts enable decisions across 5 mines, 3K employees."
+---
+
+## Exercise 2
+
+### Objective
+
+Design a maintenance and support runbook for sustaining the cube in daily operations.
+
+### Procedure
+
+**Step 1: Define daily runbook tasks**
+- 06:00 process completion verification.
+- Post-process query health check on two key executive queries.
+- Distribution of refresh status message to stakeholders.
+
+**Step 2: Define weekly controls**
+- Review processing logs for warnings and recurring failures.
+- Validate one calculated measure and one KPI against baseline numbers.
+- Confirm role-based security still maps correctly to users.
+
+**Step 3: Define monthly controls**
+- Perform full reprocess in maintenance window.
+- Review partition growth and aggregation effectiveness.
+- Audit data reconciliation results (SQL vs cube totals) for key measures.
+
+**Step 4: Define incident response workflow**
+- Incident severity levels: critical, major, minor.
+- Define response times and ownership for each level.
+- Include one fallback action if 06:00 process fails.
+
+**Step 5: Define evidence and sign-off**
+- Specify required logs and screenshots per cycle (daily/weekly/monthly).
+- Define sign-off owner for each cycle.
+- Add one checklist item confirming business communication was sent.
 
 ### Deliverable
 
-- A written answer (1-2 paragraphs) OR a screenshot of your SSDT/SSMS result.
-- Be prepared to explain your reasoning to the trainer.
+- **Input:** Operational support requirements for the Assmang cube
+- **Output:** Daily/weekly/monthly runbook with owners and SLAs
+- **Evidence:** Runbook table, escalation matrix, and validation checklist
+- **Assmang Context:** Example: "A missed 06:00 refresh must trigger escalation before 07:00 standup so leaders are not using stale production numbers."
 
 ---
 
 ## Exercise 3
 
-### Task
+### Objective
 
-List risks that could reduce trust in the cube and propose controls for each one.
+Identify trust risks in cube reporting and design controls that protect decision confidence.
 
-### Hints
+### Procedure
 
-- Refer back to the theory for **Real-World SSAS Implementation at Assmang** if you get stuck.
-- Think about how this connects to a real business question at Assmang.
-- There may be multiple correct approaches — choose the one you can explain clearly.
+**Step 1: Build risk list**
+- List at least six risks (stale data, failed processing, mismatched totals, security leaks, broken calculations, slow queries).
+- Assign each risk an impact level (high, medium, low).
+
+**Step 2: Define controls per risk**
+- For each risk, define one preventive control and one detective control.
+- Example: stale data preventive control = fixed refresh schedule; detective control = refresh timestamp monitor.
+
+**Step 3: Define measurable thresholds**
+- Set one threshold per risk (for example, query latency >2 seconds triggers review).
+- Tie each threshold to a response owner.
+
+**Step 4: Define communication rules**
+- Decide who is notified when each threshold is breached.
+- Define message template elements (issue, impact, ETA, workaround).
+
+**Step 5: Produce risk register**
+- Create a risk table with columns: Risk, Impact, Control, Threshold, Owner.
+- Add one example incident and show how the control framework responds.
 
 ### Deliverable
 
-- A written answer (1-2 paragraphs) OR a screenshot of your SSDT/SSMS result.
-- Be prepared to explain your reasoning to the trainer.
+- **Input:** Assmang operational and governance risk considerations
+- **Output:** Risk register with controls and thresholds
+- **Evidence:** Completed risk table and one worked incident response example
+- **Assmang Context:** Example: "If production totals shift after reprocessing, trust erodes quickly; reconciliation control prevents executives from acting on inconsistent numbers."
 
 ---
 
@@ -98,72 +175,17 @@ List risks that could reduce trust in the cube and propose controls for each one
 
 Your exercises are considered successful when:
 
-- Your answer reflects the topic's **business purpose**, not only the technical steps.
-- You can explain **why** the design or query choice fits Assmang's reporting needs.
-- You can connect your answer back to dimensions, measures, hierarchies, MDX, or deployment where relevant.
-- Your work is **documented clearly** enough that a colleague could understand it.
-## 💡 Stretch Challenge (Optional)
-
-If you finish early, try to extend one of the exercises above by combining it with a concept from a previous topic. For example, if this topic covers measures, try connecting your measure design to a specific dimension hierarchy from an earlier topic.
-
-*Assmang Pty Ltd — SSAS Fundamentals | Day 02 Independent Practice*
+- Your answer connects technical design to business decision quality.
+- You provide concrete evidence for each recommendation.
+- Your procedure is reproducible by another BI team member.
+- Your risk and operations thinking reflects Assmang's daily reporting reality.
 
 ---
-1. Open SSMS and connect to the **Database Engine** that hosts `AssmangMining`.
-2. Open the topic dataset script only if the lab requires a fresh load, then execute it and wait for a clean completion message in the Messages pane.
-8. Expand the SSAS database and inspect the cube, dimensions, and other objects so you know the metadata you are about to query.
-9. If you need to process objects, remember the project must already be deployed and the account must have SSAS admin rights plus read access to the relational source through the data source impersonation settings.
-16. Compare at least one SSAS result against the SQL baseline from the Database Engine connection.
-17. Save important queries with meaningful names so you can reuse them during assessments.
-### SSMS Menu Path Quick Reference
 
-- Connect to SQL Engine: `File > Connect Object Explorer > Database Engine`
-- Connect to SSAS: `Object Explorer > Connect > Analysis Services`
-- Open SQL query: `Toolbar > New Query`
-- Open MDX query: `Analysis Services connection > New Query > MDX`
-- Browse cube: `SSAS Database > Cubes > [Cube Name] > Browse`
-- Process object (if permissions allow): `Right-click Cube/Dimension > Process`
+## 💡 Stretch Challenge (Optional)
 
-## Detailed Visual Studio (SSDT) Workflow (Step-by-Step)
+Combine Exercise 1 and Exercise 3 into a single governance one-pager showing dashboard metrics, trust controls, and escalation paths.
 
-Use this path when you are building and validating directly in Visual Studio with SSDT:
+---
 
-1. Open Visual Studio and load the SSAS solution for the topic.
-2. In Solution Explorer, confirm the expected SSAS folders exist and are not already showing warning icons.
-3. Open **Project Properties > Deployment** before changing design objects so you know which SSAS server and database you are targeting.
-4. Open the data source and click **Test Connection**.
-5. Confirm the data source points to the SQL Database Engine instance, not the SSAS instance.
-6. Review impersonation settings because successful deployment alone is not enough; processing also needs relational read access.
-7. Open the Data Source View and verify the required tables and joins for the topic are present.
-8. Rearrange the DSV if it is unreadable so you can actually inspect it during the exercise.
-9. Open each required dimension and review `KeyColumns`, `NameColumn`, visible attributes, and user hierarchies.
-10. If the topic involves cube work, open the cube designer and inspect structure, measure groups, calculations, and the **Dimension Usage** tab.
-11. Check aggregation behaviour for business measures instead of accepting every wizard default.
-12. Save changes before building.
-13. Run **Build > Build Solution** and read the Error List carefully.
-14. Fix build errors before deployment and do not ignore relationship or key warnings unless you can explain them.
-15. Deploy the project using **Right-click Project > Deploy**.
-16. Remember what Microsoft’s SSDT deployment guidance says: deployment builds the project, validates the destination server, and then creates or updates the SSAS database objects.
-17. After deployment, process the affected objects if prompted, or right-click the cube or database and choose **Process** manually.
-18. Review the processing dialog before clicking Run because high-level processing choices can affect multiple lower-level objects.
-19. Wait for processing to complete and read warnings, not just the success banner.
-20. Open the Browser tab and test at least one real business slice for the topic.
-21. Open SSMS against Analysis Services and run one or two MDX checks against the same cube output.
-22. Compare SSDT browser results, MDX results, and SQL baseline values.
-23. If results differ, troubleshoot in this order: source data, DSV relationships, dimension design, dimension usage, aggregation logic, then processing freshness.
-24. Save evidence for the exercise: build result, deployment result, process result, browser or MDX output, and one sentence explaining the business meaning.
-
-### Visual Studio Menu Path Quick Reference
-
-- Open solution: File > Open > Project/Solution
-- Build: Build > Build Solution
-- Deploy: Solution Explorer > Right-click SSAS Project > Deploy
-- Project deployment settings: Right-click SSAS Project > Properties > Deployment
-- Process object: Right-click Cube/Dimension > Process
-- Cube browser: Open Cube Designer > Browser tab
-
-### Evidence Standard (What Good Submission Looks Like)
-
-- Include **input + output + explanation** for each major task.
-- Explanations should answer: **what changed, what you observed, and why it matters**.
-- Prefer short and precise evidence over long screenshots with no commentary.
+*Assmang Pty Ltd — SSAS Fundamentals | Day 02 Independent Practice*

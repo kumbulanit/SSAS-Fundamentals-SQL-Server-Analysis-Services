@@ -49,6 +49,19 @@ Apply the theory from **Multidimensional Models and Dimensions** by completing a
 - If the wizard suggests the wrong key automatically, do not accept it without checking.
 - If the dimension opens with errors, inspect the underlying SQL table for nulls or duplicate values.
 
+> 📸 **Screenshot Checkpoint 1 — Dimension Designer after creating Dim_Mine:**
+> The Dimension Designer shows two panes:
+> - **Attributes pane** (left): lists all columns from Dim_Mine as draggable attributes
+>   ```
+>   MineID (key icon — shown with a small key symbol)
+>   MineName
+>   MineType
+>   Province
+>   EstablishedYear
+>   ```
+> - **Hierarchies pane** (right): empty at this stage — you'll add the drill path in Step 4
+> If you see an error icon on the dimension, the key attribute is not set correctly.
+
 ---
 
 ### Step 2: Set `MineID` as the key and `MineName` as the business-friendly name
@@ -69,6 +82,20 @@ Apply the theory from **Multidimensional Models and Dimensions** by completing a
 - If the attribute still shows IDs after the change, recheck the NameColumn property.
 - If you see duplicate-name warnings, inspect whether multiple mines share the same display name.
 - If the Properties pane is not visible, turn it on from **View > Properties Window**.
+
+> 📸 **Screenshot Checkpoint 2 — Properties panel for the key attribute:**
+> When you click `MineID` in the Attributes pane, the Properties panel (bottom-right, or press F4) shows:
+> ```
+> Properties
+> MineID Attribute
+> ─────────────────────────────────────────
+> AggregationUsage     Default
+> KeyColumns           MineID (integer key)    ← Should be the ID column
+> Name                 MineID
+> NameColumn           MineName                ← Should be the display name column
+> OrderBy              Name
+> ```
+> The **NameColumn = MineName** is the critical setting. If it still shows MineID, click the NameColumn dropdown and change it.
 
 ---
 
@@ -117,6 +144,28 @@ Apply the theory from **Multidimensional Models and Dimensions** by completing a
 - If the hierarchy looks flat or odd, review which attributes were dragged into the hierarchy.
 - If province members appear duplicated unexpectedly, revisit key and name choices.
 
+> 📸 **Screenshot Checkpoint 3 — Hierarchies pane after building Mine Type > Province > Mine Name:**
+> The Hierarchies pane shows:
+> ```
+> ▼ Mine Geography (or whatever you named it)
+>     Level 1: Mine Type        ← Top of the drill path
+>     Level 2: Province
+>     Level 3: Mine Name        ← Bottom level — individual mines
+> ```
+> After processing, click the **Browser** tab and expand the hierarchy:
+> ```
+> ▼ Iron Ore
+>     ▼ Northern Cape
+>         Beeshoek Mine
+>         Khumani Mine
+> ▼ Chrome
+>     ▼ Limpopo
+>         Dwarsrivier Mine
+> ▼ Manganese
+>     ▼ Northern Cape
+>         Black Rock Mine
+> ```
+
 ---
 
 ### Step 5: Build the date dimension hierarchy and confirm time drill-down works
@@ -137,6 +186,26 @@ Apply the theory from **Multidimensional Models and Dimensions** by completing a
 - If months sort alphabetically instead of chronologically, review month attributes and ordering.
 - If the hierarchy fails to browse, make sure the dimension processed successfully.
 - If levels are missing, go back and confirm the attributes were added before the hierarchy was built.
+
+> 📸 **Screenshot Checkpoint 4 — Date dimension Browser tab:**
+> After processing, the Browser tab shows the date hierarchy:
+> ```
+> ▼ 2023
+>     ▼ Q1 2023
+>         January 2023
+>         February 2023
+>         March 2023
+>     ▼ Q2 2023
+>         April 2023
+>         May 2023
+>         June 2023
+>     ...
+> ▼ 2024
+>     ▼ Q1 2024
+>         January 2024
+>         ...
+> ```
+> Months should sort numerically (January, February, March...) NOT alphabetically (April, August, December...). If they sort alphabetically, the `MonthNumberOfYear` attribute needs to be set as the sort key.
 
 ---
 
@@ -175,36 +244,57 @@ By the end of this lab, you should be able to demonstrate the core workflow for 
 
 Use these checks to confirm your dimension data is hierarchy-ready:
 
+> ✅ **COPY AND PASTE each SQL block into a new SSMS query window. Set database to `AssmangMining` first.**
+
+**Check 1 — Mine types and provinces (verify the hierarchy data exists):**
+
 ```sql
 USE AssmangMining;
 GO
 
 SELECT
-	MineType,
-	Province,
-	COUNT(*) AS MineCount
+    MineType,
+    Province,
+    COUNT(*) AS MineCount
 FROM dbo.Dim_Mine
 GROUP BY MineType, Province
 ORDER BY MineType, Province;
 ```
 
+> 📸 **Expected result:** You should see rows showing:
+> ```
+> MineType     Province             MineCount
+> Chrome       Limpopo              2
+> Iron Ore     Northern Cape        2
+> Manganese    Northern Cape        1
+> ```
+> If MineType or Province columns are NULL for any rows, the hierarchy will not work correctly in SSAS.
+
+**Check 2 — Date dimension quarters (verify time hierarchy data):**
+
 ```sql
 SELECT
-	[Year],
-	[Quarter],
-	COUNT(*) AS DaysInQuarter
+    [Year],
+    [Quarter],
+    COUNT(*) AS DaysInQuarter
 FROM dbo.Dim_Date
 GROUP BY [Year], [Quarter]
 ORDER BY [Year], [Quarter];
 ```
 
+> 📸 **Expected result:** Each Quarter shows ~90 days (DaysInQuarter ≈ 90). If a quarter is missing, the time hierarchy will have gaps.
+
+**Check 3 — Null check on Dim_Mine attributes (data quality):**
+
 ```sql
 SELECT
-	SUM(CASE WHEN MineName IS NULL THEN 1 ELSE 0 END) AS NullMineName,
-	SUM(CASE WHEN MineType IS NULL THEN 1 ELSE 0 END) AS NullMineType,
-	SUM(CASE WHEN Province IS NULL THEN 1 ELSE 0 END) AS NullProvince
+    SUM(CASE WHEN MineName  IS NULL THEN 1 ELSE 0 END) AS NullMineName,
+    SUM(CASE WHEN MineType  IS NULL THEN 1 ELSE 0 END) AS NullMineType,
+    SUM(CASE WHEN Province  IS NULL THEN 1 ELSE 0 END) AS NullProvince
 FROM dbo.Dim_Mine;
 ```
+
+> 📸 **Expected result:** All three columns should show 0. Any value > 0 means that dimension attribute has NULLs — SSAS will either fail to process or create an Unknown member for those rows.
 
 ---
 

@@ -46,6 +46,13 @@ Apply the theory from **Building and Deploying SSAS Cubes** by completing a guid
 - If the DSV is missing v2 tables, update it now.
 - If someone changed the connection to a different machine, document that before proceeding.
 
+> 📸 **Screenshot Checkpoint 1 — Data Source connection screen:**
+> Double-clicking the `.ds` file opens the Data Source Designer. Look for:
+> - Connection string showing your server name and `AssmangMining`
+> - An **Edit** button (to change connection details)
+> - A **Test Connection** button
+> After clicking Test Connection, a popup should say "Test connection succeeded."
+
 ---
 
 ### Step 2: Confirm the cube contains the full v2 business model
@@ -65,6 +72,21 @@ Apply the theory from **Building and Deploying SSAS Cubes** by completing a guid
 - If the measure groups are incomplete, revisit the Cube Wizard or cube structure.
 - If dimensions are missing, make sure they exist in the project and then add them to the cube.
 - If names are confusing, fix captions before deployment so users do not inherit messy labels.
+
+> 📸 **Screenshot Checkpoint 2 — Cube Structure tab showing both measure groups:**
+> The Cube Structure tab left panel shows:
+> ```
+> ▼ Measures
+>   ▼ Production
+>       TonnesProduced
+>       RevenueZAR
+>       Grade
+>   ▼ Operating Costs
+>       LaborCostZAR
+>       MaintenanceCostZAR
+>       EquipmentCostZAR
+> ```
+> Right panel shows dimension boxes connected to the cube. If you see only one measure group, the second fact table needs to be added via right-click → New Measure Group.
 
 ---
 
@@ -86,6 +108,20 @@ Apply the theory from **Building and Deploying SSAS Cubes** by completing a guid
 - If a relationship cell is empty, revisit the DSV and fact-to-dimension key paths.
 - If browsing later shows repeated totals on every row, this tab is a primary suspect.
 - If you are unsure about a relationship type, prefer fixing the source model rather than guessing in the cube designer.
+
+> 📸 **Screenshot Checkpoint 3 — Dimension Usage tab:**
+> The Dimension Usage tab shows a grid where:
+> - Rows = Dimensions (Mine, Date, Department, Employee)
+> - Columns = Measure Groups (Production, Operating Costs)
+> - Each cell = the relationship type (should show "Regular" for most)
+> Example:
+> ```
+>                    Production    Operating Costs
+> Mine Dimension     Regular       Regular
+> Date Dimension     Regular       Regular
+> Department Dim     Regular       Regular
+> ```
+> Empty cells mean NO relationship — the dimension cannot filter that measure group. Fix this before deploying.
 
 ---
 
@@ -109,6 +145,14 @@ Apply the theory from **Building and Deploying SSAS Cubes** by completing a guid
 - If deployment fails, verify server name and SSAS permissions.
 - If processing fails, check data-source impersonation and relational read access.
 - If you changed structure after a prior deployment, remember that reprocessing may be required before browsing works again.
+
+> 📸 **Screenshot Checkpoint 4 — Output window after successful deploy + process:**
+> **Deploy log (Output window):**
+> ```
+> Deployment completed successfully.
+> ```
+> **Process log:**
+> All objects in the Process dialog should show "Success". If the dialog shows any "Error" rows, click them to read the detail before dismissing the dialog.
 
 ---
 
@@ -167,41 +211,53 @@ By the end of this lab, you should be able to demonstrate the core workflow for 
 
 Use these SQL checks before deployment and processing:
 
+> ✅ **COPY AND PASTE each SQL block into a new SSMS query window. Set database to `AssmangMining` first.**
+
+**Check 1 — Row counts for the 4 key tables:**
+
 ```sql
 USE AssmangMining;
 GO
 
 SELECT
-	t.name AS TableName,
-	p.rows AS ApproxRowCount
+    t.name AS TableName,
+    p.rows AS ApproxRowCount
 FROM sys.tables t
 JOIN sys.partitions p ON t.object_id = p.object_id AND p.index_id IN (0, 1)
 WHERE t.name IN ('Dim_Mine', 'Dim_Date', 'FactProduction', 'FactOperatingCosts')
 ORDER BY t.name;
 ```
 
+> 📸 **Expected result:** 4 rows each with ApproxRowCount > 0. If FactProduction or FactOperatingCosts shows 0, the v2 dataset is missing — reload it first.
+
+**Check 2 — Sample production data (top 20 rows):**
+
 ```sql
 SELECT TOP (20)
-	m.MineName,
-	d.[Year],
-	d.[Month],
-	fp.TonnesProduced,
-	fp.RevenueZAR
+    m.MineName,
+    d.[Year],
+    d.[Month],
+    fp.TonnesProduced,
+    fp.RevenueZAR
 FROM dbo.FactProduction fp
 JOIN dbo.Dim_Mine m ON fp.MineID = m.MineID
 JOIN dbo.Dim_Date d ON fp.DateID = d.DateID
 ORDER BY d.[Year], d.[Month], m.MineName;
 ```
 
+**Check 3 — Orphan rows check (data quality):**
+
 ```sql
 SELECT
-	COUNT(*) AS OrphanRows
+    COUNT(*) AS OrphanRows
 FROM dbo.FactOperatingCosts oc
 LEFT JOIN dbo.Dim_Mine m ON oc.MineID = m.MineID
 LEFT JOIN dbo.Dim_Department dp ON oc.DepartmentID = dp.DepartmentID
 LEFT JOIN dbo.Dim_Date dd ON oc.DateID = dd.DateID
 WHERE m.MineID IS NULL OR dp.DepartmentID IS NULL OR dd.DateID IS NULL;
 ```
+
+> 📸 **Expected result:** OrphanRows = 0. Any value > 0 means fact rows cannot be joined to a dimension — these rows will be invisible in the cube until the data is fixed.
 
 ---
 

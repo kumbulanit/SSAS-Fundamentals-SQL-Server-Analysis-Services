@@ -159,27 +159,35 @@ By the end of this lab, you should be able to demonstrate the core workflow for 
 
 ## SQL Integrated Validation Pack (Run in SSMS Database Engine)
 
+> ✅ **COPY AND PASTE each SQL block into a new SSMS query window. Set database to `AssmangMining` first.**
+
+**Check 1 — Row counts for all 9 tables:**
+
 ```sql
 USE AssmangMining;
 GO
 
-SELECT 'Dim_Mine' AS TableName, COUNT(*) AS RowCount FROM dbo.Dim_Mine
-UNION ALL SELECT 'Dim_Department', COUNT(*) FROM dbo.Dim_Department
-UNION ALL SELECT 'Dim_Employee', COUNT(*) FROM dbo.Dim_Employee
-UNION ALL SELECT 'Dim_Date', COUNT(*) FROM dbo.Dim_Date
-UNION ALL SELECT 'FactProduction', COUNT(*) FROM dbo.FactProduction
-UNION ALL SELECT 'FactOperatingCosts', COUNT(*) FROM dbo.FactOperatingCosts
-UNION ALL SELECT 'FactEquipmentEfficiency', COUNT(*) FROM dbo.FactEquipmentEfficiency
-UNION ALL SELECT 'FactSafetyKPI', COUNT(*) FROM dbo.FactSafetyKPI
-UNION ALL SELECT 'FactEmployeeMetrics', COUNT(*) FROM dbo.FactEmployeeMetrics;
+SELECT 'Dim_Mine'                AS TableName, COUNT(*) AS RowCount FROM dbo.Dim_Mine
+UNION ALL SELECT 'Dim_Department',              COUNT(*) FROM dbo.Dim_Department
+UNION ALL SELECT 'Dim_Employee',                COUNT(*) FROM dbo.Dim_Employee
+UNION ALL SELECT 'Dim_Date',                    COUNT(*) FROM dbo.Dim_Date
+UNION ALL SELECT 'FactProduction',              COUNT(*) FROM dbo.FactProduction
+UNION ALL SELECT 'FactOperatingCosts',          COUNT(*) FROM dbo.FactOperatingCosts
+UNION ALL SELECT 'FactEquipmentEfficiency',     COUNT(*) FROM dbo.FactEquipmentEfficiency
+UNION ALL SELECT 'FactSafetyKPI',               COUNT(*) FROM dbo.FactSafetyKPI
+UNION ALL SELECT 'FactEmployeeMetrics',         COUNT(*) FROM dbo.FactEmployeeMetrics;
 ```
+
+> 📸 **Expected result:** 9 rows — one per table, all with RowCount > 0. If any table shows 0, the v3 dataset did not load completely. Reload `datasets/v3_assmang_mining_complete.sql` and re-run.
+
+**Check 2 — Summary by mine across all data areas:**
 
 ```sql
 SELECT
-	m.MineName,
-	SUM(fp.TonnesProduced) AS TotalTonnes,
-	SUM(fp.RevenueZAR) AS TotalRevenueZAR,
-	AVG(sk.ComplianceScore) AS AvgComplianceScore
+    m.MineName,
+    SUM(fp.TonnesProduced)    AS TotalTonnes,
+    SUM(fp.RevenueZAR)        AS TotalRevenueZAR,
+    AVG(sk.ComplianceScore)   AS AvgComplianceScore
 FROM dbo.Dim_Mine m
 LEFT JOIN dbo.FactProduction fp ON m.MineID = fp.MineID
 LEFT JOIN dbo.FactSafetyKPI sk ON m.MineID = sk.MineID
@@ -187,33 +195,63 @@ GROUP BY m.MineName
 ORDER BY TotalRevenueZAR DESC;
 ```
 
+---
+
 ## Executive MDX Query Pack (Run in SSMS against SSAS)
 
-```mdx
-/* Executive view 1: Production and revenue by mine */
-SELECT
-	{[Measures].[TonnesProduced], [Measures].[RevenueZAR]} ON COLUMNS,
-	[Mine].[Mine Name].[Mine Name].MEMBERS ON ROWS
-FROM [Assmang Mining Analytics]
-WHERE ([Date].[Calendar Year].&[2024]);
-```
+> ⚠️ **Before running MDX:** Open an MDX query window (Analysis Services connection → right-click database → New Query → MDX), then select `AssmangMiningAnalytics` from the toolbar dropdown.
+
+> ℹ️ **About the `-- labels`:** Lines starting with `--` are comments. They explain what the query does but **do not affect the result** — you can include them or remove them.
+
+---
+
+**Executive Query 1 — Production and revenue by mine:**
+
+> ✅ COPY THIS ENTIRE BLOCK:
 
 ```mdx
-/* Executive view 2: Safety and efficiency indicators */
+-- Executive view: production + revenue per mine, 2024
 SELECT
-	{[Measures].[ComplianceScore], [Measures].[UpTimePercentage]} ON COLUMNS,
-	[Mine].[Mine Name].[Mine Name].MEMBERS ON ROWS
+    { [Measures].[TonnesProduced], [Measures].[RevenueZAR] } ON COLUMNS,
+    [Mine].[Mine Name].[Mine Name].MEMBERS ON ROWS
+FROM [Assmang Mining Analytics]
+WHERE ( [Date].[Calendar Year].&[2024] );
+```
+
+> 📸 **Expected result:** A grid with each mine's 2024 tonnes and revenue. Write one sentence for each number as if briefing management: "Khumani Mine produced X tonnes generating R Y in revenue in 2024."
+
+---
+
+**Executive Query 2 — Safety compliance and equipment uptime:**
+
+> ✅ COPY THIS ENTIRE BLOCK:
+
+```mdx
+-- Executive view: safety + equipment efficiency per mine
+SELECT
+    { [Measures].[ComplianceScore], [Measures].[UpTimePercentage] } ON COLUMNS,
+    [Mine].[Mine Name].[Mine Name].MEMBERS ON ROWS
 FROM [Assmang Mining Analytics];
 ```
 
+> 📸 **Expected result:** A grid showing safety compliance % and equipment uptime % per mine. Any mine below 80% uptime is a concern — flag it in your documentation.
+
+---
+
+**Executive Query 3 — Workforce attendance and overtime by department:**
+
+> ✅ COPY THIS ENTIRE BLOCK:
+
 ```mdx
-/* Executive view 3: Workforce metric */
+-- Executive view: workforce metrics by department, 2024
 SELECT
-	{[Measures].[AttendancePercentage], [Measures].[OvertimeHours]} ON COLUMNS,
-	[Department].[Department Name].[Department Name].MEMBERS ON ROWS
+    { [Measures].[AttendancePercentage], [Measures].[OvertimeHours] } ON COLUMNS,
+    [Department].[Department Name].[Department Name].MEMBERS ON ROWS
 FROM [Assmang Mining Analytics]
-WHERE ([Date].[Calendar Year].&[2024]);
+WHERE ( [Date].[Calendar Year].&[2024] );
 ```
+
+> 📸 **Expected result:** A grid showing each department's attendance rate and overtime hours. Departments with low attendance AND high overtime are a workforce planning signal worth noting.
 
 ---
 

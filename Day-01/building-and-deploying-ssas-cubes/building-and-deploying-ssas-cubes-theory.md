@@ -59,144 +59,258 @@ Building a cube is like setting up a new shop. First you design the layout (data
 
 ---
 
-## 1. Cube build workflow
+## 1. Cube build workflow — The 9-step process
 
-### 💬 In plain English
+Every cube follows the same sequence. Here's Assmang's typical 9-step workflow:
 
-Let's break down **cube build workflow** in the simplest possible terms:
-
-**→** A typical workflow moves from relational source -> data source -> data source view -> dimensions -> cube -> deployment -> processing.
-
-**→** Each stage introduces metadata that shapes the analytical experience.
-
-### 📚 Detailed explanation
-
-This concept is important because it directly affects how well the cube works for business users. Here is a deeper look:
-
-
-**Point 1: A typical workflow moves from relational source -> data source -> data source view -> dimensions -> cube -> deployment -> processing.**
-
-What this means in practice: When you apply this at Assmang, it means that a typical workflow moves from relational source -> data source -> data source view -> dimensions -> cube -> deployment -> processing. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-**Point 2: Each stage introduces metadata that shapes the analytical experience.**
-
-What this means in practice: When you apply this at Assmang, it means that each stage introduces metadata that shapes the analytical experience. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
-
-
-### 🏭 Assmang scenario
-
-**Situation:** A production manager at Khumani Mine asks: "Can I see this month's iron ore output compared to last month, broken down by shift?"
-
-**How cube build workflow helps:** Because the cube already has the right structure (dimensions for time and mine, measures for production), this question can be answered in seconds using Excel or Power BI — no SQL coding needed, no waiting for IT.
-
-
-### ❓ Frequently Asked Questions
-
-**Q: Do I need to be a programmer to understand cube build workflow?**  
-A: No. This concept is about business logic and design thinking. The tools (SSDT) provide visual interfaces for most of the work.
-
-**Q: What happens if we get cube build workflow wrong?**  
-A: The cube will still work technically, but users may get confusing results, slow performance, or missing data. That's why we follow best practices from the start.
-
-**Q: How long does it take to set up cube build workflow for a real project?**  
-A: For a project the size of Assmang's training cube, this typically takes a few hours of design work plus a few hours of implementation and testing.
+| Step | Activity | Input | Output | Assmang Example |
+|------|----------|-------|--------|-----------------|
+| **1** | Set up Data Source | Connection string to SQL Server | Connection test passes | Connect to AssmangWarehouse database on SERVER-SQL-01 |
+| **2** | Create Data Source View | SQL Server tables | DSV diagram showing table joins | Select Dim_Mine, Dim_Date, Dim_Department, FactProduction, FactOperatingCosts |
+| **3** | Build Dimensions | DSV tables + dimension attributes | Dimension files (.dim) | Create Mine, Date, Department, Employee dimensions |
+| **4** | Add Measure Groups | Fact tables + source columns as measures | Measure group definitions | Production measure group: TonnesProduced, RevenueZAR, Grade |
+| **5** | Build Hierarchy | Attributes + drill-down paths | Hierarchies in dimensions | Date: Year → Quarter → Month → Day |
+| **6** | Set Key Columns | Confirm primary keys match fact table | Dimension key mappings | MineKey in Dim_Mine matches MineKey in FactProduction |
+| **7** | Build Solution | Compile code for errors | Successful build with no errors | "Build successful" message in Visual Studio |
+| **8** | Deploy Project | Push metadata to SSAS server | Cube database created on server | Files copied, database AssmangMiningAnalytics created |
+| **9** | Process Cube | Load data into structures | Fully processed cube ready for queries | Data loaded, aggregations built, <1 sec query time |
 
 ---
 
-## 2. Data source and DSV
+## 2. Pre-deployment validation checklist
 
-### 💬 In plain English
+**Before you deploy, verify the 12 critical items below. If ANY fail, fix and rebuild before deploying.**
 
-Let's break down **data source and dsv** in the simplest possible terms:
+### Checklist Formula (Validation Rules)
 
-**→** The data source defines how SSDT connects to SQL Server.
+```
+VALID_TO_DEPLOY = (
+  Data Source connection = PASSING AND
+  Data Source View tables = COMPLETE AND
+  Dimension count = EXPECTED AND
+  Measures count = EXPECTED AND
+  Hierarchies defined = YES AND
+  Key columns set = YES AND
+  Build errors = 0 AND
+  Build warnings = 0 OR ACCEPTABLE AND
+  Deployment properties set = YES AND
+  Target Server is reachable = YES AND
+  Target database name = UNIQUE AND
+  Processor account has rights = YES
+)
+```
 
-**→** The Data Source View is the logical modelling layer that selects tables and relationships.
+### Detailed checklist for Assmang:
 
-**→** A clean DSV makes later cube design easier and clearer.
+**✓ Step 1: Verify data source connection**
+- Open Project Properties → Data Sources
+- Right-click connection → Test Connection
+- Expected: "Connection successful" (green checkmark)
+- If fails: Wrong server name, network issue, or SQL credentials wrong
 
-### 📚 Detailed explanation
+**✓ Step 2: Verify DSV has all required tables**
+- Double-click Data Source View
+- Confirm tables present:
+  - `Dim_Mine` (dimension)
+  - `Dim_Date` (dimension)
+  - `Dim_Department` (dimension)
+  - `FactProduction` (fact)
+  - `FactOperatingCosts` (fact)
+- If missing: Right-click DSV → Add/Remove Tables
 
-This concept is important because it directly affects how well the cube works for business users. Here is a deeper look:
+**✓ Step 3: Verify dimension count**
+- In Solution Explorer, expand Dimensions folder
+- Count dimensions: Should have 3-4 (Mine, Date, Department, Employee)
+- Expected: 3-4 dimension files (.dim)
+- If wrong: Build missing dimensions or delete duplicates
 
+**✓ Step 4: Verify measure count**
+- Open Cube Designer
+- Expand Measure Groups
+- Count measures (not including key columns):
+  - Production: TonnesProduced, RevenueZAR, Grade (3 measures)
+  - OperatingCosts: LaborCost, MaintenanceCost, EquipmentCost, etc. (5-6 measures)
+- Expected: 8-10 total measures
+- If wrong: Open fact table source, verify measure columns are selected
 
-**Point 1: The data source defines how SSDT connects to SQL Server.**
+**✓ Step 5: Verify hierarchies are defined**
+- Open each Dimension Designer
+- Look for hierarchies (should not be empty):
+  - Mine: Geography (Province → MineName)
+  - Date: Calendar (Year → Quarter → Month → Day)
+  - Department: Organization (if present)
+- If missing: Create hierarchies before deploying
 
-What this means in practice: When you apply this at Assmang, it means that the data source defines how ssdt connects to sql server. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
+**✓ Step 6: Verify key columns match**
+- In Cube Designer, check each Dimension Usage tab
+- For each dimension, confirm:
+  - Dimension Key Column = Primary key from fact table
+  - Example: MineKey (Dim_Mine) = MineKey (FactProduction)
+- If misaligned: Wrong joins produce incorrect aggregations
 
-**Point 2: The Data Source View is the logical modelling layer that selects tables and relationships.**
+**✓ Step 7: Build solution with no errors**
+- Press **Ctrl+Shift+B** (Build Solution)
+- Open **Error List** panel (View → Error List)
+- Count errors: Should be 0
+- Warnings: Acceptable if not deployment-blocking
+- If errors exist: Read error messages, fix, rebuild
 
-What this means in practice: When you apply this at Assmang, it means that the data source view is the logical modelling layer that selects tables and relationships. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
+**✓ Step 8: Verify Project Properties → Deployment**
+- Right-click project → Properties
+- Go to **Deployment** tab
+- Set **Server:** `SSAS-SERVER` (or your SSAS hostname)
+- Set **Database:** `AssmangMiningAnalytics` (unique name)
+- Test Server Connection: Should show green checkmark
 
-**Point 3: A clean DSV makes later cube design easier and clearer.**
+**✓ Step 9: Verify source/target database consistency**
+- In SQL Server Management Studio:
+  - Connect to Database Engine
+  - Run: `SELECT COUNT(*) FROM Dim_Mine; SELECT COUNT(*) FROM FactProduction;`
+  - Note row counts (e.g., 5 mines, 50,000 fact rows)
+- These are the numbers you'll see aggregated in the cube
 
-What this means in practice: When you apply this at Assmang, it means that a clean dsv makes later cube design easier and clearer. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
+**✓ Step 10: Verify SSAS service is running**
+- Start → Services
+- Find **SQL Server Analysis Services (SSAS)**
+- Status: Should be **Running** (green status)
+- If stopped: Right-click → Start
 
+**✓ Step 11: Verify network connectivity to SSAS server**
+- Open SSMS
+- File → Connect to Server
+- Server Type: **Analysis Services**
+- Server name: `SSAS-SERVER`
+- Click **Connect**
+- Expected: Object Explorer shows connected SSAS instance
+- If fails: Network issue, firewall, or SSAS not running
 
-### 🏭 Assmang scenario
-
-**Situation:** A production manager at Khumani Mine asks: "Can I see this month's iron ore output compared to last month, broken down by shift?"
-
-**How data source and dsv helps:** Because the cube already has the right structure (dimensions for time and mine, measures for production), this question can be answered in seconds using Excel or Power BI — no SQL coding needed, no waiting for IT.
-
-
-### ❓ Frequently Asked Questions
-
-**Q: Do I need to be a programmer to understand data source and dsv?**  
-A: No. This concept is about business logic and design thinking. The tools (SSDT) provide visual interfaces for most of the work.
-
-**Q: What happens if we get data source and dsv wrong?**  
-A: The cube will still work technically, but users may get confusing results, slow performance, or missing data. That's why we follow best practices from the start.
-
-**Q: How long does it take to set up data source and dsv for a real project?**  
-A: For a project the size of Assmang's training cube, this typically takes a few hours of design work plus a few hours of implementation and testing.
+**✓ Step 12: Verify no other cube named AssmangMiningAnalytics exists**
+- In SSMS Object Explorer, expand Analysis Services
+- Expand Databases
+- Look for **AssmangMiningAnalytics**
+- If exists: Either use it (rename your project) or delete old version first
+- Deploying over existing cube = overwrites all (use for updates)
 
 ---
 
-## 3. Deployment and processing
+## 3. Deployment steps (exactly 6 steps)
 
-### 💬 In plain English
+**Once all 12 checklist items pass, deployment is safe:**
 
-Let's break down **deployment and processing** in the simplest possible terms:
+**Step 1:** In Visual Studio, right-click the project name in Solution Explorer
 
-**→** Deployment pushes the project metadata to an SSAS server.
+**Step 2:** Click **Deploy**
 
-**→** Processing loads data and builds the structures users actually query.
+**Step 3:** Visual Studio shows **Output** panel with progress messages:
+```
+Building project [Assmang Mining Analytics]...
+Build completed
+Copying files...
+Deploying cube...
+Creating database [AssmangMiningAnalytics] on server [SSAS-SERVER]...
+Deployment completed
+```
 
-**→** Without successful processing, a deployed cube is not analytically usable.
+**Step 4:** When you see **"Deployment succeeded"**, the cube metadata is now on the server
 
-### 📚 Detailed explanation
+**Step 5:** Open SSMS → Analysis Services connection → check **Databases** — you should see **AssmangMiningAnalytics**
 
-This concept is important because it directly affects how well the cube works for business users. Here is a deeper look:
+**Step 6:** The cube is deployed but NOT yet usable — must process next (see section 4)
 
+---
 
-**Point 1: Deployment pushes the project metadata to an SSAS server.**
+## 4. Processing explained — The critical step
 
-What this means in practice: When you apply this at Assmang, it means that deployment pushes the project metadata to an ssas server. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
+**After deployment, the cube exists but is EMPTY. Processing loads the data.**
 
-**Point 2: Processing loads data and builds the structures users actually query.**
+### What processing does
 
-What this means in practice: When you apply this at Assmang, it means that processing loads data and builds the structures users actually query. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
+| Processing Phase | What Happens | Time | Result |
+|-----------------|--------------|------|--------|
+| **Dimension Process Full** | Reads all rows from Dim_Mine, Dim_Date, etc. | 1-2 seconds | Member lists built (Beeshoek, Khumani, Jan, Feb, etc.) |
+| **Measure Group Process Full** | Reads all fact rows, calculates aggregates | 5-10 seconds | Pre-calculated totals stored (Q1 revenue, Y2024 tonnes, etc.) |
+| **Cube Process Full** | Combines all above | 10-15 seconds | Entire cube ready for <1 sec user queries |
+| **Incremental (nightly updates)** | Only new data since last process | 2-3 seconds | New day's data appears without reprocessing old data |
 
-**Point 3: Without successful processing, a deployed cube is not analytically usable.**
+### Processing formula (cascade logic)
 
-What this means in practice: When you apply this at Assmang, it means that without successful processing, a deployed cube is not analytically usable. This is not just a technical exercise — it directly helps managers, engineers, and executives get better information faster.
+```
+WHEN cube is processed:
+  FOR EACH dimension referenced in the cube:
+    Process that dimension FULLY
+  FOR EACH measure group referencing those dimensions:
+    Process that measure group FULLY
+  BUILD aggregations and statistics
+RESULT: Pre-calculated cache ready for instant queries
+```
 
+### Processing steps in SSMS
 
-### 🏭 Assmang scenario
+**Step 1:** Open SSMS → Connect to Analysis Services
 
-**Situation:** A production manager at Khumani Mine asks: "Can I see this month's iron ore output compared to last month, broken down by shift?"
+**Step 2:** In Object Explorer, expand **Databases** → **AssmangMiningAnalytics** → **Cubes**
 
-**How deployment and processing helps:** Because the cube already has the right structure (dimensions for time and mine, measures for production), this question can be answered in seconds using Excel or Power BI — no SQL coding needed, no waiting for IT.
+**Step 3:** Right-click the **Assmang Mining Analytics** cube
 
+**Step 4:** Click **Process**
 
-### ❓ Frequently Asked Questions
+**Step 5:** A dialog appears showing:
+```
+Object: Assmang Mining Analytics (Cube)
+Process Option: [dropdown - select "Full"]
+```
 
-**Q: Do I need to be a programmer to understand deployment and processing?**  
-A: No. This concept is about business logic and design thinking. The tools (SSDT) provide visual interfaces for most of the work.
+**Step 6:** Select **"Full"** from the dropdown (processes everything)
 
-**Q: What happens if we get deployment and processing wrong?**  
-A: The cube will still work technically, but users may get confusing results, slow performance, or missing data. That's why we follow best practices from the start.
+**Step 7:** Click **Start**
+
+**Step 8:** Processing begins, you see progress messages:
+```
+Processing dimension [Mine]...
+Processing dimension [Date]...
+Processing measure group [Production]...
+Processing measure group [Operating Costs]...
+Building aggregations...
+Processing completed successfully
+```
+
+**Step 9:** When complete, you see: **"Process job succeeded"**
+
+**Step 10:** The cube is now ready — query it in the Browser tab
+
+---
+
+## 5. Common deployment/processing errors and fixes
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| **"Server not found"** | SSAS server hostname wrong | Check Project Properties → Deployment → Server name. Use ping or SSMS to verify server is reachable. |
+| **"Database already exists"** | You're re-deploying over an old cube | Redeploy overwrites old one (fine for updates). To start fresh, delete old database in SSMS first. |
+| **"Deployment succeeded but no cube appears"** | Forgot to process | Process is separate step. After deployment, must process cube in SSMS. |
+| **"Build error: Ambiguous join"** | DSV has missing relationship definition | In DSV, right-click table → New Relationship → define join between Dim and Fact tables. |
+| **"Process failed: dimension key not found"** | Fact table references non-existent dimension key | Example: FactProduction has MineKey=99 but Dim_Mine only has keys 1-5. Fix source data first. |
+| **"Process succeeded but Browser shows no data"** | Aggregation function wrong on measures | Check aggregation: Grade should be "None" (formula), TonnesProduced should be "Sum". Fix and redeploy. |
+| **"Measure shows null/blank"** | Source column is null in data | Run SQL: `SELECT * FROM FactProduction WHERE TonnesProduced IS NULL;` Fix null values before reprocessing. |
+| **"SSAS out of memory during process"** | Cube is huge, cache insufficient | Split into multiple measure groups or use incremental processing. For Assmang, usually not an issue. |
+
+---
+
+## 6. Real-world deployment checklist for Assmang
+
+**Before asking the production team to use the cube, verify:**
+
+✓ Cube processes nightly at 06:00 (after ETL completes)
+✓ All 4 mines appear in Mine dimension (Beeshoek, Khumani, Black Rock, Dwarsrivier)
+✓ Date range covers full year (2024-01-01 to 2024-12-31)
+✓ Khumani production = ~45,000 tonnes (matches SQL query baseline)
+✓ Total cost per tonne = ~R 378/tonne (formula working)
+✓ Safety KPI shows green for compliant mines
+✓ Browser queries execute in <1 second
+✓ Users can connect from Excel/Power BI without errors
+✓ Role-based security applied (departments see only their costs)
+✓ Database backup runs daily (nightly at 22:00, after processing)
+
+**If any item fails, DO NOT release to users — investigate before go-live.**
 
 **Q: How long does it take to set up deployment and processing for a real project?**  
 A: For a project the size of Assmang's training cube, this typically takes a few hours of design work plus a few hours of implementation and testing.

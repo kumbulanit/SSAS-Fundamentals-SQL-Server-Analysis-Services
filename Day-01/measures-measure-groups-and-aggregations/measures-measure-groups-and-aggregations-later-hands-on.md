@@ -3,218 +3,350 @@
 
 ---
 
-## 🎯 Purpose
-
-These exercises are designed for **independent practice** after the guided lab. They are slightly more challenging and require you to apply what you've learned without step-by-step guidance.
-
 ## 📋 Before You Begin
 
-- Ensure the guided lab for **Measures, Measure Groups, and Aggregations** is complete
-- Dataset **`v2_assmang_mining_extended.sql`** must be loaded
-- Your SSAS project should be in a working state
-- Allow 30-45 minutes for these exercises
+| Requirement | Status to check |
+|-------------|----------------|
+| Guided practical lab | Must be fully complete |
+| AssmangMining database | Must exist in SQL Server with data |
+| SSAS cube deployed and processed | Browser tab must show results |
+| Dataset v2 loaded | `FactProduction` and `FactOperatingCosts` must have rows |
+
+**Time:** Allow 45–60 minutes for all three exercises.
 
 ---
 
-## How To Work Through These Exercises
+## How to Use These Exercises
 
-Use this repeatable method for every exercise instead of jumping straight to the answer:
+These are **independent practice exercises** — no instructor will walk you through them. Each one has exact steps to follow. Read each step fully before you do anything.
 
-1. Read the task and rewrite it as a simple business question in your own words.
-2. Decide whether the answer should come from explanation only, SSDT inspection, SSMS browsing, SQL validation, or MDX output.
-3. If the task depends on model objects, first confirm the relevant cube, dimension, measure, hierarchy, or KPI exists before writing conclusions.
-4. If the task depends on numbers, get a baseline from SQL or existing browser output before writing the final answer.
-5. Start with the smallest possible test. For example, browse one measure for one mine before trying a more complex view.
-6. Expand gradually until you have enough evidence to answer the question confidently.
-7. Record what you checked, what result you saw, and what that result means in plain business language.
-8. If an exercise asks for a recommendation or explanation, support it with one concrete observation from the model or data.
-
-## Evidence Checklist For Each Exercise
-
-Before you mark an exercise complete, make sure you can show all of the following where relevant:
-
-- The object you inspected, such as a dimension, hierarchy, measure group, KPI, or MDX query.
-- The output you observed, such as a browser grid, MDX result, build result, or processing result.
-- A short explanation of why that output answers the task.
-- At least one Assmang-specific business interpretation, not just a technical description.
-
-## If You Get Stuck
-
-Use this recovery sequence:
-
-1. Return to the guided practical for the same topic and repeat the closest worked example.
-2. Check the theory page for the business meaning of the concept before changing the model.
-3. Validate source data in SQL if the cube result looks suspicious.
-4. Validate deployment and processing state if the SSAS object exists but numbers look incomplete.
-5. Reduce the query or browser slice to something smaller and rebuild from there.
+**If you get stuck:**
+1. Go back to the practical lab and find the closest matching step
+2. Check that your cube is deployed and processed (most problems come from this)
+3. Run the SQL validation queries to check if the source data is the issue
 
 ---
 
-## Exercise 1
+## Exercise 1 — Classify the Assmang Measures
 
-### Objective
+### What you are doing
 
-Classify measures in FactProduction by aggregation function and recommend appropriate modeling for each.
+You will look at each measure in the cube and decide whether it is additive, semi-additive, or non-additive. Then you will check if SSAS is set up correctly.
 
-### Procedure
+### Why this matters
 
-**Step 1: Review FactProduction Fact Table**
-- Open SSDT Data Source View
-- Inspect FactProduction table: columns, data types, and which columns represent business measures (not keys or dates)
-- List candidate measures: TonnesProduced, EquipmentHours, ProductionCost, EmployeesAssigned
-
-**Step 2: Define Aggregation Types**
-- **Additive**: Can sum across all dimensions (e.g., Tonnes: total tonnes across mines, dates, departments)
-- **Semi-Additive**: Sum across some dimensions but NOT others (e.g., EmployeesAssigned: sum by date is meaningless, max/min makes sense)
-- **Non-Additive**: Cannot sum anywhere (e.g., EquipmentUptime%: percentage, must average or use max/min)
-- **Calculated**: Not in fact table; built from other measures (e.g., CostPerTonne = ProductionCost / TonnesProduced)
-
-**Step 3: Classify Each FactProduction Measure**
-- For each measure, ask: "What does it mean to sum this across dimensions?"
-- TonnesProduced: Sum across mines, departments, dates → ADDITIVE ✓
-- ProductionCost: Sum across time periods within a fact row → SEMI-ADDITIVE (last value, not sum)
-- EquipmentHours: Sum across equipment and shifts → ADDITIVE ✓
-- EmployeesAssigned: Count of people, max during shift → SEMI-ADDITIVE (use Max, not Sum)
-
-**Step 4: Verify with SSDT Cube Designer**
-- Open the Production measure group in the cube
-- Inspect each measure's AggregationFunction property (Sum, Min, Max, Average, Count, Distinct Count)
-- Does the AggregationFunction match your classification?
-- If measure is set to Sum but should be Max (semi-additive), note this as a potential error
-
-**Step 5: Document Recommendations**
-- Write 1–2 paragraphs recommending:
-	- Which measures are correctly configured as Sum
-	- Which measures should use Max/Min/Average instead
-	- Whether any new calculated measures would add value (e.g., EfficiencyRatio = TonnesProduced / EquipmentHours)
-
-### Deliverable
-
-- **Input:** FactProduction table structure from DSV
-- **Output:** 1–2 paragraph classification summary + measure-by-measure table (Measure Name | Type | AggregationFunction | Recommendation)
-- **Evidence:** Specific measure names from cube; screenshot of AggregationFunction property in SSDT
-- **Assmang Context:** Example: \"EquipmentHours is additive (sum across shifts). EmployeesAssigned is semi-additive (use Max, not Sum, because summing '10 employees on Day shift' + '8 employees on Night shift' = '18 employees' is wrong; what matters is peak headcount). If we sum EmployeesAssigned, staffing metrics become meaningless.\"
+If SSAS uses the wrong setting (e.g., summing Grade%), the cube will show impossible numbers. A manager who sees "iron grade = 128%" will stop trusting your reports entirely.
 
 ---
 
-## Exercise 2
+### Step 1: Open the cube in Visual Studio
 
-### Objective
-
-Design a new Equipment Efficiency measure group using v3 dataset and recommend three business measures for Assmang equipment analytics.
-
-### Procedure
-
-**Step 1: Review v3 Dataset for Equipment Table**
-- Load v3 dataset script and inspect FactEquipmentEfficiency table
-- Identify columns: EquipmentID, DateID, EquipmentType, UptimePercentage, MaintenanceHours, BreakdownCount
-- Document grain: is each row one equipment per day? Per shift? Per week?
-
-**Step 2: Understand Assmang Equipment Needs**
-- Assmang tracks: Truck loaders, haul trucks, drill rigs, excavators
-- Key questions: Which equipment types are most efficient? When do breakdowns happen? Is maintenance preventing downtime?
-- Business metrics: Uptime%, maintenance cost per equipment, breakdown frequency trends
-
-**Step 3: Propose Three Measures**
-- Measure 1: **Equipment Uptime %** (AggregationFunction = Average, not Sum)
-	- Reasoning: Percentage, must average across dates/equipment types (weighted avg by operating hours preferred)
-- Measure 2: **Total Maintenance Hours** (AggregationFunction = Sum)
-	- Reasoning: Hours spent, sum across equipment and dates to see total maintenance load
-- Measure 3: **Breakdown Count** (AggregationFunction = Sum)
-	- Reasoning: Count of failures, sum across time/equipment to identify problem equipment or time periods
-
-**Step 4: Document Aggregation Functions**
-- For each measure, justify the AggregationFunction choice
-- Example: "Uptime% uses Average because summing percentages is nonsensical. If Truck 1 has 95% uptime and Truck 2 has 90%, the fleet doesn't have 185% uptime."
-- Consider: Does the measure need weights (e.g., weighted average by equipment age)?
-
-**Step 5: Consider Dimension Relationships**
-- Equipment Efficiency fact table relates to: Equipment (dimEquipment), Date (dimDate), Mine (dimMine)
-- Sketch: Can users slice maintenance hours by mine? By equipment type? By month?
-- Document: Is there a separate Equipment dimension, or do you infer EquipmentType from the fact table?
-
-### Deliverable
-
-- **Input:** v3 FactEquipmentEfficiency table structure
-- **Output:** 1–2 paragraph measure group design + three-measure specification table (Measure | Source Column | AggregationFunction | Business Purpose)
-- **Evidence:** Specific column names from v3 dataset; aggregation function reasoning; screenshot of v3 table structure
-- **Assmang Context:** Example: \"Assmang's operations team needs to identify underperforming equipment before failure impacts production. Equipment Efficiency measure group enables drill-down: 'Show breakdown count by equipment type by month.' Measuring uptime% instead of just raw hours makes cross-equipment comparison valid (95% uptime on a truck is comparable to 95% on a drill rig).\"
-
-### Deliverable
-
-- A written answer (1-2 paragraphs) OR a screenshot of your SSDT/SSMS result.
-- Be prepared to explain your reasoning to the trainer.
--   **Input:** v3 FactEquipmentEfficiency table structure
--   **Output:** 1–2 paragraph measure group design + three-measure specification
--   **Evidence:** Specific column names; aggregation function reasoning
--   **Assmang Context:** Example: \"Assmang's operations team needs to identify underperforming equipment. Equipment Efficiency measure group enables: 'Show breakdown count by equipment type by month.' Uptime% instead of raw hours makes cross-equipment comparison valid.\"
+1. Open **Visual Studio**
+2. Open your SSAS project (File → Open → Project/Solution)
+3. In **Solution Explorer**, expand **Cubes**
+4. Double-click the cube file to open the **Cube Designer**
+5. Click the **Cube Structure** tab
 
 ---
 
-## Exercise 3
+### Step 2: Find the Measures panel
 
-### Objective
-
-Demonstrate why CostPerTonneZAR should be calculated (derived) rather than pre-aggregated, using mathematics and business context.
-
-### Procedure
-
-**Step 1: Understand the Problem**
-- Assmang tracks OperatingCost (ZAR) and TonnesProduced for each mine/day/shift
-- Business question: "What is the cost per tonne for Sishen mine in Q1?"
-- Naive approach: Pre-calculate CostPerTonne in FactProduction, sum it in the cube
-- Issue: What does summing ratios mean? Is it correct?
-
-**Step 2: Show Why Summing Ratios Fails**
-- Example: Two shifts at Sishen produce:
-	- Shift 1: Cost 50,000 ZAR for 100 tonnes = 500 ZAR/tonne
-	- Shift 2: Cost 60,000 ZAR for 150 tonnes = 400 ZAR/tonne
-- Naive sum: 500 + 400 = 900 ZAR/tonne (WRONG! This is meaningless)
-- Correct calculation: (50,000 + 60,000) / (100 + 150) = 110,000 / 250 = 440 ZAR/tonne
-
-**Step 3: Demonstrate the Aggregation Error**
-- In SSDT cube designer, calculate what happens if you set CostPerTonneZAR to Sum:
-	- Browser shows: Shift 1 CostPerTonne = 500; Shift 2 CostPerTonne = 400
-	- Total CostPerTonne (summed) = 900 (INVALID: it's not a true metric anymore)
-- Document: Why SSAS ignores the business meaning when you ask it to sum a ratio
-
-**Step 4: Implement as Calculated Measure**
-- In cube designer, add calculated measure: CostPerTonneZAR_Calculated
-- MDX formula: [Measures].[OperatingCost] / [Measures].[TonnesProduced]
-- Test in browser: Does it show 440 ZAR/tonne for both shifts combined? (Expected: Yes)
-- If summed incorrectly: 900, document that it's a design error
-
-**Step 5: Document Trade-offs**
-- Pre-calculated approach (in fact table, sum in cube):
-	- Pros: No SSAS calculation overhead
-	- Cons: Only one aggregation option; summing is wrong; can't drill to different granularity
-- Calculated measure approach (MDX formula):
-	- Pros: Mathematically correct at any drill level; flexible
-	- Cons: Slight SSAS CPU cost; requires end-user education about what "calculated" means
-
-### Deliverable
-
-- **Input:** Two-shift scenario with costs and tonnes (per Step 2)
-- **Output:** 1–2 paragraph explanation + worked example showing why summing fails
-- **Evidence:** Browser screenshot showing calculated CostPerTonneZAR = 440 for combined shifts; MDX formula used; comparison to summed approach (900, marked as WRONG)
-- **Assmang Context:** Example: \"Assmang's cost-per-tonne metric must roll up correctly from shifts to daily to monthly. If we sum pre-calculated CostPerTonne, Q1 shows nonsense numbers (e.g., '9,000 ZAR/tonne'). Calculated measures ensure 'Sum of all Q1 tonnes / Sum of all Q1 costs' gives the true Q1 rate, enabling honest production efficiency analysis.\"
+1. On the left side of the Cube Designer, look for a panel labelled **Measures**
+2. Expand the **Production** measure group by clicking the arrow next to it
+3. You should see individual measures listed: TonnesProduced, RevenueZAR, Grade, etc.
+4. Write down each measure name — you will classify each one
 
 ---
 
-## ✅ Success Criteria
+### Step 3: Classify each measure using this guide
 
-Your exercises are considered successful when:
+For each measure you found, ask yourself: **"What happens if I add this number across all shifts and all mines?"**
 
-- Your answer reflects the topic's **business purpose**, not only the technical steps.
-- You can explain **why** the design or query choice fits Assmang's reporting needs.
-- You can connect your answer back to dimensions, measures, hierarchies, MDX, or deployment where relevant.
-- Your work is **documented clearly** enough that a colleague could understand it.
+Use this table to decide:
+
+| Answer | Classification | Correct SSAS setting |
+|--------|---------------|---------------------|
+| The total makes sense (e.g., total tonnes = sum of all mines) | **Additive** | AggregationFunction = Sum |
+| Adding it across time doesn't make sense, but across mines does | **Semi-Additive** | AggregationFunction = Max or LastNonEmpty |
+| Adding it produces a number that is impossible or meaningless | **Non-Additive** | Write a calculated measure formula instead |
+
+**Write your classification for each measure before the next step.**
+
+Example to guide you:
+- `TonnesProduced` → Khumani 45,000t + Beeshoek 32,000t = 77,000t total → Makes sense → **Additive**
+- `Grade` → Khumani 64% + Beeshoek 58% = 122% → Impossible → **Non-Additive**
+- `EmployeesAssigned` → Day shift 120 + Night shift 95 = 215 headcount → May be double-counting → **Semi-Additive**
 
 ---
 
-## 💡 Stretch Challenge (Optional)
+### Step 4: Check the AggregationFunction in SSAS
 
-If you finish early, try to extend one of the exercises above by combining it with a concept from a previous topic. For example, if this topic covers measures, try connecting your measure design to a specific dimension hierarchy from an earlier topic.
+1. In the Measures panel, click **TonnesProduced** to select it
+2. Press **F4** to open the **Properties** window (or go to View → Properties Window)
+3. Find the property called **AggregationFunction**
+4. Note what it is set to (Sum, None, Max, etc.)
+5. Compare it to your classification from Step 3
+6. Repeat for **RevenueZAR** and **Grade**
+
+**What you should find:**
+- TonnesProduced → should be **Sum** ✅
+- RevenueZAR → should be **Sum** ✅
+- Grade → should be **None** or a formula, NOT Sum ← if it is set to Sum, this is a problem
+
+---
+
+### Step 5: Fix any wrong settings
+
+1. If you found a measure with the wrong AggregationFunction:
+   - Click the measure to select it
+   - In the Properties window, click the AggregationFunction dropdown
+   - Change it to the correct value from your classification
+2. Press **Ctrl+S** to save
+3. Rebuild: **Build → Build Solution**
+4. Redeploy: Right-click project → **Deploy**
+5. Reprocess the cube (SSMS → Analysis Services → right-click database → Process)
+
+---
+
+### Step 6: Document your findings
+
+Write a simple table like this (fill it in with your actual findings):
+
+| Measure | My Classification | SSAS Was Set To | Correct? | Action Taken |
+|---------|------------------|----------------|----------|--------------|
+| TonnesProduced | Additive | Sum | ✅ Yes | None needed |
+| RevenueZAR | Additive | Sum | ✅ Yes | None needed |
+| Grade | Non-Additive | Sum | ❌ No | Changed to None; added formula |
+
+---
+
+### What to hand in
+
+- Your completed classification table
+- A screenshot of the Properties window showing AggregationFunction for at least two measures
+- One sentence explaining what would go wrong if Grade was left as Sum
+
+---
+
+## Exercise 2 — Design an Equipment Efficiency Measure Group
+
+### What you are doing
+
+You will look at the v3 dataset's equipment table and propose a new measure group for it. You will decide which columns become measures and what aggregation rule to use.
+
+### Why this matters
+
+Assmang needs to track equipment uptime and breakdown counts to plan maintenance. If you model the uptime% as a Sum, you will get percentages above 100% — meaningless to engineers. This exercise teaches you to think before clicking.
+
+---
+
+### Step 1: Load the v3 dataset and find the equipment table
+
+1. Open **SSMS**
+2. Click **New Query** and select database **`AssmangMining`** from the dropdown
+3. Run this query to check if the equipment table already exists:
+
+```sql
+SELECT TABLE_NAME
+FROM INFORMATION_SCHEMA.TABLES
+WHERE TABLE_NAME LIKE '%Equipment%';
+```
+
+4. If it does not appear, you need to load v3:
+   - Go to **File → Open → File**
+   - Navigate to `datasets/v3_assmang_mining_complete.sql`
+   - Press **F5** to run it
+   - Wait for "Commands completed successfully"
+
+5. Once the table exists, run:
+
+```sql
+SELECT TOP 10 *
+FROM dbo.FactEquipmentEfficiency;
+```
+
+6. Write down the column names you see in the result
+
+---
+
+### Step 2: Identify which columns are measures
+
+Look at each column from Step 1. For each column, answer: "Is this a number I would want to analyse?"
+
+**Use this guide:**
+- Column ends in `ID` → It is a foreign key, NOT a measure
+- Column is a date → It is a dimension link, NOT a measure
+- Column is a number that represents a business value (hours, count, percentage) → **YES, this is a measure candidate**
+
+Write down which columns qualify as measure candidates.
+
+---
+
+### Step 3: Classify each measure candidate
+
+For each candidate, decide its aggregation type using the same method from Exercise 1:
+
+**Common equipment measures you will likely find:**
+
+| Column | Classification | Reason |
+|--------|---------------|--------|
+| UptimePercentage | **Non-Additive** | It is a percentage. 95% + 90% ≠ 185% uptime. Use Average. |
+| MaintenanceHours | **Additive** | Hours can be summed: 8h + 6h = 14h total maintenance |
+| BreakdownCount | **Additive** | Count of failures can be summed across equipment and time |
+
+---
+
+### Step 4: Write out your proposed measure group design
+
+Create a table like this:
+
+| Measure Name | Source Column | AggregationFunction | Business Question It Answers |
+|-------------|--------------|--------------------|-----------------------------|
+| Equipment Uptime % | UptimePercentage | Average | "What was average uptime for haul trucks in Q1?" |
+| Total Maintenance Hours | MaintenanceHours | Sum | "How many total maintenance hours did we log in January?" |
+| Breakdown Count | BreakdownCount | Sum | "How many breakdowns happened at Khumani this year?" |
+
+---
+
+### Step 5: Check your design makes business sense
+
+For each measure, ask:
+1. "If I drill down to one mine, one week — does this number still make sense?"
+2. "If I zoom out to all mines, full year — does this number still make sense?"
+
+**Example check:**
+- Uptime% Average for one truck on one day = 95% → Makes sense ✅
+- Uptime% Average for all trucks for the whole year = 87% → Makes sense ✅
+- Uptime% Sum for all trucks = 8,700% → Makes NO sense ❌ → confirms Average is correct
+
+---
+
+### What to hand in
+
+- Your measure candidate list from Step 2
+- Your completed measure group design table from Step 4
+- One worked example showing why UptimePercentage must use Average not Sum (show the math, like above)
+
+---
+
+## Exercise 3 — Prove Why CostPerTonne Must Be Calculated, Not Stored
+
+### What you are doing
+
+You will use actual numbers to prove that storing `CostPerTonne` in the fact table and summing it gives wrong answers — and that building it as a calculated measure gives correct answers.
+
+### Why this matters
+
+This is one of the most common mistakes in real SSAS projects. Hundreds of reports across mining companies have been wrong because of this exact error. You need to understand why it happens and how to prevent it.
+
+---
+
+### Step 1: Get the raw numbers from SQL
+
+1. Open **SSMS**
+2. Select database **`AssmangMining`**
+3. Run this query to get cost and production per shift:
+
+```sql
+SELECT
+    m.MineName,
+    fp.DateID,
+    fp.TonnesProduced,
+    oc.LaborCostZAR + oc.MaintenanceCostZAR + oc.EquipmentCostZAR AS TotalCostZAR
+FROM dbo.FactProduction fp
+JOIN dbo.Dim_Mine m ON fp.MineID = m.MineID
+JOIN dbo.FactOperatingCosts oc
+    ON fp.MineID = oc.MineID AND fp.DateID = oc.DateID
+WHERE m.MineName = 'Khumani Mine'
+ORDER BY fp.DateID
+```
+
+4. Look at the first 2 or 3 rows in the result
+5. Write down:
+   - Row 1: TonnesProduced = ?, TotalCostZAR = ?
+   - Row 2: TonnesProduced = ?, TotalCostZAR = ?
+
+---
+
+### Step 2: Calculate CostPerTonne the WRONG way (to see why it fails)
+
+Using your numbers from Step 1, simulate what SSAS does if CostPerTonne is a stored column set to SUM:
+
+```
+Row 1 CostPerTonne = TotalCostZAR ÷ TonnesProduced
+Row 2 CostPerTonne = TotalCostZAR ÷ TonnesProduced
+
+Naive SUM = Row 1 CostPerTonne + Row 2 CostPerTonne
+```
+
+Write that SUM down. Then ask yourself: **"Is this number a meaningful cost per tonne?"**
+
+It is NOT — because you just added two ratios together. There is no business meaning to "Row1 cost/tonne + Row2 cost/tonne".
+
+---
+
+### Step 3: Calculate CostPerTonne the CORRECT way
+
+Using the same numbers from Step 1:
+
+```
+Correct CostPerTonne = (Row1 TotalCost + Row2 TotalCost) ÷ (Row1 Tonnes + Row2 Tonnes)
+```
+
+Calculate this with your actual numbers.
+
+**Example with made-up numbers:**
+- Row 1: 1,500 tonnes, R 600,000 cost → CostPerTonne = R 400/t
+- Row 2: 1,200 tonnes, R 420,000 cost → CostPerTonne = R 350/t
+- Wrong SUM: 400 + 350 = **R 750/tonne** ← WRONG
+- Correct formula: (600,000 + 420,000) ÷ (1,500 + 1,200) = 1,020,000 ÷ 2,700 = **R 378/tonne** ✅
+
+---
+
+### Step 4: Verify the calculated measure in your cube gives the right answer
+
+1. Open **Visual Studio** → your SSAS project → Cube Designer
+2. Click the **Calculations** tab
+3. Check if `Cost Per Tonne ZAR` already exists from the practical lab
+4. If it exists, click it and read the formula — it should be:
+   ```
+   [Measures].[Labor Cost (ZAR)] / [Measures].[Tonnes Produced]
+   ```
+   (or similar, using total cost divided by tonnes)
+5. Click the **Browser** tab
+6. Drag **Cost Per Tonne ZAR** into the data area
+7. Drag **Mine Name** to the rows
+8. Compare the cube result for Khumani to your Step 3 correct calculation — they should be in the same range
+
+---
+
+### Step 5: Write your explanation (2–3 sentences)
+
+Answer this question in your own words:
+
+> "Why should CostPerTonne be a calculated measure and NOT a stored fact column set to Sum?"
+
+Use your Step 2 and Step 3 numbers as your proof. Example answer format:
+
+> "If CostPerTonne is stored and summed, adding Row 1 (R400/t) and Row 2 (R350/t) gives R750/t — a meaningless number that no mine manager would recognise. The correct value is R378/t, calculated by dividing total cost by total tonnes across both rows. SSAS computed measures perform this division dynamically at whatever level the user is viewing, giving the correct answer every time."
+
+---
+
+### What to hand in
+
+- Your Step 1 raw numbers (from the SQL query)
+- Your Step 2 wrong calculation and the number it produces
+- Your Step 3 correct calculation and the number it produces
+- Your Step 5 explanation (2–3 sentences)
+- A screenshot of the calculated measure formula in the Calculations tab
+
+---
+
+## ✅ All Exercises Complete When
+
+- [ ] Exercise 1: Classification table done, AggregationFunction verified in SSAS
+- [ ] Exercise 2: Measure group design table complete with aggregation justification
+- [ ] Exercise 3: Both wrong and correct cost-per-tonne calculations shown with real numbers
 
 ---
 

@@ -5,7 +5,7 @@
 
 ## 🎯 Purpose
 
-These exercises are designed for **independent practice** after the guided lab. They are slightly more challenging and require you to apply what you've learned without step-by-step guidance.
+These exercises are designed for **independent practice** after the guided lab. They are slightly more challenging and are presented with clear step-by-step procedures so you can execute each task confidently.
 
 ## 📋 Before You Begin
 
